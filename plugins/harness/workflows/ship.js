@@ -3,7 +3,7 @@ export const meta = {
   description: 'Ship tickets to one PR: build, verify, review, test, ADRs',
   phases: [
     { title: 'Setup', detail: 'validate args, create the integration branch (multi-ticket only)' },
-    { title: 'Tickets', detail: 'intent, plan, implement, verify, finish per ticket; groups in order, tickets of a group in parallel' },
+    { title: 'Tickets', detail: 'intent, plan, ground check, implement, verify, finish per ticket; groups in order, tickets of a group in parallel' },
     { title: 'Merge', detail: 'merge a finished group into the integration branch (multi-ticket only)' },
     { title: 'Review', detail: 'code-review the final PR, fix findings, re-review only the fix commits' },
     { title: 'Intent review', detail: 'plan-blind check of the final diff against the original request' },
@@ -89,6 +89,9 @@ const STEP = { type: 'object', properties: { title: STR, files: strList, done_wh
   covers: { type: 'array', items: STR, description: 'the acceptance criteria this step proves, as AC1, AC2 (the order of acceptance[])' } }, required: ['title', 'done_when'] }
 const INTENT_SCHEMA = stageSchema({ goal: STR, acceptance: strList, files: strList, out_of_scope: strList, plan_steps: { type: 'array', items: STEP },
   approach: { type: 'string', description: 'Two to four sentences: the approach you chose and any option you rejected. It becomes design.md for depth S and M.' } }, ['goal'])
+// The ground gate result: the exit code of ground-check.sh, its FAIL lines and its whole output (the FILE lines prove the copy).
+const GROUND_SCHEMA = { type: 'object',
+  properties: { exit: NUM, failures: strList, output: { type: 'string', description: 'the complete stdout of ground-check.sh, verbatim' } }, required: ['exit'] }
 const RESEARCH_SCHEMA = stageSchema({ research_md: STR }, ['research_md'])
 const DESIGN_SCHEMA = stageSchema({ design_md: STR }, ['design_md'])
 const PLAN_SCHEMA = stageSchema({ plan_md: STR, plan_steps: { type: 'array', items: STEP } }, ['plan_md'])
@@ -308,9 +311,9 @@ async function askAdvisor(t, stage, question, state) {
 
 // One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
 async function runStage(t, stage, build, schema, opts) {
-  const { roleFile, ...rest } = opts
+  const { roleFile, labelSuffix = '', ...rest } = opts   // labelSuffix: ' retry' marks a re-run after a failed ground check
   const o = { ...rest, schema, phase: 'Tickets' }
-  let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
+  let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}${labelSuffix}`, t.title) }, roleFile)
   if (res && res.needs_advisor) {
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
     res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
@@ -346,27 +349,112 @@ function stageIntent(t) {
   return runStage(t, 'intent', build, INTENT_SCHEMA, { model: MODEL.intent, effort: EFFORT.intent })
 }
 
-function stageResearch(t, intent) {
+// Asked of the research, design and plan stages: the ground gate checks these forms against integRef.
+const CITE_RULE = () => `Cite existing code as path:line from the repo root (for example src/a.js:12) followed by a backtick quote of that line, and write (new) right after each path or symbol you will create, and after any name that is not in the code, a rejected option included. ` +
+  `A script checks every path, line, symbol and command you name against ${integRef} before implement.`
+
+function stageResearch(t, intent, ground = '') {
   const w = newWt(`research-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'xia2',
-    `Stage: research for a depth L ticket. Write the research brief and return its full text as research_md.\nIntent: ${JSON.stringify(intent)}${advice}`, w.dir)
-  return runStage(t, 'research', build, RESEARCH_SCHEMA, { model: MODEL.research, effort: EFFORT.research })
+    `Stage: research for a depth L ticket. Write the research brief and return its full text as research_md. ${CITE_RULE()}\nIntent: ${JSON.stringify(intent)}${ground}${advice}`, w.dir)
+  return runStage(t, 'research', build, RESEARCH_SCHEMA, { model: MODEL.research, effort: EFFORT.research, labelSuffix: ground ? ' retry' : '' })
 }
 
-function stageDesign(t, intent, research) {
+function stageDesign(t, intent, research, ground = '') {
   const w = newWt(`design-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'brainstorming',
-    `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file.\n` +
-    `Intent: ${JSON.stringify(intent)}\nResearch brief:\n${research.research_md}${advice}`, w.dir)
-  return runStage(t, 'design', build, DESIGN_SCHEMA, { model: stageModel('design', t.depth), effort: EFFORT.design })
+    `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file. ${CITE_RULE()}\n` +
+    `Intent: ${JSON.stringify(intent)}\nResearch brief:\n${research.research_md}${ground}${advice}`, w.dir)
+  return runStage(t, 'design', build, DESIGN_SCHEMA, { model: stageModel('design', t.depth), effort: EFFORT.design, labelSuffix: ground ? ' retry' : '' })
 }
 
-function stagePlan(t, intent, extra) {
+function stagePlan(t, intent, extra, ground = '') {
   const w = newWt(`plan-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'writing-plans',
-    `Stage: plan. Write no file; return the full plan text as plan_md, in the shape of ${pluginDir}/templates/specs/plan.md, plus plan_steps (the script saves it as specs/<slug>/plan.md).\n` +
-    `Intent: ${JSON.stringify(intent)}\n${extra || ''}${advice}`, w.dir)
-  return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan })
+    `Stage: plan. Write no file; return the full plan text as plan_md, in the shape of ${pluginDir}/templates/specs/plan.md, plus plan_steps (the script saves it as specs/<slug>/plan.md). ${CITE_RULE()}\n` +
+    `Intent: ${JSON.stringify(intent)}\n${extra || ''}${ground}${advice}`, w.dir)
+  return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan, labelSuffix: ground ? ' retry' : '' })
+}
+
+// ---------------------------------------------------------------------------
+// Ground gate: before implement, the claims of the research brief, design and plan are checked against integRef by
+// scripts/ground-check.sh. A cheap agent only copies the texts and runs the script; this code judges the result.
+// A failed check re-runs the stage once with the failed claims; a second failure asks the advisor and blocks the
+// ticket. An infrastructure problem (no answer, exit 2, a bad copy) never blocks: the gate fails open.
+// ---------------------------------------------------------------------------
+const failLines = v => (Array.isArray(v) ? v : String(v || '').split('\n')).filter(l => typeof l === 'string' && l.startsWith('FAIL '))
+
+const utf8Len = str => unescape(encodeURIComponent(String(str))).length
+
+// texts: [{ file, text }]. Returns { status: 'pass' | 'fail' | 'skipped', failures, why }.
+function judgeGround(res, texts) {
+  if (!res || typeof res.exit !== 'number') return { status: 'skipped', failures: [], why: 'no exit code from the ground agent' }
+  if (res.exit !== 0 && res.exit !== 1) return { status: 'skipped', failures: [], why: `ground-check.sh exited ${res.exit}` }
+  const out = typeof res.output === 'string' ? res.output : ''
+  for (const x of texts) {
+    const line = out.split('\n').find(l => l.startsWith(`FILE ${x.file} `))
+    const parts = line ? line.trim().split(' ') : []
+    const lines = Number(parts[2])
+    const bytes = Number(parts[3])
+    const wantLines = x.text.split('\n').length
+    const wantBytes = utf8Len(x.text)
+    const nl = x.text.endsWith('\n')
+    // The byte count must match exactly (a paraphrase of equal line count fails); only a file that lost the last newline of the text passes.
+    const okLines = lines === wantLines || (nl && lines === wantLines - 1)
+    const okBytes = bytes === wantBytes || (nl && bytes === wantBytes - 1)
+    if (!okLines || !okBytes) return { status: 'skipped', failures: [], why: `${x.file} was not copied verbatim (${line || 'no FILE line'}, expected ${wantLines} lines and ${wantBytes} bytes)` }
+  }
+  const failures = uniq([...failLines(res.failures), ...failLines(out)])
+  if (res.exit === 0 && failures.length === 0) return { status: 'pass', failures: [], why: '' }
+  if (res.exit === 1 && failures.length > 0) return { status: 'fail', failures, why: '' }
+  return { status: 'skipped', failures: [], why: `exit ${res.exit} does not match ${failures.length} FAIL line(s)` }
+}
+
+async function groundCheck(t, name, texts, mode, attempt) {
+  const items = texts.map(x => ({ file: x.file, text: typeof x.text === 'string' ? x.text : '' }))
+  const dir = `${wtRoot}/ground-${t.n}-${name}-${attempt}`
+  const blocks = items.map(x => `=== BEGIN ${x.file} ===\n${x.text}\n=== END ${x.file} ===`).join('\n\n')
+  const prompt = `${notCwd()}\nStage: ground check of the ${name} of ticket #${t.n}. Run these steps in order; edit nothing else and commit nothing.\n` +
+    `1. git -C ${repoDir} fetch ${remote}\n` +
+    `2. Write each text below with the Write tool, exactly the text between its BEGIN and END lines, verbatim, to ${dir}/<file> (create the folder; it is outside the repo).\n` +
+    `3. cd ${dir} and run: bash ${pluginDir}/scripts/ground-check.sh --repo ${repoDir} --ref ${integRef} --mode ${mode} ${items.map(x => x.file).join(' ')}\n` +
+    `4. Return exit (the exit code of that command), failures (each output line that starts with FAIL, verbatim, in order) and output (the whole stdout, verbatim). Do not fix anything.\n\n${blocks}`
+  let res
+  try {
+    res = await call(prompt, { label: lbl(`#${t.n} ground-${name}`, t.title), phase: 'Tickets', schema: GROUND_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { res = null }
+  const g = judgeGround(res, items)
+  if (g.status === 'skipped') log(`#${t.n} ground-${name}: ground did not run (${g.why}); continuing without the check`)
+  return g
+}
+
+// run(ground) runs the stage (ground is '' the first time, the advice block on the re-run); check(result, attempt) judges it.
+async function groundGate(t, name, run, check) {
+  const seen = new Set(decisions)
+  let res = await run('')
+  const first = decisions.filter(d => !seen.has(d) && d.ticket === t.n)   // by identity: tickets of a group run in parallel
+  let g = await check(res, 1)
+  if (g.status !== 'fail') return res
+  log(`#${t.n} ground-${name}: ${g.failures.length} claim(s) failed; re-running the ${name} once`)
+  const advice = `\n\n## Ground check failed\nA script checked the claims in your ${name} against ${integRef}. These failed:\n${g.failures.join('\n')}\n` +
+    `Fix them: cite only code that exists on ${integRef} (paths from the repo root, line numbers inside the file, a quote that occurs near the cited line), ` +
+    `or write (new) right after each path or symbol you will create. Keep everything that was right.`
+  try { res = await run(advice) }
+  finally { for (const d of first) { const k = decisions.indexOf(d); if (k >= 0) decisions.splice(k, 1) } }   // the rejected run's decisions go even when the re-run throws
+  g = await check(res, 2)
+  if (g.status !== 'fail') return res
+  const list = g.failures.join('\n')
+  const answer = await askAdvisor(t, `ground-${name}`, `The ${name} still fails the ground check after one re-run. Which claims are wrong, and what should the ${name} say instead?`, list)
+  addDecision(t.n, 'ground', {
+    title: `Ground check failed twice for the ${name} of #${t.n}`,
+    context: `scripts/ground-check.sh found claims in the ${name} that do not hold on ${integRef}, and a re-run with those claims did not fix them.`,
+    decision: `The ticket stops before implement. Failed claims:\n${list}\nAdvisor answer:\n${answer || '(none)'}`,
+    why: 'A claim that is not on the code would reach the implementer, which then patches around the gap instead of reporting it.',
+    consequences: `Ticket #${t.n} is blocked until the ${name} is corrected.`,
+    how_to_reverse: `Correct the ${name} (or mark a thing to be created with (new)) and run the ticket again.`,
+    needs_review: true,
+  })
+  throw new Blocked(`ground-${name}: ${g.failures.length} claim(s) still fail after one re-run: ${g.failures[0]}`)
 }
 
 // A depth-L ticket gets one advisor look at its design and plan before any code is written.
@@ -752,14 +840,18 @@ async function runTicket(t) {
     if (t.depth === 'S') {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
     } else if (t.depth === 'M') {
-      const plan = await stagePlan(t, intent)
-      spec.plan = plan
+      const plan = spec.plan = await groundGate(t, 'plan', ground => stagePlan(t, intent, undefined, ground),
+        (p, k) => groundCheck(t, 'plan', [{ file: 'plan.md', text: p.plan_md }], 'paths-only', k))
       await writeSpecsEarly(t, ['design.md', 'plan.md'])
       planText = `Follow this plan:\n${plan.plan_md}`
     } else {
-      const research = spec.research = await stageResearch(t, intent)
-      const design = spec.design = await stageDesign(t, intent, research)
-      const plan = spec.plan = await stagePlan(t, intent, `Design:\n${design.design_md}\n`)
+      // The brief and the design each get their own gate: a bad brief re-runs the research, a bad design re-runs the design only.
+      const research = spec.research = await groundGate(t, 'research', ground => stageResearch(t, intent, ground),
+        (r, k) => groundCheck(t, 'research', [{ file: 'research.md', text: r.research_md }], 'full', k))
+      const design = spec.design = await groundGate(t, 'design', ground => stageDesign(t, intent, research, ground),
+        (d, k) => groundCheck(t, 'design', [{ file: 'design.md', text: d.design_md }], 'full', k))
+      const plan = spec.plan = await groundGate(t, 'plan', ground => stagePlan(t, intent, `Design:\n${design.design_md}\n`, ground),
+        (p, k) => groundCheck(t, 'plan', [{ file: 'plan.md', text: p.plan_md }], 'paths-only', k))
       const advice = await advisePlan(t, design, plan)
       await writeSpecsEarly(t, ['design.md', 'plan.md', 'research-brief.md'])
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +

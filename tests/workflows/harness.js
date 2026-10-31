@@ -69,6 +69,12 @@ function legacyLabel(l) {
   return l
 }
 
+// A ground agent's answer. The FILE lines come from the text blocks in the prompt, the way the script prints them.
+function groundRes(c, exit, failures) {
+  const files = [...c.prompt.matchAll(/^=== BEGIN (\S+) ===\n([\s\S]*?)\n=== END \1 ===$/gm)].map(m => `FILE ${m[1]} ${m[2].split('\n').length} ${Buffer.byteLength(m[2])}`)
+  return { exit, failures, output: [...files, ...failures].join('\n') }
+}
+
 // ---- default scripted answers, keyed by label -----------------------------------------------
 const ok = (extra) => ({ status: 'ok', summary: 'did it', decisions: [], ...extra })
 function defaults(c, st) {
@@ -77,6 +83,7 @@ function defaults(c, st) {
   if (l.startsWith('advisor:')) return 'ADVICE-TEXT'
   if (l === 'setup-integration' || l === 'plugin-check') return ok()
   if (l.startsWith('intent:')) return ok({ goal: 'g', acceptance: [], files: [], plan_steps: [{ title: 'step', files: [], done_when: 'true' }] })
+  if (/^ground-(research|design|plan):/.test(l)) return groundRes(c, 0, [])
   if (l.startsWith('research:')) return ok({ research_md: 'RESEARCH' })
   if (l.startsWith('design:')) return ok({ design_md: 'DESIGN' })
   if (l.startsWith('plan:')) return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
@@ -1432,6 +1439,133 @@ test('schemas are well-formed (object root, required within properties)', async 
   let seen = 0
   for (const c of calls) if (c.schema) { assert.strictEqual(c.schema.type, 'object', c.label); check(c.schema, c.label); seen++ }
   assert(seen > 10)
+})
+
+// ---- ground gate (#521) -----------------------------------------------------------------------
+const GFAIL = 'FAIL path: src/ghost.js (not on origin/v5.0.0)'
+const LT = [T(1, 1, [], { depth: 'L' })]
+
+test('gr1: depth L, a failed design check re-runs the design once with the FAIL line, then implement runs', async () => {
+  let n = 0
+  const { calls, result } = await run({ tickets: LT }, c => {
+    if (c.label === 'ground-design:1') return n++ === 0 ? groundRes(c, 1, [GFAIL]) : undefined
+    if (c.label === 'design:1:retry') return { status: 'ok', summary: 's', decisions: [{ title: 'Design two', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'q', how_to_reverse: 'r', confidence: 'high', needs_review: false, stage: 'design' }], design_md: 'DESIGN-TWO' }
+    if (c.label === 'design:1') return { status: 'ok', summary: 's', decisions: [{ title: 'Design one', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'q', how_to_reverse: 'r', confidence: 'high', needs_review: false, stage: 'design' }], design_md: 'DESIGN-ONE' }
+  })
+  const ls = labelsOf(calls)
+  const retry = named(calls, /^design:1:retry$/)
+  assert.strictEqual(retry.length, 1, ls.join())
+  assert(retry[0].prompt.includes('## Ground check failed') && retry[0].prompt.includes(GFAIL), retry[0].prompt.slice(-600))
+  assert(retry[0].prompt.includes('(new)'))
+  assert.strictEqual(named(calls, /^ground-design:1$/).length, 2, ls.join())
+  assert(named(calls, /^plan:1$/)[0].prompt.includes('DESIGN-TWO'))
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('DESIGN-TWO'))
+  assert.strictEqual(named(calls, /^advisor:ground-/).length, 0)
+  const designs = result.decisions.filter(d => d.stage === 'design')
+  assert.strictEqual(designs.length, 1, JSON.stringify(designs.map(d => d.title)))
+  assert.strictEqual(designs[0].title, 'Design two')
+})
+
+test('gr1b: a re-run that throws still drops the rejected first run decisions', async () => {
+  const { result } = await run({ tickets: LT }, c => {
+    if (c.label === 'ground-design:1') return groundRes(c, 1, [GFAIL])
+    if (c.label === 'design:1:retry') return new Error('retry boom')
+    if (c.label === 'design:1') return { status: 'ok', summary: 's', decisions: [{ title: 'Design one', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'q', how_to_reverse: 'r', confidence: 'high', needs_review: false, stage: 'design' }], design_md: 'DESIGN-ONE' }
+  })
+  assert.strictEqual(t1({ result }).status, 'blocked')
+  assert(!result.decisions.some(d => d.title === 'Design one'), JSON.stringify(result.decisions.map(d => d.title)))
+})
+
+test('gr2: depth L, two failed design checks call the advisor, record a needs_review decision and block before implement', async () => {
+  const { calls, result } = await run({ tickets: LT }, c => (c.label === 'ground-design:1' ? groundRes(c, 1, [GFAIL]) : undefined))
+  const ls = labelsOf(calls)
+  assert.strictEqual(named(calls, /^advisor:ground-design:1$/).length, 1, ls.join())
+  assert.strictEqual(named(calls, /^ground-design:1$/).length, 2, ls.join())
+  assert.strictEqual(named(calls, /^design:1:retry$/).length, 1, ls.join())
+  assert(!ls.includes('implement:1') && !ls.includes('plan:1'), ls.join())
+  assert.strictEqual(t1({ result }).status, 'blocked')
+  const d = result.decisions.filter(x => x.needs_review && x.ticket === 1 && x.decision.includes('src/ghost.js'))
+  assert.strictEqual(d.length, 1, JSON.stringify(result.decisions.map(x => x.title)))
+  assert(d[0].decision.includes('ADVICE-TEXT'))
+})
+
+test('gr3: depth M runs ground-plan in paths-only mode after the plan and before implement', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, null)
+  const ls = labelsOf(calls)
+  assert.strictEqual(named(calls, /^ground-plan:1$/).length, 1, ls.join())
+  assert(ls.indexOf('plan:1') < ls.indexOf('ground-plan:1') && ls.indexOf('ground-plan:1') < ls.indexOf('implement:1'), ls.join())
+  assert(!ls.includes('ground-design:1'))
+  const p = named(calls, /^ground-plan:1$/)[0]
+  assert(p.prompt.includes('--mode paths-only') && p.prompt.includes('PLAN-MD'), p.prompt)
+  assert.strictEqual(p.opts.model, 'haiku')
+  assert.strictEqual(p.opts.effort, 'low')
+})
+
+test('gr4: depth S makes no ground call', async () => {
+  const { calls } = await run({}, null)
+  assert.strictEqual(named(calls, /^ground-/).length, 0, labelsOf(calls).join())
+})
+
+test('gr5: a ground agent that returns nothing, exit 2, or a wrong line count does not block the ticket', async () => {
+  for (const bad of [null, { exit: 2, failures: [], output: 'usage' }, { failures: [], output: '' }, { exit: 0, failures: [], output: 'FILE design.md 9999 9999' }, { exit: 0, failures: [], output: 'FILE design.md 1' }, { exit: 0, failures: [], output: 'FILE design.md 1 7' }]) {
+    const { calls, logs, result } = await run({ tickets: LT }, c => (/^ground-/.test(c.label) ? bad : undefined))
+    const ls = labelsOf(calls)
+    assert(ls.includes('implement:1'), JSON.stringify(bad) + ls.join())
+    assert.notStrictEqual(t1({ result }).status, 'blocked')
+    assert(logs.some(m => /ground .*did not run/.test(m)), logs.join('|'))
+    assert.strictEqual(named(calls, /^design:1:retry$/).length, 0)
+    assert(!result.decisions.some(d => /ground/i.test(d.title)))
+  }
+})
+
+test('gr6: depth L order and the ground-design prompt', async () => {
+  const { calls } = await run({ tickets: LT }, null)
+  const ls = labelsOf(calls)
+  const order = ['research:1', 'ground-research:1', 'design:1', 'ground-design:1', 'plan:1', 'ground-plan:1', 'advisor:plan-review:1', 'implement:1']
+  const at = order.map(l => ls.indexOf(l))
+  assert(at.every((v, i) => v >= 0 && (i === 0 || v > at[i - 1])), `${order.join(' < ')} in ${ls.join()}`)
+  const g = named(calls, /^ground-design:1$/)[0].prompt
+  assert(g.includes('--mode full') && g.includes('origin/v5.0.0') && g.includes('/plug/scripts/ground-check.sh'), g)
+  assert(g.includes('DESIGN') && !g.includes('RESEARCH'), g)
+  assert(g.includes('git -C /repo fetch origin'), g)
+  assert(g.includes('/.ship-repo/ms/ground-1-design-1/'), g)
+  assert(named(calls, /^ground-plan:1$/)[0].prompt.includes('/.ship-repo/ms/ground-1-plan-1/'))
+})
+
+test('gr6b: a failed research check re-runs the research, not the design; the re-run is checked too', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: LT }, c => (c.label === 'ground-research:1' ? (n++ === 0 ? groundRes(c, 1, [GFAIL]) : undefined) : undefined))
+  const ls = labelsOf(calls)
+  assert.strictEqual(named(calls, /^research:1:retry$/).length, 1, ls.join())
+  assert(named(calls, /^research:1:retry$/)[0].prompt.includes(GFAIL))
+  assert.strictEqual(named(calls, /^ground-research:1$/).length, 2, ls.join())
+  assert.strictEqual(named(calls, /^design:1/).length, 1, ls.join())
+  assert(ls.indexOf('research:1:retry') < ls.indexOf('design:1'), ls.join())
+})
+
+test('gr7: a failed plan check re-runs the plan once; a second failure blocks the ticket', async () => {
+  let n = 0
+  const one = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'ground-plan:1' ? (n++ === 0 ? groundRes(c, 1, [GFAIL]) : undefined) : undefined))
+  assert.strictEqual(named(one.calls, /^plan:1:retry$/).length, 1)
+  assert(named(one.calls, /^plan:1:retry$/)[0].prompt.includes(GFAIL))
+  assert(labelsOf(one.calls).includes('implement:1'))
+  const two = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'ground-plan:1' ? groundRes(c, 1, [GFAIL]) : undefined))
+  assert.strictEqual(named(two.calls, /^advisor:ground-plan:1$/).length, 1)
+  assert(!labelsOf(two.calls).includes('implement:1'))
+  assert.strictEqual(t1(two).status, 'blocked')
+})
+
+test('gr8: the research, design and plan prompts ask for the (new) marker and path:line citations', async () => {
+  const { calls } = await run({ tickets: LT }, null)
+  for (const l of ['research:1', 'design:1', 'plan:1']) {
+    const p = named(calls, new RegExp(`^${l}$`))[0].prompt
+    assert(p.includes('(new)') && p.includes('path:line'), l)
+  }
+})
+
+test('gr9: local mode still fetches the remote before the ground check', async () => {
+  const { calls } = await run({ local: true, tickets: LT }, null)
+  assert(named(calls, /^ground-design:1$/)[0].prompt.includes('git -C /repo fetch origin'))
 })
 
 ;(async () => {
