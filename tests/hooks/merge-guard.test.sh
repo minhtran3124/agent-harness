@@ -83,6 +83,9 @@ t "ask output carries no permissionDecision allow"; g "$MA"; if printf '%s' "$OU
 t "ask without --match-head-commit: denied, the reason names the head to pin"; g "$M"; assert_rc_contains 2 "add --match-head-commit $SHA"
 t "ask with a --match-head-commit of another sha: denied"; g "$M --match-head-commit ffffffffffffffffffffffffffffffffffffffff"; assert_rc_contains 2 "add --match-head-commit $SHA"
 t "ask with --match-head-commit=<head>: put to the owner"; g "$M --match-head-commit=$SHA"; assert_ask "at $SHA?"
+t "ask merge chained with another command: denied, not put to the owner"; g "$MA && echo extra"; assert_rc_contains 2 "only command"
+t "ask merge after another command: denied"; g "echo x; $MA"; assert_rc_contains 2 "only command"
+t "ask merge piped into another command: denied"; g "$MA | cat"; assert_rc_contains 2 "only command"
 t "bad head sha: denied"; printf 'xyz\n' > "$D/head"; g "$MA"; assert_rc 2
 t "short head sha: denied"; printf 'abc123\n' > "$D/head"; g "$MA"; assert_rc 2
 rm -f "$D/head"

@@ -200,12 +200,14 @@ segs=$(printf '%s\n' "$cmd" | awk '
 case "$segs" in *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;; esac
 
 set -f
+NSEGS=0
 while IFS= read -r seg; do
   seg=$(printf '%s' "$seg" | sed -E 's/^[[:space:]]+//'); orig=$seg
   while printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*([[:space:]]+|$)'; do
     seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//')
   done
   [ -n "$seg" ] || continue
+  NSEGS=$((NSEGS + 1))
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
@@ -242,6 +244,9 @@ SEGS
 [ "$ASKS" -gt 0 ] || exit 0
 # Something targets a non-feat base. It may be put to the owner only when it is the one and only merge.
 [ "$ASKS" -eq 1 ] && [ "$MERGES" -eq 1 ] || deny "a command with more than one merge cannot be put to the owner; one PR at a time."
+# The owner's yes approves the whole Bash command, but the prompt names only the merge: any other
+# segment (&&, ;, |, a second line) would run on that yes, so the merge must be the only command.
+[ "$NSEGS" -eq 1 ] || deny "a merge into a non-feat base must be the only command; other commands in the same line would run on the owner's yes. Run the merge alone."
 agent=$(printf '%s' "$payload" | jq -r '.agent_id // empty' 2>/dev/null) || deny "the hook input could not be parsed."
 [ -z "$agent" ] || deny "a subagent or workflow agent cannot merge into a non-feat base; the owner answers in the main session."
 mode=$(printf '%s' "$payload" | jq -r '.permission_mode // empty' 2>/dev/null) || deny "the hook input could not be parsed."
