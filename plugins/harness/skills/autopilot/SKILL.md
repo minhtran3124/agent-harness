@@ -3,7 +3,7 @@ name: autopilot
 description: "Use when starting a hands-off run. Triages one ticket or a milestone, asks the owner every open question once, then launches the ship workflow."
 disable-model-invocation: true
 argument-hint: "<milestone | #n [#m ...] | free text> [base=<branch>] [--no-ask]"
-allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *)
+allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(date *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *)
 ---
 
 # Autopilot
@@ -35,10 +35,9 @@ skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the
 7. **Summary, then ONE go/no-go question.** Table: ticket, title, verdict, depth, group, deps,
    confirmed decisions (short). State the base branch, the integration branch `feat/<slug>`,
    single or multi, the model plan (`opus` for design and plan at depth L, the difficulty signal; else Sonnet, Haiku tests, advisor `opus`; `fable` only when
-   the owner says so) and that nothing is merged. This is
-   the owner's last question.
+   the owner says so) and that nothing is merged.
 8. **Launch.** Call Workflow with `name: "harness:autopilot-run"` and `args` as a real
-   object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
+   object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` and `runId` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
    `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Tell the owner
    the run ID and that `/workflows` shows progress, then wait for completion. Answer

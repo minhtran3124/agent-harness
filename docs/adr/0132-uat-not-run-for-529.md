@@ -12,7 +12,7 @@ date: 2026-10-31
 
 ## Context
 
-The UAT stage could not check the running app: No verify.config.json found at /home/minhtran/Documents/agilityio/.ship-agent-harness/529-ship-stage-ledger/t529/verify.config.json or at the root of the worktree /home/minhtran/Documents/agilityio/.ship-agent-harness/529-ship-stage-ledger/uat-529. The uat skill forbids inferring or writing a config. The ticket also has no browser-visible surface: it changes ship.js ledger writes and docs.
+The UAT stage could not check the running app: No verify.config.json found at .ship-agent-harness/529-ship-stage-ledger/t529/verify.config.json or at the root of the worktree .ship-agent-harness/529-ship-stage-ledger/uat-529. The uat skill forbids inferring or writing a config. The ticket also has no browser-visible surface: it changes ship.js ledger writes and docs.
 
 ## Options
 

@@ -301,11 +301,16 @@ class Blocked extends Error {}
 // never finishes (a crash of the script) leaves no file; the in-memory rows still go out with the result.
 // The id becomes part of a file name: keep a safe charset and no leading dot, so it cannot leave the journal dir.
 const safeId = v => String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, '').slice(0, 80)
-const runId = (typeof args.runId === 'string' && safeId(args.runId)) || slugOf(slug) || 'run'
+const runIdArg = typeof args.runId === 'string' ? safeId(args.runId) : ''
+// The slug is not unique, so a missing runId would let a second launch replace the first journal: fall back to a
+// name that cannot collide with an earlier slug-named file only by warning loudly.
+const runId = runIdArg || slugOf(slug) || 'run'
+if (!runIdArg) log(`journal: args.runId is missing or empty, using "${runId}"; a second run with the same name replaces this journal`)
 // Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
 const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
 const journalFile = `${journalDir}/journal-${runId}.jsonl`
 const journalRows = []
+let journalFlushed = false
 let clockLogged = false
 // null means "no clock": the real sandbox has no performance, and 0 would read as a real 0 ms.
 const nowMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null)
@@ -317,18 +322,40 @@ function durationSince(t0) {
   }
   return Math.round(t1 - t0)
 }
+// There is no clock, so the second cost measure is the output tokens spent (budget.spent() is shared by the whole
+// turn, so for stages that overlap in a parallel group it is an upper bound, not an exact figure). null without budget.
+const tokensNow = () => (typeof budget !== 'undefined' && budget && typeof budget.spent === 'function' ? budget.spent() : null)
+const tokensSince = k0 => { const k1 = tokensNow(); return k0 === null || k1 === null ? null : Math.max(0, Math.round(k1 - k0)) }
+// What a stage result says about itself. A result that did not throw is not automatically ok.
+function statusOf(res) {
+  if (res === null || res === undefined) return 'failed'
+  if (typeof res !== 'object') return 'ok'
+  if (res.status === 'blocked' || res.status === 'not run') return 'blocked'
+  if (res.passed === false || res.passed_ac === false || res.pass === false) return 'failed'
+  if (typeof res.failed === 'number' && res.failed > 0) return 'failed'
+  if (Array.isArray(res.failed) && res.failed.length) return 'failed'
+  if (Array.isArray(res.checks) && res.checks.some(c => c && (c.bucket === 'fail' || c.bucket === 'cancel'))) return 'failed'
+  return 'ok'
+}
 const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
 
 // Writes the collected rows to journalFile with one cheap agent. Fail open: a failure is logged and changes nothing.
+// The text goes in a quoted heredoc (as writeSpecFiles does) and the agent must report the line count it wrote, which is
+// compared with the number of rows: a refused, truncated or altered write is logged, not silent.
 async function flushJournal() {
-  if (!journalRows.length) return
+  if (!journalRows.length || journalFlushed) return
+  journalFlushed = true
   try {
     const text = journalRows.map(r => JSON.stringify(r)).join('\n') + '\n'
-    await call(`Stage: write the run journal. ${notCwd()}\n` +
+    const res = await call(`Stage: write the run journal. ${notCwd()}\n` +
       `1. Run: mkdir -p ${journalDir}\n` +
-      `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; replace it if it exists). Do not include the marker lines.\n` +
-      `Edit nothing else. Return status ok.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
+      `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; replace it if it exists). Use a Bash heredoc with a quoted delimiter (cat > FILE <<'JOURNAL_EOF'), not the file-write tool, which can be refused. Do not include the marker lines.\n` +
+      `3. Run: wc -l < ${journalFile}   and return that number as lines in summary (digits only). If the write failed, return status blocked with blocked_reason.\n` +
+      `Edit nothing else.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
       { label: 'write run journal', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    if (!res || res.status === 'blocked') { log(`journal: not written, ${(res && (res.blocked_reason || res.summary)) || 'the writer returned nothing'}`); return }
+    const lines = parseInt(String(res.summary || '').replace(/\D+/g, ' ').trim().split(' ')[0], 10)
+    if (lines !== journalRows.length) log(`journal: written, but the line count (${Number.isNaN(lines) ? 'not reported' : lines}) does not match ${journalRows.length} rows; check ${journalFile}`)
   } catch (e) { log(`journal: not written, ${e && e.message ? e.message : e}`) }
 }
 
@@ -344,18 +371,20 @@ async function askAdvisor(t, stage, question, state) {
 }
 
 // Times fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
+// The status comes from the result (statusOf), not from the absence of a throw.
 async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
   const t0 = nowMs()
+  const k0 = tokensNow()
   let status = 'failed'
   try {
     const res = await fn(j)
-    status = 'ok'
+    status = statusOf(res)
     return res
   } catch (e) {
     status = e instanceof Blocked ? 'blocked' : 'failed'
     throw e
   } finally {
-    appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0) })
+    appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0), output_tokens: tokensSince(k0) })
   }
 }
 
@@ -761,7 +790,7 @@ async function stageGate(t, fin, impl, branch) {
   const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
     wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
   const failed = []
-  const review = await reviewLoop(ctx, ctx.target)
+  const review = await journaled(t.n, 'gate-review', MODEL.review, () => reviewLoop(ctx, ctx.target))
   let intent = await stageIntentReview([{ n: t.n }], ctx)
   let intentFixTip = ''
   if (intent.fixRound) {
@@ -1113,8 +1142,8 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
-async function runUat(label, wtName, t, body, owner, configPath) {
-  try { return await journaled(t.n, 'uat', MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath)) }
+async function runUat(label, wtName, t, body, owner, configPath, stage = 'uat') {
+  try { return await journaled(t.n, stage, MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath)) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
@@ -1162,7 +1191,7 @@ async function stageUat(delivered) {
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
       // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, t.title), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, t.title), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath, 'uat-rerun') : res   // own worktree: it must see the fix
       if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
@@ -1312,6 +1341,7 @@ const byN = new Map()
 const groups = [...new Set(tickets.map(t => t.group))].sort((a, b) => a - b)
 const ordered = () => tickets.map(t => byN.get(t.n))
 
+try {
 phase('Setup')
 // The role files come from the plugin directory. call() falls back silently to the default agent
 // when an agent type is missing, which would hide a wrong pluginDir, so check it once, up front.
@@ -1346,7 +1376,7 @@ for (const g of groups) {
   const ready = done.filter(r => LOCAL || (r.gate && r.gate.pass))
   if (!single && ready.length) {
     phase('Merge')
-    const m = await stageMerge(g, ready)
+    const m = await journaled('run', `merge-g${g}`, MODEL.cheap, () => stageMerge(g, ready))
     const failed = (m && m.failed) || []
     for (const f of failed) {
       const r = byN.get(f.n)
@@ -1418,7 +1448,7 @@ const uat = await stageUat(deliveredAll)
 log(`UAT: ${Object.keys(uat).length} ticket(s) checked, ${Object.values(uat).filter(u => u.status === 'failed').length} failed`)
 
 phase('Testing')
-const suite = await stageSuite()
+const suite = await journaled('run', 'suite', MODEL.test, () => stageSuite())
 out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
 
@@ -1439,3 +1469,8 @@ out.journal = journalRows
 out.worktrees = [...worktrees]
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 return out
+} catch (e) {
+  // A failed run is when the ledger matters most: write the rows collected so far, then rethrow.
+  await flushJournal()
+  throw e
+}
