@@ -39,6 +39,11 @@ readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- m
 1. Setup: validate args, create the integration branch (multi only).
 2. Tickets: intent, then plan by depth (S in the prompt, M plan, L research + design + plan + advisor),
    a ground check (below), implement, verify, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
+   The depth L research stage uses `codegraph` when the machine has it (ADR 0122): the agent runs `codegraph init --yes`
+   in the research worktree (with `CODEGRAPH_NO_DAEMON=1` and `CODEGRAPH_TELEMETRY=0`), uses it to find code, and deletes
+   `.codegraph` before it returns, because that folder makes `git worktree remove` fail without `--force`. Without the
+   tool, or when a command fails, the stage logs one line and uses `git grep`: no decision, no block. Codegraph is a
+   helper, not a check: an empty result means unknown, and every fact in the brief is read from the file.
    Verify runs the `harness:verify` skill in the implement worktree against the issue's `Verify:` row
    (default agent, not read-only). A failure gets one retry: a pass on retry is `flaky`, a second failure
    blocks the ticket and comments on the issue. FE and FE+BE tickets also run the steps on the base commit

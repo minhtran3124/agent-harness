@@ -35,3 +35,7 @@ Two extra haiku calls per L ticket and one per M ticket; failures cost one stage
 ## How to reverse
 
 Remove the groundGate calls in runTicket and the helper code, delete the script and its test, set the shellcheck count back to 9, and revert the docs and template lines.
+
+## See also
+
+- 0122: codegraph is an optional helper for the research stage, not a ground check.

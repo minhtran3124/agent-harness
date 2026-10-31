@@ -32,7 +32,9 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    `feat/<slug>*` to their own settings; setup never writes it, and launch args say the same.
 5. **Ignore specs.** Add `specs/` to `${CLAUDE_PROJECT_DIR}/.gitignore` if no line already says
    `specs/`. Skip this if the project tracks files under `specs/`.
-6. **Old install.** Run `bash ${CLAUDE_SKILL_DIR}/scripts/old-install.sh ${CLAUDE_PROJECT_DIR}`. An
+6. **Codegraph (optional).** Only if `command -v codegraph` finds it, offer to add `.codegraph/` to
+   `.gitignore`; skip it if a line has it already. Never run `codegraph install`; never commit `.mcp.json`.
+7. **Old install.** Run `bash ${CLAUDE_SKILL_DIR}/scripts/old-install.sh ${CLAUDE_PROJECT_DIR}`. An
    empty list means there is nothing to remove: stop here. Otherwise print the list and ask with
    AskUserQuestion whether to delete it (recommended answer: yes). Delete only after the owner
    says yes, with `rm -r -- <the listed paths>`, and only those paths. If `.claude/settings.json`
