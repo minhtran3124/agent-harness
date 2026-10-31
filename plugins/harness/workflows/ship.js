@@ -295,43 +295,19 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
-// Run journal: one JSONL file per run, written by this script (not an agent). Fails open: it logs once and never throws.
+// Run journal: one JSONL file per run. The Workflow sandbox has no fs, process, require, import() or performance
+// (measured in the real runtime, #529), so the script cannot write the file itself. It keeps the rows in memory,
+// returns them as out.journal, and one cheap agent writes the file at the end (as it does for specs/). A stage that
+// never finishes (a crash of the script) leaves no file; the in-memory rows still go out with the result.
 // The id becomes part of a file name: keep a safe charset and no leading dot, so it cannot leave the journal dir.
 const safeId = v => String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, '').slice(0, 80)
 const runId = (typeof args.runId === 'string' && safeId(args.runId)) || slugOf(slug) || 'run'
 // Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
 const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
-let journalOff = false
-let journalFails = 0   // consecutive write failures; a success resets it
-const JOURNAL_MAX_FAILS = 3
+const journalFile = `${journalDir}/journal-${runId}.jsonl`
+const journalRows = []
 let clockLogged = false
-let journalFs = null
-// The sandbox may lack process.getBuiltinModule, so try it, then require, then a dynamic import.
-async function loadFs() {
-  if (journalFs) return journalFs
-  try { if (typeof process !== 'undefined' && typeof process.getBuiltinModule === 'function') journalFs = process.getBuiltinModule('node:fs') } catch (e) { /* try the next loader */ }
-  if (!journalFs) { try { if (typeof require === 'function') journalFs = require('node:fs') } catch (e) { /* try the next loader */ } }
-  if (!journalFs) { try { const m = await import('node:fs'); journalFs = m && (m.appendFileSync ? m : m.default) } catch (e) { /* give up */ } }
-  return journalFs
-}
-async function appendJournal(entry) {
-  if (journalOff) return
-  try {
-    const fs = await loadFs()
-    if (!fs) { journalOff = true; log('journal: disabled, fs is unavailable'); return }
-    const dir = journalDir
-    fs.mkdirSync(dir, { recursive: true })
-    fs.appendFileSync(`${dir}/journal-${runId}.jsonl`, JSON.stringify({ kind: 'stage', ...entry }) + '\n')
-    journalFails = 0
-  } catch (e) {
-    // A transient error (disk full, EAGAIN) must not lose every later line: turn the journal off only after consecutive failures.
-    const msg = e && e.message ? e.message : e
-    if (++journalFails >= JOURNAL_MAX_FAILS) { journalOff = true; log(`journal: disabled after ${journalFails} consecutive failures, ${msg}`) }
-    else log(`journal: write failed (${journalFails}/${JOURNAL_MAX_FAILS}), ${msg}`)
-  }
-}
-// Journal-only clock: never read by control flow, so replay stays deterministic.
-// null means "no clock": the sandbox may lack performance, and 0 would read as a real 0 ms.
+// null means "no clock": the real sandbox has no performance, and 0 would read as a real 0 ms.
 const nowMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null)
 function durationSince(t0) {
   const t1 = nowMs()
@@ -340,6 +316,20 @@ function durationSince(t0) {
     return null
   }
   return Math.round(t1 - t0)
+}
+const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
+
+// Writes the collected rows to journalFile with one cheap agent. Fail open: a failure is logged and changes nothing.
+async function flushJournal() {
+  if (!journalRows.length) return
+  try {
+    const text = journalRows.map(r => JSON.stringify(r)).join('\n') + '\n'
+    await call(`Stage: write the run journal. ${notCwd()}\n` +
+      `1. Run: mkdir -p ${journalDir}\n` +
+      `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; replace it if it exists). Do not include the marker lines.\n` +
+      `Edit nothing else. Return status ok.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
+      { label: 'write run journal', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`journal: not written, ${e && e.message ? e.message : e}`) }
 }
 
 async function askAdvisor(t, stage, question, state) {
@@ -365,7 +355,7 @@ async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
     status = e instanceof Blocked ? 'blocked' : 'failed'
     throw e
   } finally {
-    await appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0) })
+    appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0) })
   }
 }
 
@@ -1394,6 +1384,8 @@ if (!deliveredAll.length) {
   log('ship: no ticket was delivered; nothing to review, verify or record')
   await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   out.tickets = ordered().map(publicTicket)
+  await flushJournal()
+  out.journal = journalRows
   out.worktrees = [...worktrees]
   return out
 }
@@ -1442,6 +1434,8 @@ log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
 await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
 
 out.tickets = ordered().map(publicTicket)
+await flushJournal()
+out.journal = journalRows
 out.worktrees = [...worktrees]
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 return out

@@ -5,7 +5,6 @@
 'use strict'
 const fs = require('fs')
 const path = require('path')
-const os = require('os')
 const assert = require('assert')
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
@@ -109,6 +108,7 @@ function defaults(c, st) {
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
   if (l === 'specs' || l === 'specs-early') return ok()
+  if (l === 'write run journal') return ok()
   throw new Error(`no scripted answer for label '${l}'`)
 }
 
@@ -150,113 +150,71 @@ const T = (n, group, deps, extra) => ({ n, title: `Ticket ${n}`, depth: 'S', gro
 const cases = []
 const test = (name, fn) => cases.push({ name, fn })
 
-test('journal: retry and blocked stage are written', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  try {
-    await run({ repoDir: dir, runId: 'jtest', tickets: [T(1, 1), T(2, 1)] }, c => {
-      if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
-      if (c.label === 'implement:2') return ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' })
-    })
-    const lines = fs.readFileSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir), 'journals', 'journal-jtest.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l))
-    assert(lines.length > 0)
-    assert(lines.every(l => l.kind === 'stage' && typeof l.duration_ms === 'number' && l.duration_ms >= 0), JSON.stringify(lines))
-    assert(lines.some(l => l.ticket === 1 && l.stage === 'intent' && l.retries === 1 && l.status === 'ok'))
-    assert(lines.some(l => l.ticket === 2 && l.stage === 'implement' && l.status === 'blocked'))
-    assert(lines.some(l => l.retries === 0))
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir)), { recursive: true, force: true }) }
+const journalCall = r => r.calls.filter(c => c.label === 'write run journal')
+
+test('journal: retry and blocked stages are in the result rows', async () => {
+  const r = await run({ runId: 'jtest', tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
+    if (c.label === 'implement:2') return ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' })
+  })
+  const rows = r.result.journal
+  assert(rows.length > 0 && rows.every(l => l.kind === 'stage'), JSON.stringify(rows))
+  assert(rows.some(l => l.ticket === 1 && l.stage === 'intent' && l.retries === 1 && l.status === 'ok'))
+  assert(rows.some(l => l.ticket === 2 && l.stage === 'implement' && l.status === 'blocked'))
+  assert(rows.some(l => l.retries === 0))
+  assert(rows.some(l => l.ticket === 'run' && l.stage === 'review'), 'the final review is journaled')
 })
 
-test('journal: without process.getBuiltinModule the journal still writes', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const orig = process.getBuiltinModule
-  process.getBuiltinModule = undefined
-  try {
-    const { logs } = await run({ repoDir: dir, runId: 'jtest2', tickets: [T(1, 1)] }, null)
-    assert(fs.existsSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir), 'journals', 'journal-jtest2.jsonl')), 'journal file missing')
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 0)
-  } finally { process.getBuiltinModule = orig; fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir)), { recursive: true, force: true }) }
+test('journal: one cheap agent writes the file; the prompt holds the path and every row', async () => {
+  const r = await run({ runId: 'jt-write', tickets: [T(1, 1)] }, null)
+  const jc = journalCall(r)
+  assert.strictEqual(jc.length, 1)
+  const p = jc[0].prompt
+  assert(p.includes('/.ship-repo/journals/journal-jt-write.jsonl'), p.slice(0, 300))
+  for (const row of r.result.journal) assert(p.includes(JSON.stringify(row)), 'row missing from the prompt')
+  assert.strictEqual(jc[0].opts.model, 'haiku')
 })
 
-test('journal: a runId with path characters stays inside the journal dir', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
-  try {
-    await run({ repoDir: dir, runId: '../../evil/x', tickets: [T(1, 1)] }, null)
-    const files = fs.readdirSync(path.join(jd, 'journals'))
-    assert(files.length === 1 && /^journal-[A-Za-z0-9._-]+\.jsonl$/.test(files[0]) && !files[0].includes('..'), files.join(','))
-    assert(!fs.existsSync(path.join(dir, '.ship')), 'nothing may be written inside the target repo')
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+test('journal: the path is outside the repo and a hostile runId stays inside the journal dir', async () => {
+  const r = await run({ runId: '../../evil/x', tickets: [T(1, 1)] }, null)
+  const p = journalCall(r)[0].prompt
+  const m = p.match(/to (\S+\.jsonl)/)
+  assert(m && m[1].startsWith('/.ship-repo/journals/journal-') && !m[1].includes('..'), m && m[1])
+  assert(!m[1].startsWith('/repo/'), 'must not be inside repoDir')
 })
 
-test('journal: an unwritable dir disables it once and the run still succeeds', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const file = path.join(dir, 'afile')
-  fs.writeFileSync(file, 'x')
-  try {
-    const { logs } = await run({ repoDir: path.join(file, 'repo'), runId: 'jtest3', tickets: [T(1, 1)] }, null)
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
-  } finally { fs.rmSync(dir, { recursive: true, force: true }) }
+test('journal: a failing journal agent is only logged and the run still returns', async () => {
+  const r = await run({ runId: 'jt-fail', tickets: [T(1, 1)] }, c => (c.label === 'write run journal' ? new Error('boom') : undefined))
+  assert(r.logs.some(m => m.startsWith('journal: not written')))
+  assert(r.result.journal.length > 0 && r.result.tickets.length === 1)
 })
 
-test('journal: one transient write error loses one line, not the rest of the run', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
-  const nodeFs = process.getBuiltinModule('node:fs')
-  const orig = nodeFs.appendFileSync
-  let n = 0
-  nodeFs.appendFileSync = (...a) => { if (++n === 2) throw new Error('EAGAIN once'); return orig(...a) }
-  try {
-    const { logs } = await run({ repoDir: dir, runId: 'jt-flaky', tickets: [T(1, 1)] }, null)
-    const rows = fs.readFileSync(path.join(jd, 'journals', 'journal-jt-flaky.jsonl'), 'utf8').trim().split('\n')
-    assert(rows.length >= 5, 'later lines must survive: ' + rows.length)
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 0)
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: write failed')).length, 1)
-  } finally { nodeFs.appendFileSync = orig; fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
-})
-
-test('journal: three consecutive write errors disable it once', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
-  const nodeFs = process.getBuiltinModule('node:fs')
-  const orig = nodeFs.appendFileSync
-  nodeFs.appendFileSync = () => { throw new Error('EIO') }
-  try {
-    const { logs } = await run({ repoDir: dir, runId: 'jt-dead', tickets: [T(1, 1)] }, null)
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
-  } finally { nodeFs.appendFileSync = orig; fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
-})
-
-test('journal: without performance duration_ms is null, logged once, and the journal still writes', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
+test('journal: without performance duration_ms is null and logged once', async () => {
   const desc = Object.getOwnPropertyDescriptor(globalThis, 'performance')
   Object.defineProperty(globalThis, 'performance', { value: undefined, configurable: true, writable: true })
   try {
-    const { logs } = await run({ repoDir: dir, runId: 'jt-noclock', tickets: [T(1, 1)] }, null)
-    const rows = fs.readFileSync(path.join(jd, 'journals', 'journal-jt-noclock.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l))
-    assert(rows.length > 0 && rows.every(r => r.duration_ms === null), JSON.stringify(rows[0]))
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: no clock')).length, 1)
-  } finally { if (desc) Object.defineProperty(globalThis, 'performance', desc); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+    const r = await run({ runId: 'jt-noclock', tickets: [T(1, 1)] }, null)
+    assert(r.result.journal.length > 0 && r.result.journal.every(x => x.duration_ms === null))
+    assert.strictEqual(r.logs.filter(m => m.startsWith('journal: no clock')).length, 1)
+  } finally { if (desc) Object.defineProperty(globalThis, 'performance', desc) }
 })
 
-test('journal: 20 parallel tickets in one group lose and corrupt no lines', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
-  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
-  const jf = id => path.join(jd, 'journals', `journal-${id}.jsonl`)
+test('journal: the script uses no API the real sandbox lacks (fs, process, require, import(), performance-only timing)', async () => {
+  const code = SRC.replace(/\/\/.*$/gm, '')
+  assert(!/\bimport\s*\(/.test(code), 'import() is a syntax error in the Workflow runtime')
+  assert(!/\brequire\s*\(|getBuiltinModule|node:fs|\bprocess\./.test(code), 'fs/process/require do not exist in the Workflow runtime')
+})
+
+test('journal: 20 parallel tickets in one group lose and duplicate no rows', async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms))
-  try {
-    await run({ repoDir: dir, runId: 'p1', tickets: [T(1, 1)] }, null)
-    const per = fs.readFileSync(jf('p1'), 'utf8').trim().split('\n').length
-    await run({ repoDir: dir, runId: 'p20', tickets: Array.from({ length: 20 }, (_, i) => T(i + 1, 1)) },
-      (c, _a, st) => sleep(Math.random() * 15).then(() => defaults(c, st)))
-    const raw = fs.readFileSync(jf('p20'), 'utf8')
-    assert(raw.endsWith('\n'))
-    const rows = raw.slice(0, -1).split('\n').map(l => JSON.parse(l))
-    const tk = rows.filter(r => r.ticket !== 'run')
-    assert.strictEqual(tk.length, 20 * per)
-    assert.strictEqual(new Set(tk.map(r => r.ticket + '|' + r.stage)).size, tk.length)
-    assert(rows.every(r => r.kind === 'stage'))
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+  // A batch of two is the baseline: single mode skips the per-ticket gate, so one ticket alone has fewer rows.
+  const two = await run({ runId: 'p2', tickets: [T(1, 1), T(2, 1)] }, null)
+  const per = two.result.journal.filter(r => r.ticket !== 'run').length / 2
+  const r = await run({ runId: 'p20', tickets: Array.from({ length: 20 }, (_, i) => T(i + 1, 1)) },
+    (c, _a, st) => sleep(Math.random() * 15).then(() => defaults(c, st)))
+  const tk = r.result.journal.filter(x => x.ticket !== 'run')
+  assert.strictEqual(tk.length, 20 * per)
+  assert.strictEqual(new Set(tk.map(x => x.ticket + '|' + x.stage)).size, tk.length)
 })
 
 test('meta is a pure literal', async () => {
@@ -852,7 +810,7 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   assert(p.includes('"title":"D-one"') && p.includes('"ticket":1') && p.includes('"title":"D-two"') && p.includes('"ticket":2'))
   assert(p.includes('"run":"ms"') && p.includes('--input .ship/decisions.json') && p.includes('--render-section') && p.includes('{{DECISIONS}}'))
   assert(p.includes('"stage":"intent"') && p.includes('"decided_by"'))
-  const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early')   // the local spec write needs the ADR paths
+  const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early' && l !== 'write run journal')   // the local spec write needs the ADR paths
   assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
   assert.strictEqual(result.artifact.fallback, 'docs/adr/')
