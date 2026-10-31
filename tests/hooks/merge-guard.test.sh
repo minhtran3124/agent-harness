@@ -43,6 +43,7 @@ g() {
   OUT=$(cd "$R" && printf '%s' "$json" | env PATH="$p" "$BASH_BIN" hooks/merge-guard.sh 2>&1); RC=$?
 }
 M='gh pr merge 7 --repo o/r --merge'
+MA="$M --match-head-commit $SHA"  # a merge into a protected base must pin the approved head
 
 reset; setbase feat/x
 t "base feat/x is allowed"; g "$M"; assert_rc 0
@@ -65,22 +66,25 @@ t "env assignments before gh are skipped"; reset; setbase feat/x; g "FOO=1 $M"; 
 assert_ask() { if [ "$RC" = 0 ] && printf '%s' "$OUT" | jq -e --arg w "$1" '.hookSpecificOutput | .permissionDecision == "ask" and (.permissionDecisionReason | contains($w))' >/dev/null 2>&1; then pass; else fail "rc=$RC out=$OUT"; fi; }
 for b in main master develop staging production release/1 release-2; do
   for md in default acceptEdits auto bypassPermissions; do
-    reset; setbase "$b"; t "base $b in mode $md: ask naming PR, base and head"; MODE=$md g "$M"; assert_ask "Merge PR #7 of o/r into $b at $SHA?"
+    reset; setbase "$b"; t "base $b in mode $md: ask naming PR, base and head"; MODE=$md g "$MA"; assert_ask "Merge PR #7 of o/r into $b at $SHA?"
   done
 done
 reset; setbase trunk; printf 'trunk\n' > "$D/default"
-t "base that is the default branch: ask"; g "$M"; assert_ask "into trunk at $SHA"
+t "base that is the default branch: ask"; g "$MA"; assert_ask "into trunk at $SHA"
 for b in v5.0.0 hotfix/x; do
   reset; setbase "$b"; t "base $b (unknown name) is denied with the reason on stderr"; g "$M"; assert_rc_contains 2 "human merges"
 done
 reset; setbase main
 for md in dontAsk plan bogus ""; do
-  t "mode '$md': ask is not possible, denied"; MODE=$md g "$M"; assert_rc_contains 2 "confirmation prompt"
+  t "mode '$md': ask is not possible, denied"; MODE=$md g "$MA"; assert_rc_contains 2 "confirmation prompt"
 done
-t "a subagent (agent_id) is denied"; AGENT=sub1 g "$M"; assert_rc_contains 2 "subagent"
-t "ask output carries no permissionDecision allow"; g "$M"; if printf '%s' "$OUT" | grep -q '"allow"'; then fail "$OUT"; else pass; fi
-t "bad head sha: denied"; printf 'xyz\n' > "$D/head"; g "$M"; assert_rc 2
-t "short head sha: denied"; printf 'abc123\n' > "$D/head"; g "$M"; assert_rc 2
+t "a subagent (agent_id) is denied"; AGENT=sub1 g "$MA"; assert_rc_contains 2 "subagent"
+t "ask output carries no permissionDecision allow"; g "$MA"; if printf '%s' "$OUT" | grep -q '"allow"'; then fail "$OUT"; else pass; fi
+t "ask without --match-head-commit: denied, the reason names the head to pin"; g "$M"; assert_rc_contains 2 "add --match-head-commit $SHA"
+t "ask with a --match-head-commit of another sha: denied"; g "$M --match-head-commit ffffffffffffffffffffffffffffffffffffffff"; assert_rc_contains 2 "add --match-head-commit $SHA"
+t "ask with --match-head-commit=<head>: put to the owner"; g "$M --match-head-commit=$SHA"; assert_ask "at $SHA?"
+t "bad head sha: denied"; printf 'xyz\n' > "$D/head"; g "$MA"; assert_rc 2
+t "short head sha: denied"; printf 'abc123\n' > "$D/head"; g "$MA"; assert_rc 2
 rm -f "$D/head"
 t "two merges into main in one command: denied"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 2
 t "two PR numbers in one merge into main: denied"; g 'gh pr merge 7 8 --repo o/r'; assert_rc 2
@@ -134,7 +138,7 @@ reset; setbase feat/x
 t "chain: both PRs on feat/x: allowed"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 0
 t "both PRs of a chain were read"
 if grep -q 'pr view 7 ' "$LOG" && grep -q 'pr view 8 ' "$LOG"; then pass; else fail "log: $(cat "$LOG")"; fi
-t "a merge segment hidden behind a brace group is judged (put to the owner)"; reset; setbase main; g '{ gh pr merge 7 --repo o/r; }'; assert_ask "into main"
+t "a merge segment hidden behind a brace group is judged (put to the owner)"; reset; setbase main; g "{ gh pr merge 7 --repo o/r --match-head-commit $SHA; }"; assert_ask "into main"
 
 reset
 t "echo 'gh pr merge 7' is not a merge"; g "echo 'gh pr merge 7'"; assert_rc 0
@@ -147,9 +151,9 @@ t "an apostrophe in a comment before a merge on main is denied"; g "$(printf "# 
 reset; setbase feat/x
 t "a multi-word quoted --body value does not swallow the PR number"; g 'gh pr merge --body "a b c" 7 --repo o/r --merge'
 if [ "$RC" = 0 ] && grep -q 'pr view 7 --repo o/r' "$LOG"; then pass; else fail "rc=$RC out=$OUT log: $(cat "$LOG" 2>/dev/null)"; fi
-t "a multi-word quoted --subject value before a PR on main is still put to the owner"; setbase main; g "gh pr merge -t 'x y' 7 --repo o/r"; assert_ask "Merge PR #7"
+t "a multi-word quoted --subject value before a PR on main is still put to the owner"; setbase main; g "gh pr merge -t 'x y' 7 --repo o/r --match-head-commit $SHA"; assert_ask "Merge PR #7"
 reset; setbase feat/x
-t "a quote-split gh word is still judged (main base put to the owner)"; setbase main; g '"g""h" pr merge 7 --repo o/r'; assert_ask "into main"
+t "a quote-split gh word is still judged (main base put to the owner)"; setbase main; g "\"g\"\"h\" pr merge 7 --repo o/r --match-head-commit $SHA"; assert_ask "into main"
 t "an upper-case GraphQL-style spelling cannot skip the filter"; g 'gh api graphql -f query="mutation{enablePullRequestAutoMerge(input:{pullRequestId:\"X\"}){clientMutationId}}"'; assert_rc 2
 t "gh api graphql enablePullRequestAutoMerge is denied"; g 'gh api graphql -f query=@q.graphql -f x=enablePullRequestAutoMerge'; assert_rc 2
 t "gh api repos/o/r/merges is denied"; g 'gh api repos/o/r/merges -f base=main -f head=x'; assert_rc 2

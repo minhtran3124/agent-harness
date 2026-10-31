@@ -83,10 +83,11 @@ default_of() {  # default_of <repo>: sets def
        DEFAULTS="$DEFAULTS$1=$def " ;;
   esac
 }
-# judge <pr> <repo> [plain]: "plain" marks the one form that may be put to the owner (a single plain
-# `gh pr merge`); every other form into a non-feat base is denied.
+# judge <pr> <repo> [plain] [match]: "plain" marks the one form that may be put to the owner (a single
+# plain `gh pr merge`); every other form into a non-feat base is denied. The owner approves one head
+# commit, so the ask needs --match-head-commit <that head> (match): gh then refuses to merge a later push.
 judge() {
-  local pr=$1 repo=$2 plain=${3:-} base head def words
+  local pr=$1 repo=$2 plain=${3:-} match=${4:-} base head def words
   MERGES=$((MERGES + 1))
   ghrun pr view "$pr" --repo "$repo" --json baseRefName,headRefOid -q '.baseRefName + " " + .headRefOid' || deny "PR #$pr of $repo: its base could not be read."
   # shellcheck disable=SC2086
@@ -100,12 +101,14 @@ judge() {
   case "$base" in
     main|master|develop|development|staging|production|release/*|release-*)
       [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
+      [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
       ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head?"; return ;;
     feat/?*) ;;
     *)
       default_of "$repo"
       [ "$def" = "$base" ] || deny "$words (rule: only feat/* is merged without the owner, and only the base and default branches with the owner)."
       [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
+      [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
       ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head?"; return ;;
   esac
   default_of "$repo"
@@ -113,18 +116,21 @@ judge() {
 }
 
 judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
-  local seg w repo="" prs="" skip="" u n r urepos=""
+  local seg w repo="" prs="" skip="" u n r urepos="" match=""
   seg=$(printf '%s' "$1" | sed -E 's/^gh[[:space:]]+pr[[:space:]]+merge[[:space:]]*//')
   set -f
   for w in $seg; do
     if [ "$skip" = repo ]; then repo=$w; skip=""; continue; fi
+    if [ "$skip" = match ]; then match=$w; skip=""; continue; fi
     if [ -n "$skip" ]; then skip=""; continue; fi
     case "$w" in
       --repo|-R) skip=repo ;;
       --repo=*) repo=${w#--repo=} ;;
       -R?*) repo=${w#-R} ;;
       --auto) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
-      -b|--body|-t|--subject|-F|--body-file|--match-head-commit|-A|--author-email) skip=other ;;
+      --match-head-commit) skip=match ;;
+      --match-head-commit=*) match=${w#--match-head-commit=} ;;
+      -b|--body|-t|--subject|-F|--body-file|-A|--author-email) skip=other ;;
       -*) ;;
       *[!0-9]*)
         case "$w" in
@@ -148,7 +154,7 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   [ -n "$repo" ] || deny "'gh pr merge' without --repo cannot be judged (GH_REPO does not count)."
   case "$repo" in */*/*|*/|/*|*[!A-Za-z0-9._/-]*|"") deny "unreadable --repo value '$repo'." ;; esac
   set -- $prs
-  if [ "$#" -eq 1 ]; then judge "$1" "$repo" plain; else for n in "$@"; do judge "$n" "$repo"; done; fi
+  if [ "$#" -eq 1 ]; then judge "$1" "$repo" plain "$match"; else for n in "$@"; do judge "$n" "$repo"; done; fi
 }
 
 judge_api_merge() {  # judge_api_merge <segment>

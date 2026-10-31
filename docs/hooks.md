@@ -29,7 +29,7 @@ branch with `gh repo view`. It allows the merge only when the base matches `feat
 `main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`, `release-*`, the default branch and any
 other name are denied. It exits 2 with the reason on stderr.
 
-**Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r` (no `--auto`,
+**Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r --match-head-commit <head sha>` (the flag must equal the head the hook reads, so a later push cannot ride the approval; no `--auto`,
 one PR, the only merge in the command, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
 `production`, `release/*`, `release-*` or the repo default branch. The hook reads the base and the head commit
 (`--json baseRefName,headRefOid`; the head must be 40 hex characters) and prints `permissionDecision: "ask"` with the
