@@ -296,7 +296,11 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 class Blocked extends Error {}
 
 // Run journal: one JSONL file per run, written by this script (not an agent). Fails open: it logs once and never throws.
-const runId = typeof args.runId === 'string' && args.runId.trim() ? args.runId.trim() : slugOf(slug)
+// The id becomes part of a file name: keep a safe charset and no leading dot, so it cannot leave the journal dir.
+const safeId = v => String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, '').slice(0, 80)
+const runId = (typeof args.runId === 'string' && safeId(args.runId)) || slugOf(slug) || 'run'
+// Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
+const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
 let journalOff = false
 let journalFs = null
 // The sandbox may lack process.getBuiltinModule, so try it, then require, then a dynamic import.
@@ -312,7 +316,7 @@ async function appendJournal(entry) {
   try {
     const fs = await loadFs()
     if (!fs) { journalOff = true; log('journal: disabled, fs is unavailable'); return }
-    const dir = `${trimmed}/.ship`
+    const dir = journalDir
     fs.mkdirSync(dir, { recursive: true })
     fs.appendFileSync(`${dir}/journal-${runId}.jsonl`, JSON.stringify({ kind: 'stage', ...entry }) + '\n')
   } catch (e) {
@@ -334,21 +338,25 @@ async function askAdvisor(t, stage, question, state) {
   return typeof advice === 'string' ? advice : ''
 }
 
-// One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
-async function runStage(t, stage, build, schema, opts) {
+// Times fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
+async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
   const t0 = nowMs()
-  const j = { retries: 0 }
   let status = 'failed'
   try {
-    const res = await runStageInner(t, stage, build, schema, opts, j)
+    const res = await fn(j)
     status = 'ok'
     return res
   } catch (e) {
     status = e instanceof Blocked ? 'blocked' : 'failed'
     throw e
   } finally {
-    await appendJournal({ kind: 'stage', ticket: t.n, stage, model: opts.model, status, retries: j.retries, duration_ms: Math.round(nowMs() - t0) })
+    await appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: Math.round(nowMs() - t0) })
   }
+}
+
+// One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
+function runStage(t, stage, build, schema, opts) {
+  return journaled(t.n, stage, opts.model, j => runStageInner(t, stage, build, schema, opts, j))
 }
 
 async function runStageInner(t, stage, build, schema, opts, j) {
@@ -717,7 +725,7 @@ function stageCi(t, fin, ctx, label) {
     `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
     `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid   and: git ls-remote ${remote} refs/heads/${ctx.branch}  (the first column is the branch tip)\n` +
     `Return checks (one entry per check: name and bucket, copied unchanged), headRefOid and branchTip (the ls-remote commit). If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
-  return call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  return journaled(t.n, 'ci', MODEL.cheap, () => call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }))
 }
 
 // Rewrites the merge-policy block of the ticket PR body. A failure is only logged.
@@ -949,7 +957,7 @@ function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) { 
 
 // The final, cross-ticket review: the run context over the final branch.
 function stageReview(finalPr) {
-  return reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch)
+  return journaled('run', 'review', MODEL.review, () => reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch))
 }
 
 async function reviewLoop(ctx, target) {
@@ -1101,7 +1109,7 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
 }
 
 async function runUat(label, wtName, t, body, owner, configPath) {
-  try { return await uatAgent(label, wtName, t, body, owner, configPath) }
+  try { return await journaled(t.n, 'uat', MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath)) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 

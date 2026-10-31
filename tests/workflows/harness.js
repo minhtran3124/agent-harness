@@ -157,13 +157,13 @@ test('journal: retry and blocked stage are written', async () => {
       if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
       if (c.label === 'implement:2') return ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' })
     })
-    const lines = fs.readFileSync(path.join(dir, '.ship', 'journal-jtest.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l))
+    const lines = fs.readFileSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir), 'journals', 'journal-jtest.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l))
     assert(lines.length > 0)
     assert(lines.every(l => l.kind === 'stage' && typeof l.duration_ms === 'number' && l.duration_ms >= 0), JSON.stringify(lines))
     assert(lines.some(l => l.ticket === 1 && l.stage === 'intent' && l.retries === 1 && l.status === 'ok'))
     assert(lines.some(l => l.ticket === 2 && l.stage === 'implement' && l.status === 'blocked'))
     assert(lines.some(l => l.retries === 0))
-  } finally { fs.rmSync(dir, { recursive: true, force: true }) }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir)), { recursive: true, force: true }) }
 })
 
 test('journal: without process.getBuiltinModule the journal still writes', async () => {
@@ -172,9 +172,20 @@ test('journal: without process.getBuiltinModule the journal still writes', async
   process.getBuiltinModule = undefined
   try {
     const { logs } = await run({ repoDir: dir, runId: 'jtest2', tickets: [T(1, 1)] }, null)
-    assert(fs.existsSync(path.join(dir, '.ship', 'journal-jtest2.jsonl')), 'journal file missing')
+    assert(fs.existsSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir), 'journals', 'journal-jtest2.jsonl')), 'journal file missing')
     assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 0)
-  } finally { process.getBuiltinModule = orig; fs.rmSync(dir, { recursive: true, force: true }) }
+  } finally { process.getBuiltinModule = orig; fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(path.join(path.dirname(dir), '.ship-' + path.basename(dir)), { recursive: true, force: true }) }
+})
+
+test('journal: a runId with path characters stays inside the journal dir', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
+  try {
+    await run({ repoDir: dir, runId: '../../evil/x', tickets: [T(1, 1)] }, null)
+    const files = fs.readdirSync(path.join(jd, 'journals'))
+    assert(files.length === 1 && /^journal-[A-Za-z0-9._-]+\.jsonl$/.test(files[0]) && !files[0].includes('..'), files.join(','))
+    assert(!fs.existsSync(path.join(dir, '.ship')), 'nothing may be written inside the target repo')
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
 })
 
 test('journal: an unwritable dir disables it once and the run still succeeds', async () => {
@@ -182,7 +193,7 @@ test('journal: an unwritable dir disables it once and the run still succeeds', a
   const file = path.join(dir, 'afile')
   fs.writeFileSync(file, 'x')
   try {
-    const { logs } = await run({ repoDir: file, runId: 'jtest3', tickets: [T(1, 1)] }, null)
+    const { logs } = await run({ repoDir: path.join(file, 'repo'), runId: 'jtest3', tickets: [T(1, 1)] }, null)
     assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 })
