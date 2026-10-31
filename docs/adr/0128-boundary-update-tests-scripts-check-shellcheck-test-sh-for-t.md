@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-31
 ---
 
-# 0115. Boundary: update tests/scripts/check-shellcheck.test.sh for the new shellcheck file
+# 0128. Boundary: update tests/scripts/check-shellcheck.test.sh for the new shellcheck file
 
 ## Context
 

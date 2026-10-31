@@ -8,11 +8,11 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-31
 ---
 
-# 0116. Deny list stays a mistake guard; bare push, git -C, trailing flags, aliases and delete are documented known gaps
+# 0129. Deny list stays a mistake guard; bare push, git -C, trailing flags, aliases and delete are documented known gaps
 
 ## Context
 
-The prefix glob cannot express every push form. The spike showed bare `git push`, `git push origin`, `git -C <dir> push`, trailing `--no-verify`, `refs/heads/main` without a colon, and quoted branch names still reach main. The `:main` delete form is blocked by the `*:main` rule (ADR 0119). The real Claude Code matcher confirmed `--no-verify`, `git -C`, and quoted refspecs as allowed.
+The prefix glob cannot express every push form. The spike showed bare `git push`, `git push origin`, `git -C <dir> push`, trailing `--no-verify`, `refs/heads/main` without a colon, and quoted branch names still reach main. The `:main` delete form is blocked by the `*:main` rule (ADR 0131). The real Claude Code matcher confirmed `--no-verify`, `git -C`, and quoted refspecs as allowed.
 
 ## Options
 

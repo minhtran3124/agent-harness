@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: uat)
 date: 2026-10-31
 ---
 
-# 0117. UAT not run for #530
+# 0130. UAT not run for #530
 
 ## Context
 
