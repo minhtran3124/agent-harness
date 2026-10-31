@@ -15,7 +15,19 @@
       "Bash(git push * +main)",
       "Bash(git push *:master)",
       "Bash(git push *:refs/heads/master)",
-      "Bash(git push * +master)"
+      "Bash(git push * +master)",
+      "Bash(git push *refs/heads/main*)",
+      "Bash(git push * main *)",
+      "Bash(git push *:main *)",
+      "Bash(git push * +main *)",
+      "Bash(git push *main\"*)",
+      "Bash(git push *main'*)",
+      "Bash(git push *refs/heads/master*)",
+      "Bash(git push * master *)",
+      "Bash(git push *:master *)",
+      "Bash(git push * +master *)",
+      "Bash(git push *master\"*)",
+      "Bash(git push *master'*)"
     ]
   }
 }

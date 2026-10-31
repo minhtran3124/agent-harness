@@ -130,7 +130,7 @@ The glob cannot express these forms, so they are allowed (the spike confirmed ea
 
 - Bare `git push` or `git push <remote>` when the upstream (or `push.default`) is `main`.
 - `git -C <dir> push ...`, or any other text before `push`.
-- Trailing flags after the branch, for example `git push origin main --no-verify`.
+- Other quoting or escaping of the branch name, for example `git push origin ma"in"`.
 - Aliases, and a refspec built in a shell variable.
 
 The rules are a mistake guard, not a sandbox.

@@ -74,7 +74,9 @@ row() {
 for br in main master; do
   for f in "git push origin $br" "git push origin HEAD:$br" "git push origin HEAD:refs/heads/$br" \
            "git push origin +$br" "git push origin +HEAD:$br" "git push --force origin $br" "git push -f origin $br" \
-           "git push origin :$br"; do
+           "git push origin :$br" "git push origin refs/heads/$br" "git push origin +refs/heads/$br" \
+           "git push origin $br --no-verify" "git push origin HEAD:$br --no-verify" \
+           "git push origin \"$br\"" "git push origin 'HEAD:$br'" "git push origin \"HEAD:$br\""; do
     row expect-blocked "$f" "$br"
   done
 done
@@ -82,7 +84,6 @@ for br in main master; do
   row gap "git push" "$br"
   row gap "git push origin" "$br"
   row gap "git -C @CLONE@ push origin $br" "$br"
-  row gap "git push origin $br --no-verify" "$br"
 done
 row control "git push origin feat/x" feat/x
 

@@ -24,9 +24,9 @@ Result before the change: `HEAD:main`, `HEAD:refs/heads/main`, `+main` and `+HEA
 
 ## Decision
 
-Add six patterns to both rule lists (`settings.json` and `RULES` in `merge-deny.sh`): `Bash(git push *:main)`, `Bash(git push *:refs/heads/main)`, `Bash(git push * +main)` and the same for master. After the change every expressible form is BLOCKED and the control `git push origin feat/x` is ALLOWED.
+Add 18 patterns to both rule lists (`settings.json` and `RULES` in `merge-deny.sh`): for main and master, the refspec forms `*:main`, `*:refs/heads/main`, `* +main`, plus (review fix) `*refs/heads/main*` (full ref, with or without `+`), the trailing-flag forms `* main *`, `*:main *`, `* +main *`, and the quoted forms `*main"*` and `*main'*`. The forms listed in the test are BLOCKED and the control `git push origin feat/x` is ALLOWED. Not every form a shell can express is covered (see the known gaps); the first draft's claim that every expressible form is blocked was wrong.
 
-Known gaps (ALLOWED, and they reach main on the remote): bare `git push` or `git push origin` with an upstream of main, `git -C <dir> push ...`, a trailing flag after the branch (`--no-verify`), aliases, a refspec built in a shell variable. They are listed in `docs/hooks.md`.
+Known gaps (ALLOWED, and they reach main on the remote): bare `git push` or `git push origin` with an upstream of main, `git -C <dir> push ...`, other quoting or escaping of the branch name, aliases, a refspec built in a shell variable. They are listed in `docs/hooks.md`.
 
 ## Why
 
@@ -34,8 +34,8 @@ The patterns close the forms a glob can express without blocking other commands.
 
 ## Consequences
 
-Setup merges 14 rules instead of 8 into consuming projects. A command containing `:main` after `git push` is now denied even for a non-main remote branch of that name. Until the owner enables branch protection, the known gaps stay open.
+Setup merges 26 rules instead of 8 into consuming projects. A command containing `:main` after `git push` is now denied even for a non-main remote branch of that name. Until the owner enables branch protection, the known gaps stay open.
 
 ## How to reverse
 
-Remove the six patterns from `settings.json` and `merge-deny.sh`, and update the counts in `tests/scripts/merge-deny.test.sh` and the matrix test. ADR 0114 is not edited.
+Remove the added patterns from `settings.json` and `merge-deny.sh`, and update the counts (26) in `tests/scripts/merge-deny.test.sh` and the matrix test. ADR 0114 is not edited.
