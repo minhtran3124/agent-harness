@@ -56,7 +56,7 @@ reaches() {
   [ "$(git -C "$BARE" rev-parse refs/heads/main)" != "$BASE" ] || [ "$(git -C "$BARE" rev-parse refs/heads/master)" != "$BASE" ]
 }
 
-# row <kind> <form> <branch>   kind: expect-blocked | gap | control
+# row <kind> <form> <branch>   kind: expect-blocked | gap (must stay ALLOWED and reach main) | control
 row() {
   local kind="$1" form="$2" b="$3" cmd state tag=""
   cmd=${form//@CLONE@/<dir>}
@@ -67,7 +67,8 @@ row() {
   case "$kind" in
     expect-blocked) if [ "$state" = BLOCKED ]; then pass; else fail "$cmd is allowed by the deny list"; fi ;;
     control)        if [ "$state" = ALLOWED ] && [ -z "$tag" ]; then pass; else fail "control should be ALLOWED and not reach main: $state$tag"; fi ;;
-    gap)            if [ "$state" = BLOCKED ]; then pass; else printf '        known gap (reported, not failed)\n'; pass; fi ;;
+    gap)            if [ "$state" = ALLOWED ] && [ "$tag" = " GAP" ]; then pass
+                    else fail "documented gap changed ($state$tag): a closed gap belongs in expect-blocked and out of docs/hooks.md Known gaps"; fi ;;
   esac
 }
 
@@ -84,6 +85,8 @@ for br in main master; do
   row gap "git push" "$br"
   row gap "git push origin" "$br"
   row gap "git -C @CLONE@ push origin $br" "$br"
+  row gap "git push origin ma\"in\"" "$br"
+  row gap "B=$br; git push origin \"\$B\"" "$br"
 done
 row control "git push origin feat/x" feat/x
 
