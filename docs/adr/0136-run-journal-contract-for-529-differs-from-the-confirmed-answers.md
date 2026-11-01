@@ -1,9 +1,9 @@
 ---
 ticket: 529
 stage: implement
-status: needs-review
-needs_review: true
-confidence: medium
+status: accepted
+needs_review: false
+confidence: high
 decided_by: claude (ship workflow: implement)
 date: 2026-11-01
 ---
@@ -45,4 +45,4 @@ The confirmed answers assumed a script that can write files and read a clock. Th
 
 ## How to reverse
 
-Restore a file write in the script if the runtime ever exposes a file API and a clock, and restore `.ship/` plus the `.gitignore` entry. Ask the owner to confirm or change this contract on #529.
+Restore a file write in the script if the runtime ever exposes a file API and a clock, and restore `.ship/` plus the `.gitignore` entry. The owner confirmed this contract on 2026-11-01 (ticket #529); change it only with the owner.
