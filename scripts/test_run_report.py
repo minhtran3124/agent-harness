@@ -116,6 +116,19 @@ def test_journal_input_can_be_the_run_log():
     assert rr.read_journal_rows("nothing here") is None
 
 
+def test_a_run_id_is_found_under_home(tmp_path, monkeypatch):
+    run = tmp_path / ".claude" / "projects" / "proj" / "sess" / "subagents" / "workflows" / "wf_abc-123"
+    run.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert rr.resolve_run_dir("wf_abc-123") == run
+    for bad in ("wf_missing", "../etc", "wf_*"):
+        try:
+            rr.resolve_run_dir(bad)
+        except SystemExit:
+            continue
+        raise AssertionError(bad)
+
+
 def test_a_naive_timestamp_does_not_crash_the_report(tmp_path):
     (tmp_path / "journal.jsonl").write_text(json.dumps({"type": "started", "agentId": "a1", "label": "#1 plan", "phase": "T"}) + "\n")
     agent_file(tmp_path / "agent-a1.jsonl", ["2026-11-01T00:00:00", "2026-11-01T00:00:30Z"], [1, 1])

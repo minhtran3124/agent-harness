@@ -124,6 +124,8 @@ The script measures neither. The Workflow sandbox has no clock (`performance` is
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run dir> [--journal FILE] [--json]
 ```
 
+The run id (`wf_...`) can replace the run dir. Autopilot saves `out.journal` after a run and prints the top rows (see `skills/autopilot/references/launch-args.md`).
+
 `--journal` takes `out.journal` saved as a JSON array, or the run log saved as text (it reads the `journal row: {...}` lines), and adds each stage's `status` and `retries`. Label names and journal names differ for a few stages (`code-review` is `review`, `gate CI checks` is `ci`, `test` is `suite`, `merge ticket branches` covers every `merge-g<n>`); the script maps them, and a test pins the table. The report is read-only. The run dir layout belongs to Claude Code and can change: a missing file is reported, never guessed. Output tokens are counted once per message id, because a message can be written on several lines while it streams.
 
 ## Local mode

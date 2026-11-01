@@ -11,7 +11,9 @@ With --journal it also adds the status and retries ship.js recorded (the `out.jo
 Read-only. The run dir is under ~/.claude/projects/<project>/<session>/subagents/workflows/<run id>/ ; that layout
 belongs to Claude Code and can change, so a missing file is reported, never guessed.
 
-  python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run dir> [--journal FILE] [--json]
+  python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run dir | run id> [--journal FILE] [--json]
+
+A run id (wf_...) is looked up under ~/.claude/projects/*/*/subagents/workflows/; it must match one directory.
 
 FILE is either out.journal saved as a JSON array, or the run log saved as text: lines that contain
 `journal row: {...}` (what ship.js logs) are read from it.
@@ -104,6 +106,21 @@ def read_journal_rows(text):
     return rows or None
 
 
+def resolve_run_dir(arg):
+    """A directory as given, or a run id (wf_...) found under ~/.claude/projects/*/*/subagents/workflows/."""
+    p = Path(arg)
+    if p.is_dir():
+        return p
+    if re.fullmatch(r"[A-Za-z0-9_-]+", str(arg)):   # a bare id only: never a path fragment or a glob
+        hits = sorted((Path.home() / ".claude" / "projects").glob(f"*/*/subagents/workflows/{arg}"))
+        hits = [h for h in hits if h.is_dir()]
+        if len(hits) == 1:
+            return hits[0]
+        if len(hits) > 1:
+            raise SystemExit(f"run-report: run id {arg} matches {len(hits)} directories; pass the one you mean:\n" + "\n".join(map(str, hits)))
+    raise SystemExit(f"run-report: {arg} is neither a directory nor a known run id")
+
+
 def build(run_dir, journal_rows=None):
     jpath = run_dir / "journal.jsonl"
     if not jpath.is_file():
@@ -160,12 +177,11 @@ def build(run_dir, journal_rows=None):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("run_dir", type=Path)
+    ap.add_argument("run_dir", help="the run directory, or a run id such as wf_2525c101-225")
     ap.add_argument("--journal", type=Path, help="out.journal of the run, saved as a JSON array")
     ap.add_argument("--json", action="store_true", help="one JSON object per stage instead of a table")
     a = ap.parse_args(argv)
-    if not a.run_dir.is_dir():
-        raise SystemExit(f"run-report: {a.run_dir} is not a directory")
+    run_dir = resolve_run_dir(a.run_dir)
     jr = None
     if a.journal:
         try:
@@ -174,7 +190,7 @@ def main(argv=None):
             raise SystemExit(f"run-report: cannot read {a.journal}: {e}")
         if jr is None:
             raise SystemExit(f"run-report: {a.journal} holds neither a JSON array nor 'journal row: {{...}}' lines")
-    rows, missing = build(a.run_dir, jr)
+    rows, missing = build(run_dir, jr)
     if a.json:
         for r in rows:
             print(json.dumps(r))

@@ -3,7 +3,7 @@ name: autopilot
 description: "Use when starting a hands-off run. Triages one ticket or a milestone, asks the owner every open question once, then launches the ship workflow."
 disable-model-invocation: true
 argument-hint: "<milestone | #n [#m ...] | free text> [base=<branch>] [--no-ask]"
-allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *)
+allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *), Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py *)
 ---
 
 # Autopilot
@@ -16,7 +16,7 @@ skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the
    (`git remote -v`) and the checkout dir (`git rev-parse --show-toplevel`). For a milestone run
    `gh issue list --repo <repo> --milestone "<name>" --state open --json number,title,labels`.
    Read each ticket: `gh issue view <n> --repo <repo> --json title,body,labels -q ...`.
-   Base = the `base=` argument, else the current branch. Name it in the summary.
+   Base = the `base=` argument, else the current branch.
 2. **Triage.** One call per ticket, all in one message. A Haiku `researcher` finds facts (code the
    ticket touches, tests, links between tickets). A Sonnet agent follows the `harness:intake` skill
    and returns verdict `READY | CONFIRM | GRILL | BLOCKED`, depth `S|M|L`, deps and questions.
