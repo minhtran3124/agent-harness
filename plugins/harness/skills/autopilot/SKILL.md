@@ -3,7 +3,7 @@ name: autopilot
 description: "Use when starting a hands-off run. Triages one ticket or a milestone, asks the owner every open question once, then launches the ship workflow."
 disable-model-invocation: true
 argument-hint: "<milestone | #n [#m ...] | free text> [base=<branch>] [--no-ask]"
-allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(date -u +%Y%m%dT%H%M%S), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *)
+allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(date -u +%*), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *)
 ---
 
 # Autopilot

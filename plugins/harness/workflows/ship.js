@@ -306,7 +306,7 @@ const safeId = v => shortId(String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').r
 const runIdArg = typeof args.runId === 'string' ? safeId(args.runId) : ''
 // The slug is not unique: a missing runId would let a second launch replace the first journal, so it is logged.
 const runId = runIdArg || slugOf(slug) || 'run'
-if (!runIdArg) log(`journal: args.runId is missing or empty, using "${runId}"; a second run with the same name replaces this journal`)
+if (!runIdArg) log(`journal: args.runId is missing or empty, using "${runId}"; a second run with the same name gets a numbered file name (journal-${runId}-2.jsonl), so look for the newest one`)
 // Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
 const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
 const journalFile = `${journalDir}/journal-${runId}.jsonl`
@@ -356,7 +356,7 @@ async function flushJournal() {
     const res = await call(`Stage: write the run journal. ${notCwd()}\n` +
       `1. Run: mkdir -p ${journalDir}\n` +
       `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; ${runIdArg ? 'replace it if it exists' : `if it exists, do not replace it: use the first free name journal-${runId}-2.jsonl, -3.jsonl and so on, and say which in summary`}). Use a Bash heredoc with a quoted delimiter (cat > FILE <<'JOURNAL_EOF'), not the file-write tool, which can be refused. Do not include the marker lines.\n` +
-      `3. Run: python3 -c "import json,sys; print(sum(1 for l in open(sys.argv[1]) if json.loads(l)))" ${journalFile}   and return that number as lines. If the write or the parse failed, return status blocked with blocked_reason.\n` +
+      `3. Run: python3 -c "import json,sys; print(sum(1 for l in open(sys.argv[1]) if json.loads(l)))" <the file you wrote in step 2>   and return that number as lines. If the write or the parse failed, return status blocked with blocked_reason.\n` +
       `Edit nothing else.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
       { label: 'write run journal', phase: 'Decisions', schema: JOURNAL_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') { dumpJournal(`not written, ${(res && (res.blocked_reason || res.summary)) || 'the writer returned nothing'}`); return }
