@@ -297,7 +297,7 @@ class Blocked extends Error {}
 
 // Run journal (#529): one row per stage with what only this script knows: ticket, stage, model, status, retries.
 // Time and tokens are not measured here. The Workflow sandbox has no clock (no performance, Date.now throws), and the
-// runtime already keeps a transcript per agent with timestamps and token usage: scripts/run-report.py joins the two.
+// runtime already keeps a transcript per agent with timestamps and token usage: plugins/harness/scripts/run_report.py joins the two.
 // The rows are returned as out.journal and logged at the end of the run (also when it throws, so a failed run keeps them).
 const journalRows = []
 let journalLogged = false
@@ -1105,9 +1105,11 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
-const uatStatus = res => (!res ? 'failed' : res.status === 'blocked' ? 'blocked' : uatOk(res) ? 'ok' : 'failed')
+// No result (the agent returned nothing or threw) means UAT did not run: that is blocked, never an acceptance failure.
+const uatStatus = res => (!res || res.status === 'blocked' ? 'blocked' : uatOk(res) ? 'ok' : 'failed')
 async function runUat(label, wtName, t, body, owner, configPath, stage = 'uat') {
-  try { return await journaled(t.n, stage, MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath), undefined, uatStatus) }
+  const attempt = async () => { try { return await uatAgent(label, wtName, t, body, owner, configPath) } catch (e) { log(`${label} failed: ${e && e.message}`); return null } }
+  try { return await journaled(t.n, stage, MODEL.verify, attempt, undefined, uatStatus) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 

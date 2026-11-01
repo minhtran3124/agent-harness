@@ -259,6 +259,15 @@ test('journal: a run that throws still logs the rows collected so far', async ()
   assert(logs.some(m => m.startsWith('journal row: ') && m.includes('"stage":"intent"')), logs.join('\n'))
 })
 
+test('journal: a UAT agent that returns nothing or throws is journaled blocked, not failed', async () => {
+  for (const reply of [null, new Error('uat agent died')]) {
+    const r = await run({}, c => (c.label === 'uat:1' ? reply : undefined))
+    const row = r.result.journal.find(x => x.stage === 'uat')
+    assert(row && row.status === 'blocked', JSON.stringify(row))
+    assert.strictEqual(r.result.tickets[0].status, 'done', 'UAT not run never fails the ticket')
+  }
+})
+
 test('meta is a pure literal', async () => {
   const text = metaText()
   const noStrings = text.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, '""')

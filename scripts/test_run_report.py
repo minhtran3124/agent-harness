@@ -134,3 +134,24 @@ def test_a_naive_timestamp_does_not_crash_the_report(tmp_path):
     agent_file(tmp_path / "agent-a1.jsonl", ["2026-11-01T00:00:00", "2026-11-01T00:00:30Z"], [1, 1])
     rows, missing = rr.build(tmp_path)
     assert not missing and rows[0]["agent_seconds"] == 30.0
+
+
+def test_fix_rounds_collapse_into_one_stage():
+    assert rr.stage_of("fix r1.1 · ship.js:679") == ("run", "fix")
+    assert rr.stage_of("fix r2.3 · x") == ("run", "fix")
+    assert rr.stage_of("#4 gate fix r1.2 · x") == ("4", "gate fix")
+    assert rr.stage_of("#4 implement · fix r1.1") == ("4", "implement")
+
+
+def test_odd_transcript_content_never_crashes_the_report(tmp_path):
+    (tmp_path / "journal.jsonl").write_text("\n".join(json.dumps({"type": "started", "agentId": a, "label": "#1 plan", "phase": "T"})
+                                                  for a in ("a1", "a2", "a3")) + "\n")
+    (tmp_path / "agent-a1.jsonl").write_text(json.dumps({"type": "assistant", "timestamp": 1793494660,
+                                                         "message": {"id": "m", "usage": {"output_tokens": "many"}}}) + "\n")
+    (tmp_path / "agent-a2.jsonl").write_bytes(b"\xff\xfe not json\n[1, 2]\n" + json.dumps(
+        {"type": "assistant", "timestamp": "2026-11-01T00:00:00Z", "message": "text"}).encode() + b"\n")
+    agent_file(tmp_path / "agent-a3.jsonl", ["2026-11-01T00:00:00Z", "2026-11-01T00:00:30Z"], [7, 3])
+    rows, missing = rr.build(tmp_path)
+    # a1 has no usable timestamp (missing); a2 keeps its one valid line; a3 is normal
+    assert missing == ["a1"]
+    assert rows[0]["agents"] == 2 and rows[0]["agent_seconds"] == 30.0 and rows[0]["output_tokens"] == 7

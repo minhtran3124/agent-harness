@@ -47,17 +47,20 @@ def stage_of(label):
     m = LABEL.match(label or "")
     ticket, rest = (m.group("n"), m.group("rest")) if m else ("run", label or "?")
     rest = re.sub(r"\s+retry$", "", rest.split(" · ")[0].strip())   # a retry is the same stage
+    rest = re.sub(r"^((?:gate )?fix) r\d+(?:\.\d+)?$", r"\1", rest)    # one stage "fix", not one per round and finding
     return ticket, rest or "?"
 
 
 def when(s):
+    if not isinstance(s, str):
+        raise ValueError("timestamp is not a string")
     t = dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
     return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)   # a naive stamp is read as UTC, never compared raw
 
 
 def read_jsonl(path):
     out = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         line = line.strip()
         if not line:
             continue
@@ -65,7 +68,7 @@ def read_jsonl(path):
             out.append(json.loads(line))
         except ValueError:
             continue   # a torn last line of a live run
-    return out
+    return [d for d in out if isinstance(d, dict)]
 
 
 def agent_facts(path):
@@ -77,13 +80,14 @@ def agent_facts(path):
                 stamps.append(when(d["timestamp"]))
             except (ValueError, TypeError):
                 pass
-        msg = d.get("message") or {}
+        msg = d.get("message") if isinstance(d.get("message"), dict) else {}
         if d.get("type") == "assistant":
-            model = model or msg.get("model")
-            usage = msg.get("usage") or {}
+            model = model or (msg.get("model") if isinstance(msg.get("model"), str) else None)
+            usage = msg.get("usage") if isinstance(msg.get("usage"), dict) else {}
             # A message can be written on several lines while it streams: keep the largest count per message id.
             key = msg.get("id") or d.get("uuid")
-            tokens[key] = max(tokens.get(key, 0), usage.get("output_tokens") or 0)
+            n = usage.get("output_tokens")
+            tokens[key] = max(tokens.get(key, 0), n if isinstance(n, int) and not isinstance(n, bool) else 0)
     return (min(stamps), max(stamps)) if stamps else None, sum(tokens.values()), model
 
 
@@ -117,14 +121,14 @@ def resolve_run_dir(arg):
         if len(hits) == 1:
             return hits[0]
         if len(hits) > 1:
-            raise SystemExit(f"run-report: run id {arg} matches {len(hits)} directories; pass the one you mean:\n" + "\n".join(map(str, hits)))
-    raise SystemExit(f"run-report: {arg} is neither a directory nor a known run id")
+            raise SystemExit(f"run_report: run id {arg} matches {len(hits)} directories; pass the one you mean:\n" + "\n".join(map(str, hits)))
+    raise SystemExit(f"run_report: {arg} is neither a directory nor a known run id")
 
 
 def build(run_dir, journal_rows=None):
     jpath = run_dir / "journal.jsonl"
     if not jpath.is_file():
-        raise SystemExit(f"run-report: no journal.jsonl in {run_dir}")
+        raise SystemExit(f"run_report: no journal.jsonl in {run_dir}")
     agents = {}
     for d in read_jsonl(jpath):
         if d.get("type") == "started" and d.get("agentId"):
@@ -138,7 +142,10 @@ def build(run_dir, journal_rows=None):
         if not f.is_file():
             missing.append(aid)
             continue
-        span, tok, model = agent_facts(f)
+        try:
+            span, tok, model = agent_facts(f)
+        except OSError:
+            span = None
         if span is None:
             missing.append(aid)
             continue
@@ -187,9 +194,9 @@ def main(argv=None):
         try:
             jr = read_journal_rows(a.journal.read_text(encoding="utf-8"))
         except OSError as e:
-            raise SystemExit(f"run-report: cannot read {a.journal}: {e}")
+            raise SystemExit(f"run_report: cannot read {a.journal}: {e}")
         if jr is None:
-            raise SystemExit(f"run-report: {a.journal} holds neither a JSON array nor 'journal row: {{...}}' lines")
+            raise SystemExit(f"run_report: {a.journal} holds neither a JSON array nor 'journal row: {{...}}' lines")
     rows, missing = build(run_dir, jr)
     if a.json:
         for r in rows:
@@ -200,7 +207,7 @@ def main(argv=None):
             print(f"{r['ticket']:>6} {r['stage'][:22]:<22} {r['agents']:>6} {r['agent_seconds']:>8.0f} {r['wall_seconds']:>8.0f} "
                   f"{r['output_tokens']:>9}  {str(r.get('status', '-')):<6} {str(r.get('retries', '-')):<7} {','.join(r['models'])}")
     if missing:
-        print(f"run-report: {len(missing)} agent(s) had no readable transcript and are not counted", file=sys.stderr)
+        print(f"run_report: {len(missing)} agent(s) had no readable transcript and are not counted", file=sys.stderr)
     return 0
 
 

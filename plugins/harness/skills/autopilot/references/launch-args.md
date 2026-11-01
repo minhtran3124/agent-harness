@@ -30,7 +30,7 @@ the repo's `plugins/harness/workflows/ship.js`, say so. If the result has no suc
 `script path not shown`. Do not read the session directory to find it.
 
 Then save the run journal, so the owner can see time and tokens per stage. Write `out.journal` (a JSON array) to
-`<parent of repoDir>/.ship-<repo>/journals/journal-<run id>.json` with the Write tool; the run id is the `wf_...`
+`<parent of repoDir>/.ship-<name of repoDir>/journals/journal-<run id>.json` with the Write tool; the run id is the `wf_...`
 id the Workflow result names. Outside the repo. Run
 `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run id> --journal <that file>` and add its top five rows
 to the report. The owner may be asked to allow that command once; the run is already finished. If the result
