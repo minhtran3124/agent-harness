@@ -9,7 +9,7 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ### Added
 
-- `ship.js` run journal (#529): one row per stage (`ticket`, `stage`, `model`, `status`, `retries`, `duration_ms`, `output_tokens`), returned as `out.journal` and written by one agent to `<parent of repoDir>/.ship-<repo>/journals/journal-<runId>.jsonl`, also when the run throws. New `runId` arg; autopilot passes one. See `docs/workflows.md`.
+- `ship.js` run journal (#529): one row per stage (`ticket`, `stage`, `model`, `status`, `retries`) returned as `out.journal` and logged as `journal row:` lines, also when the run throws. `scripts/run-report.py` adds time and output tokens per stage from the runtime's own transcripts. See `docs/workflows.md`.
 - `scripts/check-tag-version.sh`, wired into `scripts/run-tests.sh`, the CI workflow and the shellcheck list. It reads tags only and checks that `git show <tag>:VERSION` equals the tag name for tags `v5.1.0` and later. Issue #531.
 - Release tag note: `5.0.0` was never tagged, so `v5.1.0` is the first v5 tag. The tag `v4.0.0` points at a commit whose `VERSION` is `2.28.0`; it is left as is (no tag is moved or deleted), and tags `v1` to `v4` fail the check by design, so it starts at `v5.1.0`.
 - `/harness:tickets <brief path>`, a skill that turns a brief into a milestone, GitHub issues and an epic, each written to pass `intake` as READY, after one go/no-go approval. Issue #539.

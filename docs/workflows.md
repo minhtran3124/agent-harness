@@ -8,7 +8,7 @@ no human in the loop. `/autopilot` asks the owner everything first, then launche
 ## args
 
 `{repo, repoDir, remote, base, slug, tickets: [{n, title, depth: S|M|L, group, deps, confirmed}],
-testCmd, lintCmd, fullTestCmd, advisorModel, noAsk, local, runId}`. `runId` names the run journal (see Run journal); pass a unique one. Tickets of one `group` run in parallel;
+testCmd, lintCmd, fullTestCmd, advisorModel, noAsk, local}`. Tickets of one `group` run in parallel;
 groups run in ascending order. One ticket: its PR is the final PR. Several: branch `feat/<slug>`,
 sibling PRs into it, a merge agent after each group, one final PR into `base`.
 
@@ -102,20 +102,29 @@ Models and effort are constants at the top of the file. `stageModel(stage, depth
 
 ## Run journal
 
-`ship.js` records one row per stage and returns the rows as `out.journal`. At the end of the run, and also when the run throws, one cheap agent writes them to `<parent of repoDir>/.ship-<repo>/journals/journal-<run-id>.jsonl`, one file per run. The file sits next to the worktrees, outside the target repo, so the owner's `git status` stays clean and no `.gitignore` entry is needed.
+`ship.js` records one row per stage and returns the rows as `out.journal`. At the end of the run, and also when the run throws, it logs each row as `journal row: {...}`. No file is written and no agent is spent on it.
 
-The script cannot write the file itself. Measured in the real Workflow runtime (#529): `fs`, `process`, `require` and `performance` do not exist, `Date.now` throws, and `import()` is a syntax error that stops the script from launching. So the script keeps the rows in memory and an agent does the write, as it does for `specs/`. The agent writes with a quoted heredoc and returns how many lines of the file parse as JSON; the script logs `journal: not written` when the agent throws, returns `blocked` or returns nothing, and logs a mismatch when that count differs from the row count. The rows are always in the result of a run that ends normally. A script crash flushes the rows collected so far before it rethrows. When no agent can write (the token budget is spent, the run was aborted, or the write was refused), the script logs `journal: not written` and then one `journal row: {...}` line per row, so the rows are in the run log.
+A row says what only the script knows: `ticket` (a number, or `run` for cross-ticket stages), `stage`, `model`, `status` and `retries`, plus `kind` (`stage` today, `fact` reserved for #454).
 
-The run id is `args.runId` (reduced to `A-Za-z0-9._-`, so it cannot leave the dir; over 80 characters it keeps the first 40 and the last 39, so a time suffix survives). Without it the script uses the slug, logs a warning, and tells the writer agent to use the first free file name instead of replacing an existing journal (the slug is not unique). A script cannot call `Date.now` or `Math.random`, so autopilot passes a unique `runId` (`<slug>-<UTC time>`).
+- `status` is the stage's own verdict, the same function the pipeline uses: CI by `judgeCi`, reviews by `judgeReview` (`blocked` when the review did not run), UAT by `uatOk` (`blocked` when the run did not happen), the suite by its counts (an agent that returned nothing is `failed`), the join stage (`merge-g<n>`) is `failed` when it failed or a ready ticket was not reported as joined. `verify-base` is inverted: the test must fail on the base commit, so a fail there is `ok` and a pass is `failed`. Other stages: `blocked` for a thrown Blocked or a result with status `blocked` or `not run`; `failed` for a throw, no result, `passed` or `passed_ac` false.
+- `retries` is 0 when none and 1 when the advisor re-run happened; review, CI and fix loops are not counted.
+- `gate-review` and `ci` are judged when their call returns, before the gate applies the intent-fix re-review and the last-fix head check; the gate can still fail a ticket whose row says `ok`.
+- Stage names: every `runStage` stage, `ci`, `uat`, `uat-rerun` (the run after a UAT fix), `gate-review` (the per-ticket review), `merge-g<group>`, `suite` and the final `review`. Not covered (no row): intent review and its fix round, fix agents, the advisor, setup and integration-branch creation, the final PR, GIF, attach and verify-comment agents, the run artifact, the CI snapshot, the ADR stage and the specs writes. Single-ticket runs skip the gate, so they have no `gate-review` or `ci` rows.
 
-Each row is one JSON object with a `kind` field: `stage` today, `fact` reserved for #454. A `stage` row carries `ticket` (a number, or `run` for cross-ticket stages), `stage`, `model`, `status`, `retries` (0 when none, 1 when the advisor re-run happened; review, CI and fix loops are not counted), `duration_ms` and `output_tokens`.
+### Time and tokens
 
-- `status` comes from the stage's own verdict, the same function the pipeline uses: CI by `judgeCi`, reviews by `judgeReview` (`blocked` when the review did not run); the join stage (`merge-g<n>`) is `failed` when it failed or a ready ticket was not reported as joined (`blocked` when the review did not run), UAT by `uatOk` (`blocked` when the run did not happen), the suite by its counts (an agent that returned nothing is `failed`). `verify-base` is inverted: the test must fail on the base commit, so a fail there is `ok` and a pass is `failed`. Other stages: `blocked` for a thrown Blocked or a result with status `blocked` or `not run`, `failed` for a throw, no result, `passed` or `passed_ac` false, or a failed merge.
-- There is no clock in the runtime, so `duration_ms` is `null` there (the script logs that once); where `performance` exists, as in the test harness, it is the elapsed milliseconds. `output_tokens` is the change in `budget.spent()` over the stage. It is the only cost measure the runtime offers. The pool is shared by the whole turn, so stages that run in parallel each include the others' tokens: compare rows, do not add them up.
-- `gate-review` and `ci` are judged when their call returns, before the gate applies the intent-fix re-review and the last-fix head check; the gate can still fail a ticket whose row says `ok`. The row records the stage's own result.
-- Stage names: every `runStage` stage, `ci`, `uat`, `uat-rerun` (the run after a UAT fix), `gate-review` (the per-ticket review), `merge-g<group>`, `suite` and the final `review`. Not covered (no row): intent review and its fix round, fix agents, the advisor, setup and integration-branch creation, the final PR, GIF, attach and verify-comment agents, the run artifact, the CI snapshot, the ADR stage and the specs writes. Single-ticket runs skip the gate, so they have no `gate-review` or `ci` rows. Sum the rows only as a floor for cost or time.
+The script measures neither. The Workflow sandbox has no clock (`performance` is missing and `Date.now` throws), and `budget.spent()` is shared by the whole turn. The runtime already records what is needed, for every run, under `~/.claude/projects/<project>/<session>/subagents/workflows/<run id>/`:
 
-A resumed run (`resumeFromRunId`) returns cached agent results at once; give a resumed run a new `runId`.
+- `journal.jsonl`: one `started` and one `result` line per agent (`agentId`, `label`, `phase`, `result`);
+- `agent-<id>.jsonl`: the transcript of one agent, with a timestamp and token usage on every message.
+
+`scripts/run-report.py` joins them. It groups agents by the stage in their label (`#516 implement · title` is ticket 516, stage `implement`; a `retry` label counts into the same stage) and prints, slowest first, the agent time, wall time and output tokens per stage:
+
+```bash
+python3 scripts/run-report.py <run dir> [--journal out-journal.json] [--json]
+```
+
+`--journal` takes `out.journal` saved as a JSON array and adds each row's `status` and `retries`. The report is read-only. The run dir layout belongs to Claude Code and can change: a missing file is reported, never guessed. Output tokens are counted once per message id, because a message can be written on several lines while it streams.
 
 ## Local mode
 

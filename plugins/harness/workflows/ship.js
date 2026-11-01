@@ -117,7 +117,6 @@ const UAT_SCHEMA = stageSchema({
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
-const JOURNAL_SCHEMA = stageSchema({ lines: { type: 'number', description: 'how many lines of the journal file parsed as JSON' } }, [])
 const MERGE_SCHEMA = stageSchema({
   merged: { type: 'array', items: NUM },
   failed: { type: 'array', items: { type: 'object', properties: { n: NUM, reason: STR }, required: ['n', 'reason'] } },
@@ -296,37 +295,12 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
-// Run journal: one JSONL file per run. The Workflow sandbox has no fs, process, require, import() or performance
-// (measured in the real runtime, #529), so the script cannot write the file itself. It keeps the rows in memory,
-// returns them as out.journal, and one cheap agent writes the file at the end (as it does for specs/). A stage that
-// never finishes (a crash of the script) leaves no file; the in-memory rows still go out with the result.
-// The id becomes part of a file name: keep a safe charset and no leading dot, so it cannot leave the journal dir.
-const shortId = v => (v.length > 80 ? `${v.slice(0, 40)}-${v.slice(-39)}` : v)   // keep the tail: it holds the unique time suffix
-const safeId = v => shortId(String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, ''))
-const runIdArg = typeof args.runId === 'string' ? safeId(args.runId) : ''
-// The slug is not unique: a missing runId would let a second launch replace the first journal, so it is logged.
-const runId = runIdArg || slugOf(slug) || 'run'
-if (!runIdArg) log(`journal: args.runId is missing or empty, using "${runId}"; a second run with the same name gets a numbered file name (journal-${runId}-2.jsonl), so look for the newest one`)
-// Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
-const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
-const journalFile = `${journalDir}/journal-${runId}.jsonl`
+// Run journal (#529): one row per stage with what only this script knows: ticket, stage, model, status, retries.
+// Time and tokens are not measured here. The Workflow sandbox has no clock (no performance, Date.now throws), and the
+// runtime already keeps a transcript per agent with timestamps and token usage: scripts/run-report.py joins the two.
+// The rows are returned as out.journal and logged at the end of the run (also when it throws, so a failed run keeps them).
 const journalRows = []
-let journalFlushed = false
-let clockLogged = false
-// null means "no clock": the real sandbox has no performance, and 0 would read as a real 0 ms.
-const nowMs = () => { try { return typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null } catch (e) { return null } }
-function durationSince(t0) {
-  const t1 = nowMs()
-  if (t0 === null || t1 === null) {
-    if (!clockLogged) { clockLogged = true; log('journal: no clock available, duration_ms is null') }
-    return null
-  }
-  return Math.round(t1 - t0)
-}
-// There is no clock, so the second cost measure is the output tokens spent (budget.spent() is shared by the whole
-// turn, so for stages that overlap in a parallel group it is an upper bound, not an exact figure). null without budget.
-const tokensNow = () => { try { const v = typeof budget !== 'undefined' && budget && typeof budget.spent === 'function' ? budget.spent() : null; return Number.isFinite(v) ? v : null } catch (e) { return null } }
-const tokensSince = k0 => { const k1 = tokensNow(); return Number.isFinite(k0) && Number.isFinite(k1) ? Math.max(0, Math.round(k1 - k0)) : null }
+let journalLogged = false
 // What a stage result says about itself. A result that did not throw is not automatically ok.
 function statusOf(res) {
   if (res === null || res === undefined) return 'failed'
@@ -339,29 +313,10 @@ function statusOf(res) {
 }
 const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
 
-// When no agent can write the file (budget spent, abort, refused write), the rows still reach the run log, one line each.
-function dumpJournal(why) {
-  log(`journal: ${why}`)
+function logJournal() {
+  if (journalLogged) return
+  journalLogged = true
   for (const r of journalRows) log(`journal row: ${JSON.stringify(r)}`)
-}
-
-// Writes the collected rows to journalFile with one cheap agent. Fail open: a failure is logged and changes nothing.
-// The text goes in a quoted heredoc (as writeSpecFiles does) and the agent must report how many lines of the file parse as JSON, which is
-// compared with the number of rows: a refused, truncated or altered write is logged, not silent.
-async function flushJournal() {
-  if (!journalRows.length || journalFlushed) return
-  journalFlushed = true
-  try {
-    const text = journalRows.map(r => JSON.stringify(r)).join('\n') + '\n'
-    const res = await call(`Stage: write the run journal. ${notCwd()}\n` +
-      `1. Run: mkdir -p ${journalDir}\n` +
-      `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; ${runIdArg ? 'replace it if it exists' : `if it exists, do not replace it: use the first free name journal-${runId}-2.jsonl, -3.jsonl and so on, and say which in summary`}). Use a Bash heredoc with a quoted delimiter (cat > FILE <<'JOURNAL_EOF'), not the file-write tool, which can be refused. Do not include the marker lines.\n` +
-      `3. Run: python3 -c "import json,sys; print(sum(1 for l in open(sys.argv[1]) if json.loads(l)))" <the file you wrote in step 2>   and return that number as lines. If the write or the parse failed, return status blocked with blocked_reason.\n` +
-      `Edit nothing else.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
-      { label: 'write run journal', phase: 'Decisions', schema: JOURNAL_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
-    if (!res || res.status === 'blocked') { dumpJournal(`not written, ${(res && (res.blocked_reason || res.summary)) || 'the writer returned nothing'}`); return }
-    if (typeof res.lines === 'number' && res.lines !== journalRows.length) log(`journal: written, but ${res.lines} lines parse and there are ${journalRows.length} rows; check ${journalFile}`)
-  } catch (e) { dumpJournal(`not written, ${e && e.message ? e.message : e}`) }
 }
 
 async function askAdvisor(t, stage, question, state) {
@@ -375,12 +330,10 @@ async function askAdvisor(t, stage, question, state) {
   return typeof advice === 'string' ? advice : ''
 }
 
-// Times fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
+// Runs fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
 // The status comes from the result, not from the absence of a throw: judge(res) is the stage's own verdict
 // (the same function the pipeline uses), statusOf is the fallback.
 async function journaled(ticket, stage, model, fn, j = { retries: 0 }, judge = statusOf) {
-  const t0 = nowMs()
-  const k0 = tokensNow()
   let status = 'failed'
   try {
     const res = await fn(j)
@@ -390,7 +343,7 @@ async function journaled(ticket, stage, model, fn, j = { retries: 0 }, judge = s
     status = e instanceof Blocked ? 'blocked' : 'failed'
     throw e
   } finally {
-    appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0), output_tokens: tokensSince(k0) })
+    appendJournal({ ticket, stage, model, status, retries: j.retries })
   }
 }
 
@@ -1426,8 +1379,8 @@ if (!deliveredAll.length) {
   log('ship: no ticket was delivered; nothing to review, verify or record')
   await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   out.tickets = ordered().map(publicTicket)
-  await flushJournal()
   out.journal = journalRows
+  logJournal()
   out.worktrees = [...worktrees]
   return out
 }
@@ -1476,13 +1429,13 @@ log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
 await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
 
 out.tickets = ordered().map(publicTicket)
-await flushJournal()
 out.journal = journalRows
+logJournal()
 out.worktrees = [...worktrees]
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 return out
 } catch (e) {
-  // A failed run is when the ledger matters most: write the rows collected so far, then rethrow.
-  await flushJournal()
+  // A failed run is when the ledger matters most: log the rows collected so far, then rethrow.
+  logJournal()
   throw e
 }

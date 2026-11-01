@@ -8,14 +8,13 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 
 ```text
 { repo: "owner/name", repoDir: "/abs/path", pluginDir: "<plugin directory>", remote: "origin", base: "<base>",
-  slug: "<milestone-or-ticket slug>", runId: "<slug>-<UTC time from `date -u +%Y%m%dT%H%M%S`>",
+  slug: "<milestone-or-ticket slug>",
   tickets: [ { n: 346, title: "...", depth: "S|M|L", group: 1, deps: [345],
                confirmed: "owner-confirmed decisions text incl. the Verify: row, may be empty" } ],
   testCmd: "<related-tests command or template>", lintCmd: "<lint command>",
   fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false }
 ```
 
-- `runId` names the run journal file. It must be unique per launch; the script cannot make one itself (SKILL.md step 8 runs `date -u`, which `allowed-tools` permits). Without it the script uses the slug and logs a warning.
 - `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
 - One ticket means single mode: no integration branch (ADR 0001, decision 5).
 - `noAsk: true` when `--no-ask` was given. `local` stays false unless the owner asks for a run

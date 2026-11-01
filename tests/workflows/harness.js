@@ -108,14 +108,13 @@ function defaults(c, st) {
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
   if (l === 'specs' || l === 'specs-early') return ok()
-  if (l === 'write run journal') return ok({ lines: (c.prompt.split('<<<JOURNAL\n')[1] || '').split('JOURNAL>>>')[0].split('\n').filter(Boolean).length })
   throw new Error(`no scripted answer for label '${l}'`)
 }
 
 let args0
 function baseArgs(over) {
   return {
-    repo: 'o/r', repoDir: '/repo', runId: 'rt-default', pluginDir: '/plug', remote: 'origin', base: 'v5.0.0', slug: 'ms',
+    repo: 'o/r', repoDir: '/repo', pluginDir: '/plug', remote: 'origin', base: 'v5.0.0', slug: 'ms',
     tickets: [{ n: 1, title: 'Add the thing', depth: 'S', group: 1, deps: [], confirmed: '' }],
     testCmd: 'run-related', lintCmd: 'lint-it', fullTestCmd: 'run-all', advisorModel: 'opus', noAsk: false, local: false, ...over,
   }
@@ -139,7 +138,7 @@ async function run(over, override) {
   const pipeline = async () => { throw new Error('pipeline is not used by ship.js') }
   const body = SRC.replace('export const meta =', 'const meta =')
   const fn = new AsyncFunction('agent', 'parallel', 'pipeline', 'phase', 'log', 'args', 'budget', 'workflow', body)
-  const result = await fn(agent, parallel, pipeline, () => {}, m => logs.push(m), args, { total: null, spent: () => calls.length * 10, remaining: () => Infinity }, async () => { throw new Error('no nested workflow') })
+  const result = await fn(agent, parallel, pipeline, () => {}, m => logs.push(m), args, { total: null, spent: () => 0, remaining: () => Infinity }, async () => { throw new Error('no nested workflow') })
   return { result, calls, logs, args }
 }
 
@@ -150,10 +149,9 @@ const T = (n, group, deps, extra) => ({ n, title: `Ticket ${n}`, depth: 'S', gro
 const cases = []
 const test = (name, fn) => cases.push({ name, fn })
 
-const journalCall = r => r.calls.filter(c => c.label === 'write run journal')
 
 test('journal: retry and blocked stages are in the result rows', async () => {
-  const r = await run({ runId: 'jtest', tickets: [T(1, 1), T(2, 1)] }, c => {
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
     if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
     if (c.label === 'implement:2') return ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' })
   })
@@ -163,41 +161,6 @@ test('journal: retry and blocked stages are in the result rows', async () => {
   assert(rows.some(l => l.ticket === 2 && l.stage === 'implement' && l.status === 'blocked'))
   assert(rows.some(l => l.retries === 0))
   assert(rows.some(l => l.ticket === 'run' && l.stage === 'review'), 'the final review is journaled')
-})
-
-test('journal: one cheap agent writes the file; the prompt holds the path and every row', async () => {
-  const r = await run({ runId: 'jt-write', tickets: [T(1, 1)] }, null)
-  const jc = journalCall(r)
-  assert.strictEqual(jc.length, 1)
-  const p = jc[0].prompt
-  assert(p.includes('/.ship-repo/journals/journal-jt-write.jsonl'), p.slice(0, 300))
-  for (const row of r.result.journal) assert(p.includes(JSON.stringify(row)), 'row missing from the prompt')
-  assert.strictEqual(jc[0].opts.model, 'haiku')
-})
-
-test('journal: the path is outside the repo and a hostile runId stays inside the journal dir', async () => {
-  const r = await run({ runId: '../../evil/x', tickets: [T(1, 1)] }, null)
-  const p = journalCall(r)[0].prompt
-  const m = p.match(/to (\S+\.jsonl)/)
-  assert(m && m[1].startsWith('/.ship-repo/journals/journal-') && !m[1].includes('..'), m && m[1])
-  assert(!m[1].startsWith('/repo/'), 'must not be inside repoDir')
-})
-
-test('journal: a failing journal agent is only logged and the run still returns', async () => {
-  const r = await run({ runId: 'jt-fail', tickets: [T(1, 1)] }, c => (c.label === 'write run journal' ? new Error('boom') : undefined))
-  assert(r.logs.some(m => m.startsWith('journal: not written')))
-  assert(r.result.journal.length > 0 && r.result.tickets.length === 1)
-})
-
-test('journal: without performance duration_ms is null and logged once', async () => {
-  const desc = Object.getOwnPropertyDescriptor(globalThis, 'performance')
-  const had = Object.prototype.hasOwnProperty.call(globalThis, 'performance')
-  Object.defineProperty(globalThis, 'performance', { value: undefined, configurable: true, writable: true })
-  try {
-    const r = await run({ runId: 'jt-noclock', tickets: [T(1, 1)] }, null)
-    assert(r.result.journal.length > 0 && r.result.journal.every(x => x.duration_ms === null))
-    assert.strictEqual(r.logs.filter(m => m.startsWith('journal: no clock')).length, 1)
-  } finally { if (had) Object.defineProperty(globalThis, 'performance', desc); else delete globalThis.performance }
 })
 
 test('journal: the script uses no API the real sandbox lacks (import(), require, getBuiltinModule, node:fs, process.)', async () => {
@@ -210,9 +173,9 @@ test('journal: the script uses no API the real sandbox lacks (import(), require,
 test('journal: 20 parallel tickets in one group lose and duplicate no rows', async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms))
   // A batch of two is the baseline: single mode skips the per-ticket gate, so one ticket alone has fewer rows.
-  const two = await run({ runId: 'p2', tickets: [T(1, 1), T(2, 1)] }, null)
+  const two = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
   const per = two.result.journal.filter(r => r.ticket !== 'run').length / 2
-  const r = await run({ runId: 'p20', tickets: Array.from({ length: 20 }, (_, i) => T(i + 1, 1)) },
+  const r = await run({ tickets: Array.from({ length: 20 }, (_, i) => T(i + 1, 1)) },
     (c, _a, st) => sleep(Math.random() * 15).then(() => defaults(c, st)))
   const tk = r.result.journal.filter(x => x.ticket !== 'run')
   assert.strictEqual(tk.length, 20 * per)
@@ -222,115 +185,78 @@ test('journal: 20 parallel tickets in one group lose and duplicate no rows', asy
 const rowsOf = r => r.result.journal
 
 test('journal: status follows the result, not the absence of a throw', async () => {
-  const blockedUat = await run({ runId: 'js1' }, c => (c.label === 'uat:1' ? ok({ status: 'blocked', blocked_reason: 'no config', passed_ac: false, scenarios: [] }) : undefined))
+  const blockedUat = await run({}, c => (c.label === 'uat:1' ? ok({ status: 'blocked', blocked_reason: 'no config', passed_ac: false, scenarios: [] }) : undefined))
   assert(rowsOf(blockedUat).some(x => x.stage === 'uat' && x.status === 'blocked'), JSON.stringify(rowsOf(blockedUat)))
-  const noReview = await run({ runId: 'js2' }, c => (/^review:/.test(c.label) ? ok({ findings: [], skill_invoked: false, skill_error: 'skill missing' }) : undefined))
+  const noReview = await run({}, c => (/^review:/.test(c.label) ? ok({ findings: [], skill_invoked: false, skill_error: 'skill missing' }) : undefined))
   assert.strictEqual(noReview.result.review.status, 'not run')
   assert(rowsOf(noReview).some(x => x.stage === 'review' && x.status === 'blocked'), JSON.stringify(rowsOf(noReview).filter(x => x.stage === 'review')))
-  const badVerify = await run({ runId: 'js3' }, c => (/^verify(-retry)?:1$/.test(c.label) ? ok({ passed: false, kind: 'BE', failedStep: 's', consoleErrors: [], stills: [], report: 'r' }) : undefined))
+  const badVerify = await run({}, c => (/^verify(-retry)?:1$/.test(c.label) ? ok({ passed: false, kind: 'BE', failedStep: 's', consoleErrors: [], stills: [], report: 'r' }) : undefined))
   assert(rowsOf(badVerify).some(x => x.stage === 'verify' && x.status === 'failed'), JSON.stringify(rowsOf(badVerify)))
-  const failCi = await run({ runId: 'js4', tickets: [T(1, 1), T(2, 1)] }, c => (/^gci:/.test(c.label) ? { checks: [{ name: 'x', bucket: 'fail' }], headRefOid: 'h' } : undefined))
+  const failCi = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (/^gci:/.test(c.label) ? { checks: [{ name: 'x', bucket: 'fail' }], headRefOid: 'h' } : undefined))
   assert(rowsOf(failCi).some(x => x.stage === 'ci' && x.status === 'failed'), JSON.stringify(rowsOf(failCi).filter(x => x.stage === 'ci')))
 })
 
 test('journal: suite, merge, gate review and the UAT rerun have their own rows', async () => {
-  const r = await run({ runId: 'jr1', tickets: [T(1, 1), T(2, 1)] }, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
   const has = (ticket, stage) => rowsOf(r).filter(x => x.ticket === ticket && x.stage === stage).length
   assert.strictEqual(has('run', 'suite'), 1)
   assert.strictEqual(has('run', 'merge-g1'), 1)
   assert.strictEqual(has(1, 'gate-review'), 1)
   assert.strictEqual(has(1, 'uat'), 1)
   assert.strictEqual(has(1, 'uat-rerun'), 1)
-  assert(rowsOf(r).every(x => typeof x.output_tokens === 'number' && x.output_tokens >= 0))
-  assert(rowsOf(r).some(x => x.output_tokens > 0), 'the delta of budget.spent() shows in a row')
-})
-
-test('journal: a run that throws still writes the rows collected so far', async () => {
-  const calls = []
-  try {
-    await run({ runId: 'jf2' }, (c, all) => { calls.length = 0; calls.push(...all); return c.label === 'suite' ? new Error('suite agent died') : undefined })
-    assert.fail('the run must reject')
-  } catch (e) { assert(/suite agent died/.test(e.message), e.message) }
-  const jc = calls.filter(c => c.label === 'write run journal')
-  assert.strictEqual(jc.length, 1, 'one journal write after the throw')
-  assert(jc[0].prompt.includes('"stage":"intent"'), jc[0].prompt.slice(0, 400))
-})
-
-test('journal: a blocked, empty or short write is logged', async () => {
-  for (const reply of [ok({ status: 'blocked', blocked_reason: 'permission denied' }), null]) {
-    const r = await run({ runId: 'jw1' }, c => (c.label === 'write run journal' ? reply : undefined))
-    assert(r.logs.some(m => m.startsWith('journal: not written')), JSON.stringify(reply))
-  }
-  const short = await run({ runId: 'jw2' }, c => (c.label === 'write run journal' ? ok({ lines: 1 }) : undefined))
-  assert(short.logs.some(m => /lines parse/.test(m)), short.logs.join('\n'))
-  const good = await run({ runId: 'jw3' }, null)
-  assert(!good.logs.some(m => m.startsWith('journal: ')), 'a matching count logs nothing')
-  assert(/<<'JOURNAL_EOF'|quoted delimiter/.test(journalCall(good)[0].prompt))
-})
-
-test('journal: a missing runId warns, a given one does not', async () => {
-  const none = await run({ runId: '' }, null)
-  assert(none.logs.some(m => m.startsWith('journal: args.runId is missing')))
-  const some = await run({ runId: 'unique-1' }, null)
-  assert(!some.logs.some(m => m.startsWith('journal: args.runId')))
 })
 
 test('journal: each stage uses the pipeline verdict, the right model and an honest suite status', async () => {
-  const good = await run({ runId: 'jv0', tickets: [T(1, 1), T(2, 1)] }, null)
+  const good = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
   assert.strictEqual(rowsOf(good).find(x => x.stage === 'merge-g1').model, 'sonnet')
-  const r = await run({ runId: 'jv1', tickets: [T(1, 1), T(2, 1)] }, c => {
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
     if (c.label === 'suite') return null
     if (c.label === 'gci:1') return { checks: [{ name: 'x', bucket: 'pending' }], headRefOid: 'h' }
   })
   const row = (ticket, stage) => rowsOf(r).find(x => x.ticket === ticket && x.stage === stage)
   assert.strictEqual(row('run', 'suite').status, 'failed')
   assert.strictEqual(row(1, 'ci').status, 'failed')
-  const fe = await run({ runId: 'jv2' }, c => (c.label === 'verify:1' || c.label === 'verify-base:1' ? ok({ passed: c.label === 'verify:1', kind: 'FE', failedStep: '', consoleErrors: [], stills: [], report: 'r' }) : undefined))
+  const fe = await run({}, c => (c.label === 'verify:1' || c.label === 'verify-base:1' ? ok({ passed: c.label === 'verify:1', kind: 'FE', failedStep: '', consoleErrors: [], stills: [], report: 'r' }) : undefined))
   const base = rowsOf(fe).find(x => x.stage === 'verify-base')
   assert(base && base.status === 'ok', JSON.stringify(rowsOf(fe).filter(x => /verify/.test(x.stage))))
-  const uat = await run({ runId: 'jv3' }, c => (c.label === 'uat:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  const uat = await run({}, c => (c.label === 'uat:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
   assert.strictEqual(rowsOf(uat).find(x => x.stage === 'uat').status, 'failed', 'an AC scenario FAIL is failed even when passed_ac is true')
 })
 
-test('journal: a long runId keeps its time suffix', async () => {
-  const id = 'a'.repeat(70) + '-20261101T062619'
-  const r = await run({ runId: id }, null)
-  assert(/journal-.*20261101T062619\.jsonl/.test(journalCall(r)[0].prompt), journalCall(r)[0].prompt.slice(0, 400))
+test('journal: a ready ticket the join agent did not report is a failed join row', async () => {
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (/^merge/.test(c.label) ? ok({ merged: [], failed: [] }) : undefined))
+  assert.strictEqual(rowsOf(r).find(x => x.stage === 'merge-g1').status, 'failed')
 })
 
-test('journal: when the writer cannot run, the rows still reach the log', async () => {
-  const r = await run({ runId: 'jd1' }, c => (c.label === 'write run journal' ? new Error('budget spent') : undefined))
+test('journal: no agent writes a journal and no runId is needed', async () => {
+  const r = await run({ tickets: [T(1, 1)] }, null)
+  assert(!r.calls.some(c => /journal/.test(c.label || '')), 'ship.js must not spend an agent on the journal')
+  assert(r.result.journal.length > 0 && r.result.journal.every(x => !('duration_ms' in x) && !('output_tokens' in x)))
+})
+
+test('journal: the rows are logged once at the end of the run', async () => {
+  const r = await run({ tickets: [T(1, 1)] }, null)
   const rowLogs = r.logs.filter(m => m.startsWith('journal row: '))
   assert.strictEqual(rowLogs.length, r.result.journal.length)
   assert.deepStrictEqual(JSON.parse(rowLogs[0].slice('journal row: '.length)), r.result.journal[0])
 })
 
-test('journal: a writer reply without a line count makes no false mismatch claim', async () => {
-  const r = await run({ runId: 'jd2' }, c => (c.label === 'write run journal' ? ok({ summary: 'Wrote journal-20261101T062619.jsonl with 3 rows' }) : undefined))
-  assert(!r.logs.some(m => m.startsWith('journal: written')), r.logs.join('\n'))
-})
-
-test('journal: without a runId the writer is told not to replace an existing file', async () => {
-  const none = await run({ runId: '' }, null)
-  assert(/do not replace it: use the first free name/.test(journalCall(none)[0].prompt))
-  const some = await run({ runId: 'uniq-2' }, null)
-  assert(/replace it if it exists/.test(journalCall(some)[0].prompt))
-})
-
-test('journal: a ready ticket the join agent did not report is a failed join row', async () => {
-  const r = await run({ runId: 'jm1', tickets: [T(1, 1), T(2, 1)] }, c => (/^merge/.test(c.label) ? ok({ merged: [], failed: [] }) : undefined))
-  assert.strictEqual(rowsOf(r).find(x => x.stage === 'merge-g1').status, 'failed')
-})
-
-test('journal: a stage whose measurement helpers throw still returns its result', async () => {
-  const fn = new AsyncFunction('agent', 'parallel', 'pipeline', 'phase', 'log', 'args', 'budget', 'workflow', SRC.replace('export const meta =', 'const meta ='))
-  const calls = []
-  const agent = async (prompt, opts = {}) => { const c = { prompt, opts, label: legacyLabel(opts.label) }; calls.push(c); return defaults(c, { fix: 0 }) }
-  const parallel = thunks => Promise.all(thunks.map(async f => { try { return await f() } catch (e) { return null } }))
-  const bad = { total: null, spent() { throw new Error('no budget') }, remaining: () => Infinity }
-  args0 = baseArgs({ runId: 'jx1' })
-  const out = await fn(agent, parallel, async () => {}, () => {}, () => {}, args0, bad, async () => {})
-  assert(out.tickets.length === 1 && out.journal.length > 0 && out.journal.every(x => x.output_tokens === null))
+test('journal: a run that throws still logs the rows collected so far', async () => {
+  const logs = []
+  try {
+    const args = baseArgs({})
+    args0 = args
+    const agent = async (prompt, opts = {}) => {
+      const c = { prompt, opts, label: legacyLabel(opts.label) }
+      if (c.label === 'suite') throw new Error('suite agent died')
+      return defaults(c, { fix: 0 })
+    }
+    const parallel = thunks => Promise.all(thunks.map(async f => { try { return await f() } catch (e) { return null } }))
+    const fn = new AsyncFunction('agent', 'parallel', 'pipeline', 'phase', 'log', 'args', 'budget', 'workflow', SRC.replace('export const meta =', 'const meta ='))
+    await fn(agent, parallel, async () => {}, () => {}, m => logs.push(m), args, { total: null, spent: () => 0, remaining: () => Infinity }, async () => {})
+    assert.fail('the run must reject')
+  } catch (e) { assert(/suite agent died/.test(e.message), e.message) }
+  assert(logs.some(m => m.startsWith('journal row: ') && m.includes('"stage":"intent"')), logs.join('\n'))
 })
 
 test('meta is a pure literal', async () => {
@@ -926,7 +852,7 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   assert(p.includes('"title":"D-one"') && p.includes('"ticket":1') && p.includes('"title":"D-two"') && p.includes('"ticket":2'))
   assert(p.includes('"run":"ms"') && p.includes('--input .ship/decisions.json') && p.includes('--render-section') && p.includes('{{DECISIONS}}'))
   assert(p.includes('"stage":"intent"') && p.includes('"decided_by"'))
-  const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early' && l !== 'write run journal')   // the local spec write needs the ADR paths
+  const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early')   // the local spec write needs the ADR paths
   assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
   assert.strictEqual(result.artifact.fallback, 'docs/adr/')
