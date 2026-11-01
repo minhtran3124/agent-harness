@@ -118,13 +118,13 @@ The script measures neither. The Workflow sandbox has no clock (`performance` is
 - `journal.jsonl`: one `started` and one `result` line per agent (`agentId`, `label`, `phase`, `result`);
 - `agent-<id>.jsonl`: the transcript of one agent, with a timestamp and token usage on every message.
 
-`scripts/run-report.py` joins them. It groups agents by the stage in their label (`#516 implement · title` is ticket 516, stage `implement`; a `retry` label counts into the same stage) and prints, slowest first, the agent time, wall time and output tokens per stage:
+`run_report.py` (in the plugin `scripts/` dir) joins them. It groups agents by the stage in their label (`#516 implement · title` is ticket 516, stage `implement`; a `retry` label counts into the same stage) and prints, slowest first, the agent time, wall time and output tokens per stage:
 
 ```bash
-python3 scripts/run-report.py <run dir> [--journal out-journal.json] [--json]
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run dir> [--journal FILE] [--json]
 ```
 
-`--journal` takes `out.journal` saved as a JSON array and adds each row's `status` and `retries`. The report is read-only. The run dir layout belongs to Claude Code and can change: a missing file is reported, never guessed. Output tokens are counted once per message id, because a message can be written on several lines while it streams.
+`--journal` takes `out.journal` saved as a JSON array, or the run log saved as text (it reads the `journal row: {...}` lines), and adds each stage's `status` and `retries`. Label names and journal names differ for a few stages (`code-review` is `review`, `gate CI checks` is `ci`, `test` is `suite`, `merge ticket branches` covers every `merge-g<n>`); the script maps them, and a test pins the table. The report is read-only. The run dir layout belongs to Claude Code and can change: a missing file is reported, never guessed. Output tokens are counted once per message id, because a message can be written on several lines while it streams.
 
 ## Local mode
 

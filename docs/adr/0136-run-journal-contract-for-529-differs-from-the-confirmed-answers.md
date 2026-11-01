@@ -29,7 +29,7 @@ The runtime itself keeps, for every run, a `journal.jsonl` (one `started` and on
 
 `ship.js` returns the rows as `out.journal` and logs each one as `journal row: {...}` at the end of the run and when the run throws. It writes no file, spends no agent on the journal, and takes no `runId`.
 
-`scripts/run-report.py` reads a run's `journal.jsonl` and `agent-*.jsonl`, groups the agents by the stage in their label, and prints agent time, wall time and output tokens per stage, slowest first. With `--journal out-journal.json` it adds each row's `status` and `retries`.
+`plugins/harness/scripts/run_report.py` reads a run's `journal.jsonl` and `agent-*.jsonl`, groups the agents by the stage in their label, and prints agent time, wall time and output tokens per stage, slowest first. With `--journal FILE` (out.journal as JSON, or the run log) it adds each row's `status` and `retries`.
 
 ## Why
 

@@ -1186,20 +1186,21 @@ async function stageUat(delivered) {
   return records
 }
 
+const SUITE_NO_RESULT = ['the suite agent returned nothing', 'the re-run agent returned nothing']   // the journal judge reads these
 async function stageSuite() {
   const prompt = (label, cmd, only) => `${newWt(`suite-${label}`, null, finalRef).setup}${RULES}\n\n` +
     `Stage: verify. ${only ? `Re-run ONLY these failing tests: ${only.join(', ')} (use the narrowest command the project supports; ${testCmd} is the related-tests template).` : `Run the full suite: ${cmd}`}\n` +
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
   const first = await call(prompt('run', fullTestCmd, null), { label: 'test · run full suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!first) return { passed: 0, failed: 0, skipped: 0, note: 'the suite agent returned nothing' }
+  if (!first) return { passed: 0, failed: 0, skipped: 0, note: SUITE_NO_RESULT[0] }
   if (!first.failed) return { passed: first.passed, failed: 0, skipped: first.skipped }
   const fix = await call(`${newWt('fix-suite', null, finalRef).setup}${RULES}\n\nStage: fix the failing tests of the final suite run, with minimal commits ("git add", then "git commit"). Failing: ${first.failing.join(', ')}\nOutput tail:\n${first.tail || ''}\n` +
     `Fix the code, not the test, unless the test itself is wrong. Run only the failing tests. Then land it: ${land(finalBranch)}`,
     { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
   const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
+  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: SUITE_NO_RESULT[1] }
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
 }
 
@@ -1413,7 +1414,7 @@ const uat = await stageUat(deliveredAll)
 log(`UAT: ${Object.keys(uat).length} ticket(s) checked, ${Object.values(uat).filter(u => u.status === 'failed').length} failed`)
 
 phase('Testing')
-const suite = await journaled('run', 'suite', MODEL.test, () => stageSuite(), undefined, res => (!res || /returned nothing/.test(res.note || '') || res.failed > 0 ? 'failed' : 'ok'))
+const suite = await journaled('run', 'suite', MODEL.test, () => stageSuite(), undefined, res => (!res || SUITE_NO_RESULT.includes(res.note) || res.failed > 0 ? 'failed' : 'ok'))
 out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
 

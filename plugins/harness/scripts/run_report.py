@@ -11,7 +11,10 @@ With --journal it also adds the status and retries ship.js recorded (the `out.jo
 Read-only. The run dir is under ~/.claude/projects/<project>/<session>/subagents/workflows/<run id>/ ; that layout
 belongs to Claude Code and can change, so a missing file is reported, never guessed.
 
-  python3 scripts/run-report.py <run dir> [--journal out-journal.json] [--json]
+  python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run dir> [--journal FILE] [--json]
+
+FILE is either out.journal saved as a JSON array, or the run log saved as text: lines that contain
+`journal row: {...}` (what ship.js logs) are read from it.
 """
 import argparse
 import datetime as dt
@@ -23,6 +26,20 @@ from pathlib import Path
 LABEL = re.compile(r"^#(?P<n>\d+)\s+(?P<rest>.+)$")
 
 
+# Agent labels name stages for people; ship.js journals them under shorter names. Compare through this table.
+LABEL_TO_JOURNAL = {
+    "code-review": "review", "gate code-review": "gate-review", "gate ci checks": "ci",
+    "uat": "uat", "uat rerun": "uat-rerun", "merge ticket branches": "merge", "test": "suite",
+}
+STATUS_RANK = {"ok": 0, "blocked": 1, "failed": 2}
+
+
+def journal_stage(name):
+    """Stage name as ship.js journals it, for either side of the join: 'merge-g2' -> 'merge', 'Gate CI checks' -> 'ci'."""
+    n = re.sub(r"-g\d+$", "", str(name).strip().lower()) if str(name).lower().startswith("merge-g") else str(name).strip().lower()
+    return LABEL_TO_JOURNAL.get(n, n)
+
+
 def stage_of(label):
     """('516', 'implement') for '#516 implement · title'; ('run', 'code-review') for 'code-review · round 0'."""
     m = LABEL.match(label or "")
@@ -32,7 +49,8 @@ def stage_of(label):
 
 
 def when(s):
-    return dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+    t = dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+    return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)   # a naive stamp is read as UTC, never compared raw
 
 
 def read_jsonl(path):
@@ -55,7 +73,7 @@ def agent_facts(path):
         if d.get("timestamp"):
             try:
                 stamps.append(when(d["timestamp"]))
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
         msg = d.get("message") or {}
         if d.get("type") == "assistant":
@@ -65,6 +83,25 @@ def agent_facts(path):
             key = msg.get("id") or d.get("uuid")
             tokens[key] = max(tokens.get(key, 0), usage.get("output_tokens") or 0)
     return (min(stamps), max(stamps)) if stamps else None, sum(tokens.values()), model
+
+
+def read_journal_rows(text):
+    """out.journal as a JSON array, or the run log: every `journal row: {...}` line. None when neither is found."""
+    try:
+        v = json.loads(text)
+        return v if isinstance(v, list) else None
+    except ValueError:
+        pass
+    rows = []
+    for line in text.splitlines():
+        i = line.find("journal row: ")
+        if i < 0:
+            continue
+        try:
+            rows.append(json.loads(line[i + len("journal row: "):]))
+        except ValueError:
+            continue
+    return rows or None
 
 
 def build(run_dir, journal_rows=None):
@@ -102,16 +139,20 @@ def build(run_dir, journal_rows=None):
     joined = {}
     for r in journal_rows or []:
         if isinstance(r, dict) and r.get("stage") is not None:
-            joined[(str(r.get("ticket")), r["stage"])] = r
+            k = (str(r.get("ticket")), journal_stage(r["stage"]))
+            j = joined.setdefault(k, {"status": "ok", "retries": 0})
+            if STATUS_RANK.get(r.get("status"), 0) > STATUS_RANK[j["status"]]:
+                j["status"] = r["status"]   # several rows (merge groups, verify modes) share one stage: keep the worst
+            j["retries"] += r.get("retries") or 0
     rows = []
     for key, s in stages.items():
         row = {"ticket": s["ticket"], "stage": s["stage"], "agents": s["agents"],
                "wall_seconds": round((s["end"] - s["start"]).total_seconds(), 1),
                "agent_seconds": round(s["agent_seconds"], 1), "output_tokens": s["output_tokens"],
                "models": sorted(s["models"]), "blocked_agents": s["blocked"]}
-        j = joined.get(key)
+        j = joined.get((s["ticket"], journal_stage(s["stage"])))
         if j:
-            row["status"], row["retries"] = j.get("status"), j.get("retries")
+            row["status"], row["retries"] = j["status"], j["retries"]
         rows.append(row)
     rows.sort(key=lambda r: r["agent_seconds"], reverse=True)
     return rows, missing
@@ -128,11 +169,11 @@ def main(argv=None):
     jr = None
     if a.journal:
         try:
-            jr = json.loads(a.journal.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as e:
+            jr = read_journal_rows(a.journal.read_text(encoding="utf-8"))
+        except OSError as e:
             raise SystemExit(f"run-report: cannot read {a.journal}: {e}")
-        if not isinstance(jr, list):
-            raise SystemExit(f"run-report: {a.journal} must hold a JSON array")
+        if jr is None:
+            raise SystemExit(f"run-report: {a.journal} holds neither a JSON array nor 'journal row: {{...}}' lines")
     rows, missing = build(a.run_dir, jr)
     if a.json:
         for r in rows:

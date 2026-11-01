@@ -2,7 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("run_report", Path(__file__).with_name("run-report.py"))
+spec = importlib.util.spec_from_file_location("run_report", Path(__file__).parent.parent / "plugins" / "harness" / "scripts" / "run_report.py")
 rr = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rr)
 
@@ -83,3 +83,41 @@ def test_cli_prints_a_table_and_json(tmp_path, capsys):
     assert rr.main([str(tmp_path), "--json"]) == 0
     first = json.loads(capsys.readouterr().out.splitlines()[0])
     assert first["stage"] == "implement"
+
+
+def test_every_journaled_stage_joins_the_label_ship_js_gives_it():
+    # label stage (as stage_of reads the display label) -> the name ship.js journals it under
+    pairs = [
+        ("code-review · round 0", "run", "review"), ("#5 gate code-review · round 0", "5", "gate-review"),
+        ("#5 gate CI checks", "5", "ci"), ("#5 UAT · t", "5", "uat"), ("#5 UAT rerun · t", "5", "uat-rerun"),
+        ("merge ticket branches · group 2", "run", "merge-g2"), ("test · run full suite", "run", "suite"),
+        ("#5 implement · t", "5", "implement"), ("#5 verify-retry · t", "5", "verify-retry"),
+    ]
+    for label, ticket, journaled in pairs:
+        t, st = rr.stage_of(label)
+        assert t == ticket and rr.journal_stage(st) == rr.journal_stage(journaled), (label, t, st)
+
+
+def test_join_keeps_the_worst_status_and_sums_retries_over_merge_groups(tmp_path):
+    j = [{"type": "started", "agentId": "a1", "label": "merge ticket branches · group 1", "phase": "Merge"},
+         {"type": "started", "agentId": "a2", "label": "merge ticket branches · group 2", "phase": "Merge"}]
+    (tmp_path / "journal.jsonl").write_text("\n".join(json.dumps(x) for x in j) + "\n")
+    for a in ("a1", "a2"):
+        agent_file(tmp_path / f"agent-{a}.jsonl", ["2026-11-01T00:00:00Z", "2026-11-01T00:00:30Z"], [1, 1])
+    rows, _ = rr.build(tmp_path, [{"ticket": "run", "stage": "merge-g1", "status": "ok", "retries": 0},
+                                  {"ticket": "run", "stage": "merge-g2", "status": "failed", "retries": 1}])
+    assert rows[0]["status"] == "failed" and rows[0]["retries"] == 1
+
+
+def test_journal_input_can_be_the_run_log():
+    text = "log line\njournal row: {\"ticket\": 1, \"stage\": \"suite\", \"status\": \"ok\", \"retries\": 0}\nnoise\n"
+    assert rr.read_journal_rows(text) == [{"ticket": 1, "stage": "suite", "status": "ok", "retries": 0}]
+    assert rr.read_journal_rows("[{\"stage\": \"ci\"}]") == [{"stage": "ci"}]
+    assert rr.read_journal_rows("nothing here") is None
+
+
+def test_a_naive_timestamp_does_not_crash_the_report(tmp_path):
+    (tmp_path / "journal.jsonl").write_text(json.dumps({"type": "started", "agentId": "a1", "label": "#1 plan", "phase": "T"}) + "\n")
+    agent_file(tmp_path / "agent-a1.jsonl", ["2026-11-01T00:00:00", "2026-11-01T00:00:30Z"], [1, 1])
+    rows, missing = rr.build(tmp_path)
+    assert not missing and rows[0]["agent_seconds"] == 30.0
