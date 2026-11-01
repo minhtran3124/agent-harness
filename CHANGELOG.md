@@ -9,8 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ### Added
 
+- `ship.js` run journal (#529): one row per stage (`ticket`, `stage`, `model`, `status`, `retries`) returned as `out.journal` and logged as `journal row:` lines, also when the run throws. `plugins/harness/scripts/run_report.py` adds time and output tokens per stage from the runtime's own transcripts. See `docs/workflows.md`.
 - `scripts/check-tag-version.sh`, wired into `scripts/run-tests.sh`, the CI workflow and the shellcheck list. It reads tags only and checks that `git show <tag>:VERSION` equals the tag name for tags `v5.1.0` and later. Issue #531.
 - Release tag note: `5.0.0` was never tagged, so `v5.1.0` is the first v5 tag. The tag `v4.0.0` points at a commit whose `VERSION` is `2.28.0`; it is left as is (no tag is moved or deleted), and tags `v1` to `v4` fail the check by design, so it starts at `v5.1.0`.
+- `/harness:tickets <brief path>`, a skill that turns a brief into a milestone, GitHub issues and an epic, each written to pass `intake` as READY, after one go/no-go approval. Issue #539.
 - `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
 - A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
 - Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.
@@ -28,6 +30,14 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 ### Documented
 
 - `clean-worktrees.sh` details from #494: protected branch names (`develop`, `development`, `staging`, `production`, `release/*`, `release-*`), the skip of a worktree another live process uses (SessionStart sweep only), the SessionStart time budget (`CLEAN_BUDGET`, default 20 s) and the `CLEAN_RECREATE` guards.
+
+## [5.3.0] — 2026-10-31
+
+- feat(hooks): owner approves one merge into base from the session (#545) (PR #546)
+
+## [5.2.0] — 2026-10-31
+
+- feat(skills): add /harness:tickets skill (#539) (PR #541)
 
 ## [5.1.1] — 2026-10-30
 

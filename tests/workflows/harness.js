@@ -149,6 +149,125 @@ const T = (n, group, deps, extra) => ({ n, title: `Ticket ${n}`, depth: 'S', gro
 const cases = []
 const test = (name, fn) => cases.push({ name, fn })
 
+
+test('journal: retry and blocked stages are in the result rows', async () => {
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
+    if (c.label === 'implement:2') return ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' })
+  })
+  const rows = r.result.journal
+  assert(rows.length > 0 && rows.every(l => l.kind === 'stage'), JSON.stringify(rows))
+  assert(rows.some(l => l.ticket === 1 && l.stage === 'intent' && l.retries === 1 && l.status === 'ok'))
+  assert(rows.some(l => l.ticket === 2 && l.stage === 'implement' && l.status === 'blocked'))
+  assert(rows.some(l => l.retries === 0))
+  assert(rows.some(l => l.ticket === 'run' && l.stage === 'review'), 'the final review is journaled')
+})
+
+test('journal: the script uses no API the real sandbox lacks (import(), require, getBuiltinModule, node:fs, process.)', async () => {
+  const code = SRC.replace(/^\s*\/\/.*$/gm, '').replace(/ \/\/ .*$/gm, '')
+  assert(!/\bimport\s*\(/.test(code), 'import() is a syntax error in the Workflow runtime')
+  assert(!/\brequire\s*\(|getBuiltinModule|node:fs|\bprocess\.(env|argv|exit|cwd|nextTick|platform)/.test(code), 'fs/process/require do not exist in the Workflow runtime')
+  assert(!/Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(\s*\)/.test(code), 'Date.now, Math.random and new Date() throw in the Workflow runtime')
+})
+
+test('journal: 20 parallel tickets in one group lose and duplicate no rows', async () => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms))
+  // A batch of two is the baseline: single mode skips the per-ticket gate, so one ticket alone has fewer rows.
+  const two = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  const per = two.result.journal.filter(r => r.ticket !== 'run').length / 2
+  const r = await run({ tickets: Array.from({ length: 20 }, (_, i) => T(i + 1, 1)) },
+    (c, _a, st) => sleep(Math.random() * 15).then(() => defaults(c, st)))
+  const tk = r.result.journal.filter(x => x.ticket !== 'run')
+  assert.strictEqual(tk.length, 20 * per)
+  assert.strictEqual(new Set(tk.map(x => x.ticket + '|' + x.stage)).size, tk.length)
+})
+
+const rowsOf = r => r.result.journal
+
+test('journal: status follows the result, not the absence of a throw', async () => {
+  const blockedUat = await run({}, c => (c.label === 'uat:1' ? ok({ status: 'blocked', blocked_reason: 'no config', passed_ac: false, scenarios: [] }) : undefined))
+  assert(rowsOf(blockedUat).some(x => x.stage === 'uat' && x.status === 'blocked'), JSON.stringify(rowsOf(blockedUat)))
+  const noReview = await run({}, c => (/^review:/.test(c.label) ? ok({ findings: [], skill_invoked: false, skill_error: 'skill missing' }) : undefined))
+  assert.strictEqual(noReview.result.review.status, 'not run')
+  assert(rowsOf(noReview).some(x => x.stage === 'review' && x.status === 'blocked'), JSON.stringify(rowsOf(noReview).filter(x => x.stage === 'review')))
+  const badVerify = await run({}, c => (/^verify(-retry)?:1$/.test(c.label) ? ok({ passed: false, kind: 'BE', failedStep: 's', consoleErrors: [], stills: [], report: 'r' }) : undefined))
+  assert(rowsOf(badVerify).some(x => x.stage === 'verify' && x.status === 'failed'), JSON.stringify(rowsOf(badVerify)))
+  const failCi = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (/^gci:/.test(c.label) ? { checks: [{ name: 'x', bucket: 'fail' }], headRefOid: 'h' } : undefined))
+  assert(rowsOf(failCi).some(x => x.stage === 'ci' && x.status === 'failed'), JSON.stringify(rowsOf(failCi).filter(x => x.stage === 'ci')))
+})
+
+test('journal: suite, merge, gate review and the UAT rerun have their own rows', async () => {
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  const has = (ticket, stage) => rowsOf(r).filter(x => x.ticket === ticket && x.stage === stage).length
+  assert.strictEqual(has('run', 'suite'), 1)
+  assert.strictEqual(has('run', 'merge-g1'), 1)
+  assert.strictEqual(has(1, 'gate-review'), 1)
+  assert.strictEqual(has(1, 'uat'), 1)
+  assert.strictEqual(has(1, 'uat-rerun'), 1)
+})
+
+test('journal: each stage uses the pipeline verdict, the right model and an honest suite status', async () => {
+  const good = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  assert.strictEqual(rowsOf(good).find(x => x.stage === 'merge-g1').model, 'sonnet')
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'suite') return null
+    if (c.label === 'gci:1') return { checks: [{ name: 'x', bucket: 'pending' }], headRefOid: 'h' }
+  })
+  const row = (ticket, stage) => rowsOf(r).find(x => x.ticket === ticket && x.stage === stage)
+  assert.strictEqual(row('run', 'suite').status, 'failed')
+  assert.strictEqual(row(1, 'ci').status, 'failed')
+  const fe = await run({}, c => (c.label === 'verify:1' || c.label === 'verify-base:1' ? ok({ passed: c.label === 'verify:1', kind: 'FE', failedStep: '', consoleErrors: [], stills: [], report: 'r' }) : undefined))
+  const base = rowsOf(fe).find(x => x.stage === 'verify-base')
+  assert(base && base.status === 'ok', JSON.stringify(rowsOf(fe).filter(x => /verify/.test(x.stage))))
+  const uat = await run({}, c => (c.label === 'uat:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  assert.strictEqual(rowsOf(uat).find(x => x.stage === 'uat').status, 'failed', 'an AC scenario FAIL is failed even when passed_ac is true')
+})
+
+test('journal: a ready ticket the join agent did not report is a failed join row', async () => {
+  const r = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (/^merge/.test(c.label) ? ok({ merged: [], failed: [] }) : undefined))
+  assert.strictEqual(rowsOf(r).find(x => x.stage === 'merge-g1').status, 'failed')
+})
+
+test('journal: no agent writes a journal and no runId is needed', async () => {
+  const r = await run({ tickets: [T(1, 1)] }, null)
+  assert(!r.calls.some(c => /journal/.test(c.label || '')), 'ship.js must not spend an agent on the journal')
+  assert(r.result.journal.length > 0 && r.result.journal.every(x => !('duration_ms' in x) && !('output_tokens' in x)))
+})
+
+test('journal: the rows are logged once at the end of the run', async () => {
+  const r = await run({ tickets: [T(1, 1)] }, null)
+  const rowLogs = r.logs.filter(m => m.startsWith('journal row: '))
+  assert.strictEqual(rowLogs.length, r.result.journal.length)
+  assert.deepStrictEqual(JSON.parse(rowLogs[0].slice('journal row: '.length)), r.result.journal[0])
+})
+
+test('journal: a run that throws still logs the rows collected so far', async () => {
+  const logs = []
+  try {
+    const args = baseArgs({})
+    args0 = args
+    const agent = async (prompt, opts = {}) => {
+      const c = { prompt, opts, label: legacyLabel(opts.label) }
+      if (c.label === 'suite') throw new Error('suite agent died')
+      return defaults(c, { fix: 0 })
+    }
+    const parallel = thunks => Promise.all(thunks.map(async f => { try { return await f() } catch (e) { return null } }))
+    const fn = new AsyncFunction('agent', 'parallel', 'pipeline', 'phase', 'log', 'args', 'budget', 'workflow', SRC.replace('export const meta =', 'const meta ='))
+    await fn(agent, parallel, async () => {}, () => {}, m => logs.push(m), args, { total: null, spent: () => 0, remaining: () => Infinity }, async () => {})
+    assert.fail('the run must reject')
+  } catch (e) { assert(/suite agent died/.test(e.message), e.message) }
+  assert(logs.some(m => m.startsWith('journal row: ') && m.includes('"stage":"intent"')), logs.join('\n'))
+})
+
+test('journal: a UAT agent that returns nothing or throws is journaled blocked, not failed', async () => {
+  for (const reply of [null, new Error('uat agent died')]) {
+    const r = await run({}, c => (c.label === 'uat:1' ? reply : undefined))
+    const row = r.result.journal.find(x => x.stage === 'uat')
+    assert(row && row.status === 'blocked', JSON.stringify(row))
+    assert.strictEqual(r.result.tickets[0].status, 'done', 'UAT not run never fails the ticket')
+  }
+})
+
 test('meta is a pure literal', async () => {
   const text = metaText()
   const noStrings = text.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, '""')

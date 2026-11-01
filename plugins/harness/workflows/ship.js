@@ -295,6 +295,30 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
+// Run journal (#529): one row per stage with what only this script knows: ticket, stage, model, status, retries.
+// Time and tokens are not measured here. The Workflow sandbox has no clock (no performance, Date.now throws), and the
+// runtime already keeps a transcript per agent with timestamps and token usage: plugins/harness/scripts/run_report.py joins the two.
+// The rows are returned as out.journal and logged at the end of the run (also when it throws, so a failed run keeps them).
+const journalRows = []
+let journalLogged = false
+// What a stage result says about itself. A result that did not throw is not automatically ok.
+function statusOf(res) {
+  if (res === null || res === undefined) return 'failed'
+  if (typeof res !== 'object') return 'ok'
+  if (res.status === 'blocked' || res.status === 'not run') return 'blocked'
+  if (res.passed === false || res.passed_ac === false) return 'failed'
+  if (typeof res.failed === 'number' && res.failed > 0) return 'failed'
+  if (Array.isArray(res.failed) && res.failed.length) return 'failed'
+  return 'ok'
+}
+const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
+
+function logJournal() {
+  if (journalLogged) return
+  journalLogged = true
+  for (const r of journalRows) log(`journal row: ${JSON.stringify(r)}`)
+}
+
 async function askAdvisor(t, stage, question, state) {
   const prompt = `${RULES}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nQuestion: ${question || '(the stage gave no question; review its work)'}\n` +
@@ -306,12 +330,34 @@ async function askAdvisor(t, stage, question, state) {
   return typeof advice === 'string' ? advice : ''
 }
 
+// Runs fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
+// The status comes from the result, not from the absence of a throw: judge(res) is the stage's own verdict
+// (the same function the pipeline uses), statusOf is the fallback.
+async function journaled(ticket, stage, model, fn, j = { retries: 0 }, judge = statusOf) {
+  let status = 'failed'
+  try {
+    const res = await fn(j)
+    try { status = judge(res) } catch (e) { status = statusOf(res) }   // a judge that throws never changes the stage outcome
+    return res
+  } catch (e) {
+    status = e instanceof Blocked ? 'blocked' : 'failed'
+    throw e
+  } finally {
+    appendJournal({ ticket, stage, model, status, retries: j.retries })
+  }
+}
+
 // One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
-async function runStage(t, stage, build, schema, opts) {
+function runStage(t, stage, build, schema, { judge, ...opts }) {
+  return journaled(t.n, stage, opts.model, j => runStageInner(t, stage, build, schema, opts, j), undefined, judge)
+}
+
+async function runStageInner(t, stage, build, schema, opts, j) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
   if (res && res.needs_advisor) {
+    j.retries = 1
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
     res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
       { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
@@ -397,7 +443,9 @@ function stageVerify(t, impl, mode) {
       ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
       : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
     `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, configPath (the absolute path of the verify.config.json you used, empty when none), failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
-  return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify })
+  // verify-base is meant to fail: the test must fail on the base commit. A pass there is the bad outcome.
+  const judge = base ? res => (res && !res.passed ? 'ok' : 'failed') : undefined
+  return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify, judge })
 }
 
 // A failed comment must not change the outcome: it is only logged.
@@ -664,6 +712,8 @@ function judgeReview(rv) {
   return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left` }
 }
 
+const reviewStatus = rv => (judgeReview(rv).ok ? 'ok' : (rv && rv.status === 'ran' ? 'failed' : 'blocked'))
+
 function stageCi(t, fin, ctx, label) {
   const pr = fin.pr
   const prompt = `${RULES}\n\nStage: ci. Read the CI result of PR ${pr} in ${repo}. Edit nothing. ${notCwd()}\n` +
@@ -672,7 +722,7 @@ function stageCi(t, fin, ctx, label) {
     `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
     `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid   and: git ls-remote ${remote} refs/heads/${ctx.branch}  (the first column is the branch tip)\n` +
     `Return checks (one entry per check: name and bucket, copied unchanged), headRefOid and branchTip (the ls-remote commit). If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
-  return call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  return journaled(t.n, 'ci', MODEL.cheap, () => call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }), undefined, res => (judgeCi(res).ok ? 'ok' : 'failed'))
 }
 
 // Rewrites the merge-policy block of the ticket PR body. A failure is only logged.
@@ -703,7 +753,7 @@ async function stageGate(t, fin, impl, branch) {
   const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
     wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
   const failed = []
-  const review = await reviewLoop(ctx, ctx.target)
+  const review = await journaled(t.n, 'gate-review', MODEL.review, () => reviewLoop(ctx, ctx.target), undefined, reviewStatus)
   let intent = await stageIntentReview([{ n: t.n }], ctx)
   let intentFixTip = ''
   if (intent.fixRound) {
@@ -904,7 +954,7 @@ function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) { 
 
 // The final, cross-ticket review: the run context over the final branch.
 function stageReview(finalPr) {
-  return reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch)
+  return journaled('run', 'review', MODEL.review, () => reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch), undefined, reviewStatus)
 }
 
 async function reviewLoop(ctx, target) {
@@ -1055,8 +1105,11 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
-async function runUat(label, wtName, t, body, owner, configPath) {
-  try { return await uatAgent(label, wtName, t, body, owner, configPath) }
+// No result (the agent returned nothing or threw) means UAT did not run: that is blocked, never an acceptance failure.
+const uatStatus = res => (!res || res.status === 'blocked' ? 'blocked' : uatOk(res) ? 'ok' : 'failed')
+async function runUat(label, wtName, t, body, owner, configPath, stage = 'uat') {
+  const attempt = async () => { try { return await uatAgent(label, wtName, t, body, owner, configPath) } catch (e) { log(`${label} failed: ${e && e.message}`); return null } }
+  try { return await journaled(t.n, stage, MODEL.verify, attempt, undefined, uatStatus) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
@@ -1104,7 +1157,7 @@ async function stageUat(delivered) {
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
       // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, t.title), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, t.title), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath, 'uat-rerun') : res   // own worktree: it must see the fix
       if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
@@ -1135,20 +1188,21 @@ async function stageUat(delivered) {
   return records
 }
 
+const SUITE_NO_RESULT = ['the suite agent returned nothing', 'the re-run agent returned nothing']   // the journal judge reads these
 async function stageSuite() {
   const prompt = (label, cmd, only) => `${newWt(`suite-${label}`, null, finalRef).setup}${RULES}\n\n` +
     `Stage: verify. ${only ? `Re-run ONLY these failing tests: ${only.join(', ')} (use the narrowest command the project supports; ${testCmd} is the related-tests template).` : `Run the full suite: ${cmd}`}\n` +
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
   const first = await call(prompt('run', fullTestCmd, null), { label: 'test · run full suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!first) return { passed: 0, failed: 0, skipped: 0, note: 'the suite agent returned nothing' }
+  if (!first) return { passed: 0, failed: 0, skipped: 0, note: SUITE_NO_RESULT[0] }
   if (!first.failed) return { passed: first.passed, failed: 0, skipped: first.skipped }
   const fix = await call(`${newWt('fix-suite', null, finalRef).setup}${RULES}\n\nStage: fix the failing tests of the final suite run, with minimal commits ("git add", then "git commit"). Failing: ${first.failing.join(', ')}\nOutput tail:\n${first.tail || ''}\n` +
     `Fix the code, not the test, unless the test itself is wrong. Run only the failing tests. Then land it: ${land(finalBranch)}`,
     { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
   const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
+  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: SUITE_NO_RESULT[1] }
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
 }
 
@@ -1254,6 +1308,7 @@ const byN = new Map()
 const groups = [...new Set(tickets.map(t => t.group))].sort((a, b) => a - b)
 const ordered = () => tickets.map(t => byN.get(t.n))
 
+try {
 phase('Setup')
 // The role files come from the plugin directory. call() falls back silently to the default agent
 // when an agent type is missing, which would hide a wrong pluginDir, so check it once, up front.
@@ -1288,7 +1343,8 @@ for (const g of groups) {
   const ready = done.filter(r => LOCAL || (r.gate && r.gate.pass))
   if (!single && ready.length) {
     phase('Merge')
-    const m = await stageMerge(g, ready)
+    const m = await journaled('run', `merge-g${g}`, MODEL.merge, () => stageMerge(g, ready), undefined,
+      res => (!res || (res.failed || []).length || !ready.every(r => (res.merged || []).includes(r.n)) ? 'failed' : 'ok'))
     const failed = (m && m.failed) || []
     for (const f of failed) {
       const r = byN.get(f.n)
@@ -1326,6 +1382,8 @@ if (!deliveredAll.length) {
   log('ship: no ticket was delivered; nothing to review, verify or record')
   await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   out.tickets = ordered().map(publicTicket)
+  out.journal = journalRows
+  logJournal()
   out.worktrees = [...worktrees]
   return out
 }
@@ -1358,7 +1416,7 @@ const uat = await stageUat(deliveredAll)
 log(`UAT: ${Object.keys(uat).length} ticket(s) checked, ${Object.values(uat).filter(u => u.status === 'failed').length} failed`)
 
 phase('Testing')
-const suite = await stageSuite()
+const suite = await journaled('run', 'suite', MODEL.test, () => stageSuite(), undefined, res => (!res || SUITE_NO_RESULT.includes(res.note) || res.failed > 0 ? 'failed' : 'ok'))
 out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
 
@@ -1374,6 +1432,13 @@ log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
 await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
 
 out.tickets = ordered().map(publicTicket)
+out.journal = journalRows
+logJournal()
 out.worktrees = [...worktrees]
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 return out
+} catch (e) {
+  // A failed run is when the ledger matters most: log the rows collected so far, then rethrow.
+  logJournal()
+  throw e
+}

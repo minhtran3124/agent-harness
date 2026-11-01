@@ -21,13 +21,25 @@ against what was staged before that call. Stage in one call and commit in the ne
 
 ### `merge-guard.sh` (PreToolUse, Bash)
 
-Blocks a PR merge unless the PR base is a `feat/*` branch. It acts on `gh pr merge` and `gh api .../pulls/<n>/merge`
+Blocks a PR merge unless the PR base is a `feat/*` branch or the owner approves that one PR (see below). It acts on `gh pr merge` and `gh api .../pulls/<n>/merge`
 (at command position, after `&&`, `;`, `|`, `( )`, braces or env assignments; it uses the same segment splitter as
 `clean-worktrees.sh`, so text in a heredoc or quoted string that only mentions a merge is ignored). For every PR number
 in every merge segment it reads the live base with `gh pr view <n> --repo <r> --json baseRefName` and the repo default
 branch with `gh repo view`. It allows the merge only when the base matches `feat/*` and is not the default branch.
 `main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`, `release-*`, the default branch and any
 other name are denied. It exits 2 with the reason on stderr.
+
+**Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r --match-head-commit <head sha>` (the flag must equal the head the hook reads, so a later push cannot ride the approval; no `--auto`,
+one PR, the only merge in the command, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
+`production`, `release/*`, `release-*` or the repo default branch. The hook reads the base and the head commit
+(`--json baseRefName,headRefOid`; the head must be 40 hex characters) and prints `permissionDecision: "ask"` with the
+reason `Merge PR #<n> of <repo> into <base> at <head sha>?`. Claude Code shows the owner a confirmation prompt, and the
+owner approves in it; the agent cannot answer it. The approval covers that one call only: no session-wide or multi-PR
+approval exists. `permission_mode` must be `default`, `acceptEdits`, `auto` or `bypassPermissions`; a missing, unknown
+or `dontAsk` mode, and a subagent or workflow agent (payload carries `agent_id`), are denied. Probe (headless
+`claude -p`): under `default`, `auto` and `bypassPermissions` an `ask` is not turned into an allow; with no one to
+answer, Claude Code returns it as a denial. So no `UserPromptSubmit` token fallback exists. The hook never outputs
+`allow`. The owner's `!` or terminal merge stays as before.
 
 **It fails closed, unlike the other hooks (ADR: fail-closed merge guard).** Once it has seen a merge, any doubt denies:
 no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
