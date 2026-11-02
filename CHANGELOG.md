@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [5.5.0] — 2026-11-02
+
+- feat(skills): add /harness:recall to search docs/solutions/ before work starts (PR #555)
+
 ## [5.4.0] — 2026-11-02
 
 - feat(tickets): optional milestone, publish check and eval suite (PR #552)
