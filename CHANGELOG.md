@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [5.4.0] — 2026-11-02
+
+- feat(tickets): optional milestone, publish check and eval suite (PR #552)
+
 ## [5.3.1] — 2026-11-02
 
 - docs(changelog): move shipped entries out of Unreleased (PR #550)
