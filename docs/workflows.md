@@ -100,6 +100,34 @@ Stage agents run the skill by path with `Mode: auto`, never ask, and return `dec
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
 Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L and keeps Sonnet for the plan stage at depth M. Depth L is the difficulty signal, so this fixed rule fits "the orchestrator chooses the model per task difficulty"; there is no args override.
 
+## Run journal
+
+`ship.js` records one row per stage and returns the rows as `out.journal`. At the end of the run, and also when the run throws, it logs each row as `journal row: {...}`. No file is written and no agent is spent on it.
+
+A row says what only the script knows: `ticket` (a number, or `run` for cross-ticket stages), `stage`, `model`, `status` and `retries`, plus `kind` (`stage` today, `fact` reserved for #454).
+
+- `status` is the stage's own verdict, the same function the pipeline uses: CI by `judgeCi`, reviews by `judgeReview` (`blocked` when the review did not run), UAT by `uatOk` (`blocked` when the run did not happen), the suite by its counts (an agent that returned nothing is `failed`), the join stage (`merge-g<n>`) is `failed` when it failed or a ready ticket was not reported as joined. `verify-base` is inverted: the test must fail on the base commit, so a fail there is `ok` and a pass is `failed`. Other stages: `blocked` for a thrown Blocked or a result with status `blocked` or `not run`; `failed` for a throw, no result, `passed` or `passed_ac` false.
+- `retries` is 0 when none and 1 when the advisor re-run happened; review, CI and fix loops are not counted.
+- `gate-review` and `ci` are judged when their call returns, before the gate applies the intent-fix re-review and the last-fix head check; the gate can still fail a ticket whose row says `ok`.
+- Stage names: every `runStage` stage, `ci`, `uat`, `uat-rerun` (the run after a UAT fix), `gate-review` (the per-ticket review), `merge-g<group>`, `suite` and the final `review`. Not covered (no row): intent review and its fix round, fix agents, the advisor, setup and integration-branch creation, the final PR, GIF, attach and verify-comment agents, the run artifact, the CI snapshot, the ADR stage and the specs writes. Single-ticket runs skip the gate, so they have no `gate-review` or `ci` rows.
+
+### Time and tokens
+
+The script measures neither. The Workflow sandbox has no clock (`performance` is missing and `Date.now` throws), and `budget.spent()` is shared by the whole turn. The runtime already records what is needed, for every run, under `~/.claude/projects/<project>/<session>/subagents/workflows/<run id>/`:
+
+- `journal.jsonl`: one `started` and one `result` line per agent (`agentId`, `label`, `phase`, `result`);
+- `agent-<id>.jsonl`: the transcript of one agent, with a timestamp and token usage on every message.
+
+`run_report.py` (in the plugin `scripts/` dir) joins them. It groups agents by the stage in their label (`#516 implement · title` is ticket 516, stage `implement`; a `retry` label counts into the same stage) and prints, slowest first, the agent time, wall time and output tokens per stage:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_report.py <run dir> [--journal FILE] [--json]
+```
+
+The run id (`wf_...`) can replace the run dir. Autopilot saves `out.journal` after a run and prints the top rows (see `skills/autopilot/references/launch-args.md`).
+
+`--journal` takes `out.journal` saved as a JSON array, or the run log saved as text (it reads the `journal row: {...}` lines), and adds each stage's `status` and `retries`. Label names and journal names differ for a few stages (`code-review` is `review`, `gate CI checks` is `ci`, `test` is `suite`, `merge ticket branches` covers every `merge-g<n>`); the script maps them, and a test pins the table. The report is read-only. The run dir layout belongs to Claude Code and can change: a missing file is reported, never guessed. Output tokens are counted once per message id, because a message can be written on several lines while it streams.
+
 ## Local mode
 
 `local: true` pushes nothing and opens no PR: branches stay local and the PR body is written to
