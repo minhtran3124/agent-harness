@@ -11,7 +11,7 @@ KEYS='[a-z0-9_-]*(password|passwd|pwd|api[ _-]?key|secret|token)[a-z0-9_-]*'
 # A keyword needs a quoted value, or a long bare value, so that "token: JWT" does not stop a run.
 # An escaped quote counts too, for JSON pasted inside a string.
 QUOTE="\\\\?[\"']"
-VALUE="($QUOTE)?[[:space:]]*[:=][[:space:]]*($QUOTE[^\"']+|[^[:space:]\"'\\\\]{12,})"
+VALUE="(${QUOTE})?[[:space:]]*[:=][[:space:]]*(${QUOTE}[^\"']+|[^[:space:]\"'\\\\]{12,})"
 # With = a password is a value of any length: "password=x" is not prose.
 SHORT='[a-z0-9_-]*(password|passwd|pwd)[a-z0-9_-]*=[^[:space:]=]+'
 TOKENS='sk-[a-z0-9_-]{20,}|[rsp]k_(live|test)_[a-z0-9]{16,}|whsec_[a-z0-9]{16,}|AKIA[0-9A-Z]{16}|AIza[a-z0-9_-]{30,}|gh[pousr]_[a-z0-9]{20,}|github_pat_|glpat-[a-z0-9_-]{16,}|xox[baprs]-|eyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.'
