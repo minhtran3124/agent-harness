@@ -280,14 +280,38 @@
   ],
   "last_run": {
     "date": "2026-11-02",
-    "with_skill": "10/10",
-    "without_skill": "8/10",
-    "without_skill_misses": [
-      2,
-      5
-    ],
-    "no_match_run": "printed 'no match' and 'Search surface:'",
-    "note": "Author-written prompts; the hit rate can be biased upward. Baseline: same prompt, same repo, same tools (Read, Grep, Glob), without /harness:recall. Hit = expected record path appears in the output.",
+    "skill_md_commit": "50003e0",
+    "results": {
+      "path": {
+        "with_skill": "12/12",
+        "without_skill": "11/12",
+        "without_skill_misses": [
+          5
+        ]
+      },
+      "action": {
+        "with_skill": "10/12",
+        "without_skill": "11/12",
+        "with_skill_misses": [
+          2,
+          8
+        ],
+        "without_skill_misses": [
+          12
+        ]
+      },
+      "stale_premise": {
+        "with_skill": "2/2",
+        "without_skill": "N/A (the baseline has no Possibly stale section)"
+      }
+    },
+    "format_checks": {
+      "verdict_first_line": "12/12 with-skill outputs start with 'Verdict:'",
+      "item_caps": "Do first, Avoid and Check before done held 0 items in all 12 with-skill outputs, because every matched record was reported under Possibly stale (age over 30 days, or an affects path that moved to plugins/harness/). The 3-item cap was therefore not exercised.",
+      "no_match_run": "printed 'no match' and 'Search surface:'",
+      "git_status": "0 lines for tracked paths after the runs; only tests/evals/recall/ is untracked output"
+    },
+    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge: it can miss a correct rewrite and can hit on an incidental phrase. One run per prompt and arm, on the final SKILL.md at the commit above. Raw outputs are in tests/evals/recall/runs/2026-11-02/. The baseline is the same prompt, repo, flags and tools, without the /harness:recall call.",
     "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
   },
   "scoring": {
