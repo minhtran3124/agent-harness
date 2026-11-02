@@ -91,5 +91,17 @@
         "Output lists docs/solutions/harness/ste100-adoption-decisions.md"
       ]
     }
-  ]
+  ],
+  "last_run": {
+    "date": "2026-11-02",
+    "with_skill": "10/10",
+    "without_skill": "8/10",
+    "without_skill_misses": [
+      2,
+      5
+    ],
+    "no_match_run": "printed 'no match' and 'Search surface:'",
+    "note": "Author-written prompts; the hit rate can be biased upward. Baseline: same prompt, same repo, same tools (Read, Grep, Glob), without /harness:recall. Hit = expected record path appears in the output.",
+    "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
+  }
 }
