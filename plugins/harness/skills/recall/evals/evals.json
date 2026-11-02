@@ -280,7 +280,7 @@
   ],
   "last_run": {
     "date": "2026-11-02",
-    "skill_md_commit": "50003e0",
+    "skill_md_commit": "77fe2fd",
     "results": {
       "path": {
         "with_skill": "12/12",
@@ -293,25 +293,30 @@
         "with_skill": "10/12",
         "without_skill": "11/12",
         "with_skill_misses": [
-          2,
-          8
+          5,
+          12
         ],
         "without_skill_misses": [
           12
-        ]
+        ],
+        "note": "Eval 5 is a phrase miss: the output gives the right advice (run git add in its own Bash call) in other words. Eval 12 is a stale-only prompt where no action is expected."
       },
       "stale_premise": {
-        "with_skill": "2/2",
-        "without_skill": "N/A (the baseline has no Possibly stale section)"
+        "with_skill": "1/2",
+        "without_skill": "N/A (the baseline has no Possibly stale section)",
+        "with_skill_misses": [
+          11
+        ],
+        "note": "Eval 11: the record is listed in Possibly stale and also in Do first, with a command that names a file that no longer exists."
       }
     },
     "format_checks": {
       "verdict_first_line": "12/12 with-skill outputs start with 'Verdict:'",
-      "item_caps": "Do first, Avoid and Check before done held 0 items in all 12 with-skill outputs, because every matched record was reported under Possibly stale (age over 30 days, or an affects path that moved to plugins/harness/). The 3-item cap was therefore not exercised.",
-      "no_match_run": "printed 'no match' and 'Search surface:'",
+      "item_caps": "11 of 12 outputs hold at most 3 items in each of Do first, Avoid and Check before done. Eval 7 holds 4 in Check before done. Eval 12 holds none, by design.",
+      "no_match_run": "printed 'no match' and 'Search surface:', and a Verdict: line first",
       "git_status": "0 lines for tracked paths after the runs; only tests/evals/recall/ is untracked output"
     },
-    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge: it can miss a correct rewrite and can hit on an incidental phrase. One run per prompt and arm, on the final SKILL.md at the commit above. Raw outputs are in tests/evals/recall/runs/2026-11-02/. The baseline is the same prompt, repo, flags and tools, without the /harness:recall call.",
+    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on SKILL.md at the commit above (the first with-skill run used an earlier SKILL.md and is kept in runs/2026-11-02/superseded-skill-v1/). The baseline arm was run once and does not depend on SKILL.md. Cost of the with-skill re-run: 2.42 USD.",
     "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
   },
   "scoring": {

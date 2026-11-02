@@ -1,12 +1,29 @@
-Verdict: known risk (the matching records are all stale; see Possibly stale)
+Verdict: known risk
+
+**Do first.**
+- Pick one of two options before dispatch (`docs/solutions/harness/parallel-implementers-share-one-git-index.md`, confirmed_at 2026-09-29, no command in the record):
+  - Give each same-wave task its own worktree and merge at the wave boundary.
+  - Have each implementer commit only its own paths with `git commit -- <its Files list>`.
+- Put the ban on `git reset`, `git commit --amend` and `git stash` in the shared worktree into the implementer brief. If a commit swept foreign files, the implementer must report it and stop (same record).
+- If an orphan already exists, recover it this way (same record):
+  1. Check that the staged index is byte-identical to the orphaned commit's tree. For each file, compare `git show <sha>:<f> | git hash-object --stdin` with `git rev-parse :<f>`.
+  2. Re-commit the staged changes as a normal new commit.
+  3. Confirm `git diff <orphan> <new>` is empty.
+  4. Record the mixed commit as a deviation.
+  5. Do not run the denied reset yourself, and do not rewrite history.
+
+**Avoid.**
+- A plain `git commit` in a shared worktree. It records everything anyone staged, so a commit gets another task's files and its message is wrong.
+- `git reset --soft HEAD~1` to undo that. A sibling may already have moved `HEAD`, so the reset orphans the sibling's commit and leaves its files staged but uncommitted.
+- Running a reset for a subagent after it was denied. That is permission laundering.
+
+**Check before done.**
+- Check that each commit holds only its own task's Files list. The record says disjoint Files sets stop content conflicts but not index or `HEAD` races.
+- Check that the recovery commit's diff against the orphan is empty and that no commit is left dangling.
+- Check that the mixed commit is recorded as a deviation.
 
 **Possibly stale.**
-- `docs/solutions/harness/parallel-implementers-share-one-git-index.md` (failure, `confirmed_at` 2026-09-29): this is the exact symptom in your task, but the record is stale.
-  - **Reasons:** it is 34 days old, and its `affects` path `skills/subagent-driven-development/implementer-prompt.md` is missing.
-  - **Premise:** the shared-worktree setup no longer matches. `plugins/harness/skills/implement/SKILL.md` step 3 and `plugins/harness/workflows/ship.js` give each agent its own worktree, which is the record's second prevention option. A shared worktree now means a dispatch went outside this path.
-  - **Unverified:** the record's other prevention rule (`git commit -- <Files>`, no reset, amend or stash) is not in `plugins/harness/skills/implement/implementer-prompt.md`. That rule was only ever proposed in the record.
-  - **Still useful, after you re-check it:** its recovery guidance is to verify the index against the orphaned commit, re-commit normally, and not rewrite history. The controller must not run a reset that was denied to a subagent.
-- `docs/solutions/harness/sdd-report-file-handoff-refused-for-subagents.md` (failure, `confirmed_at` 2026-10-09): the age is fine, but its `affects` paths `skills/subagent-driven-development/implementer-prompt.md`, `skills/subagent-driven-development/SKILL.md` and `rules/orchestration.md` are missing. It is only a neighbouring record, from a different failure in parallel implementer runs.
-- `docs/solutions/harness/wave-boundary-verify-evidence.md` (knowledge, `confirmed_at` 2026-07-23): it is 102 days old, and its `affects` paths `hooks/commit-quality-gate.sh` and `templates/SUMMARY.template.md` are missing. It was also marked superseded on 2026-09-29. It covers Verify evidence per wave, not index races.
+- `docs/solutions/harness/parallel-implementers-share-one-git-index.md`: the `affects` path `skills/subagent-driven-development/implementer-prompt.md` has moved. The file is now `plugins/harness/skills/implement/implementer-prompt.md`. A grep of it found no `git reset`, `--amend`, `stash`, pathspec or `git commit` rule. The record's Guardrail was marked "proposed" and has not been added, so the risk is still open. The record is 34 days old.
+- `docs/solutions/harness/wave-boundary-verify-evidence.md` was read but not used. It concerns Verify rows in SUMMARY.md, not this symptom. It also notes that `commit-quality-gate.sh` was merged into `hooks/commit-gate.sh`, so its `affects` path is stale.
 
-**Search surface:** `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/INDEX.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/critical-patterns.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/harness/parallel-implementers-share-one-git-index.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/harness/wave-boundary-verify-evidence.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/harness/sdd-report-file-handoff-refused-for-subagents.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/plugins/harness/skills/implement/SKILL.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/plugins/harness/skills/implement/implementer-prompt.md`; `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/plugins/harness/workflows/ship.js` was seen through Grep only, not read in full; the other 42 INDEX entries were judged from their INDEX rows only and not opened.
+**Search surface:** `docs/solutions/INDEX.md`, `docs/solutions/critical-patterns.md`, `docs/solutions/harness/parallel-implementers-share-one-git-index.md`, `docs/solutions/harness/wave-boundary-verify-evidence.md`, `plugins/harness/skills/implement/implementer-prompt.md` (grep only)
