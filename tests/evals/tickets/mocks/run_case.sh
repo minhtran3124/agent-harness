@@ -29,10 +29,15 @@ start=$(date +%s)
     --no-session-persistence --permission-mode default --max-turns 40 \
     --allowedTools Write --disallowedTools AskUserQuestion Agent \
     --append-system-prompt "$SYS" --output-format stream-json --verbose \
-    "$COMMAND" </dev/null >"$OUT/stream.jsonl" 2>"$OUT/stderr.log" ) || true
+    "$COMMAND" </dev/null >"$OUT/stream.jsonl" 2>"$OUT/stderr.log" ) && rc=0 || rc=$?
 cp "$STUB/state.json" "$OUT/gh-state-after.json"
 : >"$OUT/questions.md"
 for q in "$BOX"/q[0-9]*.md; do [ -f "$q" ] && cat "$q" >>"$OUT/questions.md"; done
 ls -A "$BOX" >"$OUT/repo-files.txt"
 jq -r 'select(.type=="result")|.result // ""' "$OUT/stream.jsonl" >"$OUT/final.md" || true
 jq -c --argjson s "$(( $(date +%s) - start ))" 'select(.type=="result")|{total_tokens:((.usage.input_tokens//0)+(.usage.output_tokens//0)+(.usage.cache_read_input_tokens//0)+(.usage.cache_creation_input_tokens//0)),duration_ms,total_duration_seconds:$s,denials:(.permission_denials|length)}' "$OUT/stream.jsonl" >"$OUT/timing.json" || true
+if [ "$rc" != 0 ] || ! grep -q '"type":"result"' "$OUT/stream.jsonl"; then
+  rm -f "$OUT/timing.json"
+  echo "$CASE: claude failed (exit $rc), see $OUT/stderr.log" >&2
+  exit 1
+fi
