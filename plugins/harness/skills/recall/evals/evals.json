@@ -1,0 +1,107 @@
+{
+  "skill_name": "recall",
+  "evals": [
+    {
+      "id": 1,
+      "problem_type": "bug",
+      "prompt": "My hook shows 'Permission denied' / exit 126 after I registered it in settings.json as a bare path.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md"
+      ]
+    },
+    {
+      "id": 2,
+      "problem_type": "bug",
+      "prompt": "I installed the plugin from the marketplace cache and my script now reads and edits the wrong repo because it works out the project root from where the script lives.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/hook-root-must-not-come-from-install-location.md"
+      ]
+    },
+    {
+      "id": 3,
+      "problem_type": "failure",
+      "prompt": "My ### Verify row in SUMMARY.md gets split into extra columns by the strict gate, and the whole-suite command in it times out.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md"
+      ]
+    },
+    {
+      "id": 4,
+      "problem_type": "failure",
+      "prompt": "Two implementer subagents ran in one shared worktree in the same wave, and one commit ended up with the other's files and a reset orphaned a commit.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/parallel-implementers-share-one-git-index.md"
+      ]
+    },
+    {
+      "id": 5,
+      "problem_type": "failure",
+      "prompt": "A Bash call that runs git add and git commit together gets denied by the PreToolUse hook while untracked python files sit in the tree.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md"
+      ]
+    },
+    {
+      "id": 6,
+      "problem_type": "knowledge",
+      "prompt": "My SKILL.md is over the 600 word limit and I need room for new sentences without losing meaning.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/deletion-test-for-word-ceiling.md"
+      ]
+    },
+    {
+      "id": 7,
+      "problem_type": "knowledge",
+      "prompt": "I want to build an eval that proves a prompt-driven skill works by measuring model judgment, with blind runs and a scorer that is not the model itself.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/skill-eval-blind-run-scoring.md"
+      ]
+    },
+    {
+      "id": 8,
+      "problem_type": "knowledge",
+      "prompt": "I am adding a new file under hooks/ that is not wired into settings.json yet, and the risk gate still treats the change as high risk.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md"
+      ]
+    },
+    {
+      "id": 9,
+      "problem_type": "decision",
+      "prompt": "I need to change which model and effort the reviewer and intent reviewer roles use, and wonder whether review should use a different model than the implementer.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/review-model-diversity-dropped-decisions.md"
+      ]
+    },
+    {
+      "id": 10,
+      "problem_type": "decision",
+      "prompt": "I want to add controlled-English (ASD-STE100) lint checks or vendor a third-party style skill, and need to know what was decided about the ratchet and pilot.",
+      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "assertions": [
+        "Output lists docs/solutions/harness/ste100-adoption-decisions.md"
+      ]
+    }
+  ],
+  "last_run": {
+    "date": "2026-11-02",
+    "with_skill": "10/10",
+    "without_skill": "8/10",
+    "without_skill_misses": [
+      2,
+      5
+    ],
+    "no_match_run": "printed 'no match' and 'Search surface:'",
+    "note": "Author-written prompts; the hit rate can be biased upward. Baseline: same prompt, same repo, same tools (Read, Grep, Glob), without /harness:recall. Hit = expected record path appears in the output.",
+    "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
+  }
+}
