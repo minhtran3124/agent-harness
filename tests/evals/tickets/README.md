@@ -2,7 +2,7 @@
 
 Each folder is one case. A run uses `claude -p` in a throwaway directory, with the stub `mocks/gh` first on PATH and a fake `GH_TOKEN`, so it cannot reach GitHub. The fixture stays outside the run's directory, so the run is blind to it. Runs cost model usage, so CI does not run them.
 
-Use `mocks/run_case.sh`, not `claude plugin eval`. That command has no stub, so `prompt.md` grants it no Bash. The `graders/` files exist only for its layout. `mocks/score.py` is what scores a run.
+Use `mocks/run_case.sh`, not `claude plugin eval`. That command has no stub, so `prompt.md` grants it no Bash. `mocks/score.py` holds every check.
 
 ## Run one case and see the result
 
