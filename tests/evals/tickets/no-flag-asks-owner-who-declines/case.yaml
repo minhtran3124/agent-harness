@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: no-flag-asks-owner-who-declines
+expected_outcome: |
+  The owner is asked about a milestone before approval, declines, and no milestone exists.

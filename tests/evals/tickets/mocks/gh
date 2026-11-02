@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Stand-in for gh in the tickets eval. It never reaches the network.
+
+It logs each call to $GH_STUB_LOG as one JSON line (argv and stdin), and answers from the
+fixture $GH_STUB_STATE: {"repo", "visibility", "user", "labels", "milestones", "issues"}.
+"""
+import json, os, re, subprocess, sys
+
+args = sys.argv[1:]
+stdin = sys.stdin.read() if "-" in args else ""
+state_path = os.environ["GH_STUB_STATE"]
+state = json.load(open(state_path))
+with open(os.environ["GH_STUB_LOG"], "a") as log:
+    log.write(json.dumps({"argv": args, "stdin": stdin}) + "\n")
+
+
+def opt(*names):
+    for i, a in enumerate(args):
+        if a in names and i + 1 < len(args):
+            return args[i + 1]
+    return None
+
+
+def opts(*names):
+    return [args[i + 1] for i, a in enumerate(args[:-1]) if a in names]
+
+
+def save():
+    json.dump(state, open(state_path, "w"), indent=2)
+
+
+def out(value):
+    expr = opt("--jq", "-q")
+    text = json.dumps(value)
+    if expr:
+        sys.stdout.write(subprocess.run(["jq", "-r", expr], input=text, text=True, capture_output=True).stdout)
+    else:
+        print(text)
+
+
+def main():
+    if args[:2] == ["repo", "view"]:
+        out({"nameWithOwner": state["repo"], "visibility": state["visibility"]})
+    elif args[:2] == ["api", "user"]:
+        out({"login": state["user"]})
+    elif args[:2] == ["label", "list"]:
+        out([{"name": n} for n in state["labels"]])
+    elif args[:2] == ["label", "create"]:
+        state["labels"].append(args[2])
+        save()
+        print(args[2])
+    elif args[:2] == ["issue", "list"]:
+        wanted = opt("--milestone")
+        rows = state["issues"]
+        if wanted:
+            rows = [r for r in rows if (r.get("milestone") or {}).get("title") == wanted]
+        out(rows)
+    elif args[:2] == ["issue", "create"]:
+        name = opt("--milestone", "-m")
+        if name and not any(m["title"] == name and m["state"] == "open" for m in state["milestones"]):
+            sys.exit(f"could not add to milestone '{name}': '{name}' not found")
+        n = 1 + max([i["number"] for i in state["issues"]] + [100])
+        state["issues"].append({
+            "number": n, "title": opt("--title", "-t"), "body": stdin, "state": "OPEN",
+            "author": {"login": state["user"]}, "labels": opts("--label", "-l"),
+            "milestone": {"title": name} if name else None,
+        })
+        save()
+        print(f"https://github.com/{state['repo']}/issues/{n}")
+    elif args[:1] == ["api"] and re.fullmatch(r"repos/[^ ]+/milestones", args[1]):
+        if "-X" in args and opt("-X") == "GET":
+            out(state["milestones"])
+        else:
+            title = next(a[6:] for a in args if a.startswith("title="))
+            n = 1 + len(state["milestones"])
+            m = {"number": n, "title": title, "state": "open",
+                 "html_url": f"https://github.com/{state['repo']}/milestone/{n}"}
+            state["milestones"].append(m)
+            save()
+            out(m)
+    else:
+        sys.exit(f"stub: no such call: {args}")
+
+
+main()

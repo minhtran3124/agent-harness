@@ -1,0 +1,17 @@
+{
+  "repo": "acme/app",
+  "visibility": "PUBLIC",
+  "user": "owner-a",
+  "labels": [
+    "bug",
+    "enhancement",
+    "documentation",
+    "P1",
+    "P2",
+    "size:S",
+    "size:M",
+    "size:L"
+  ],
+  "milestones": [],
+  "issues": []
+}
