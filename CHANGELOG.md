@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [5.3.1] — 2026-11-02
+
+- docs(changelog): move shipped entries out of Unreleased (PR #550)
+
 ## [5.3.0] — 2026-10-31
 
 - feat(hooks): owner approves one merge into base from the session (#545) (PR #546)
