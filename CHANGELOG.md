@@ -7,34 +7,13 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-### Added
-
-- `/harness:tickets <brief path>`, a skill that turns a brief into a milestone, GitHub issues and an epic, each written to pass `intake` as READY, after one go/no-go approval. Issue #539.
-- `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
-- A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
-- Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.
-
-### Changed
-
-- The merge stage merges with `--match-head-commit <sha>` and no longer resolves conflicts, pushes or closes PRs: a conflicting or failing ticket stays open as a human merge. Local mode runs `git merge --abort` on a conflict.
-- A ticket that fails its gate is `blocked` with the reason `human merge: gate <names> failed` and keeps its PR. The final PR is always a human merge.
-- `/harness:setup` step 4 names the merge guard and no longer offers the `gh pr merge` allow rule (plugin hooks are not proven to fire for workflow agents).
-
-### Fixed
-
-- The SessionStart `clean-worktrees.sh` hook now has a 30 second timeout and runs only on `startup`, in its own group apart from `session-rules.sh`, so network I/O cannot stall session start.
-
-### Documented
-
-- `clean-worktrees.sh` details from #494: protected branch names (`develop`, `development`, `staging`, `production`, `release/*`, `release-*`), the skip of a worktree another live process uses (SessionStart sweep only), the SessionStart time budget (`CLEAN_BUDGET`, default 20 s) and the `CLEAN_RECREATE` guards.
-
 ## [5.3.0] — 2026-10-31
 
 - feat(hooks): owner approves one merge into base from the session (#545) (PR #546)
 
 ## [5.2.0] — 2026-10-31
 
-- feat(skills): add /harness:tickets skill (#539) (PR #541)
+- feat(skills): add /harness:tickets skill (#539): `/harness:tickets <brief path>` turns a brief into a milestone, GitHub issues and an epic, each written to pass `intake` as READY, after one go/no-go approval. (PR #541)
 
 ## [5.1.1] — 2026-10-30
 
@@ -47,10 +26,24 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 - `clean-worktrees.sh` runs at SessionStart in sweep mode (no payload) and returns what it removed as `additionalContext`, so a PR merged on the GitHub web is cleaned. Issue #494.
 - `clean-worktrees.sh` runs `git fetch -q --prune <remote>` first, removes `worktree-*` agent branches contained in a `<remote>/*` branch, and works without `gh` (upstream gone and tip an ancestor of `<remote>/main`).
 - Settings in the `env` block of `.claude/settings.json`: `CLEAN_REMOTE`, `CLEAN_KEEP`, `CLEAN_STRICT`, `CLEAN_RECREATE` (see `docs/hooks.md`).
+- `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
+- A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
+- Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.
 
 ### Changed
 
 - A squash-merged branch is now removed with `git branch -D` when a merged PR head equals the local tip (before: reported and kept). A branch with commits after the merge is still kept.
+- The merge stage merges with `--match-head-commit <sha>` and no longer resolves conflicts, pushes or closes PRs: a conflicting or failing ticket stays open as a human merge. Local mode runs `git merge --abort` on a conflict.
+- A ticket that fails its gate is `blocked` with the reason `human merge: gate <names> failed` and keeps its PR. The final PR is always a human merge.
+- `/harness:setup` step 4 names the merge guard and no longer offers the `gh pr merge` allow rule (plugin hooks are not proven to fire for workflow agents).
+
+### Fixed
+
+- The SessionStart `clean-worktrees.sh` hook now has a 30 second timeout and runs only on `startup`, in its own group apart from `session-rules.sh`, so network I/O cannot stall session start.
+
+### Documented
+
+- `clean-worktrees.sh` details from #494: protected branch names (`develop`, `development`, `staging`, `production`, `release/*`, `release-*`), the skip of a worktree another live process uses (SessionStart sweep only), the SessionStart time budget (`CLEAN_BUDGET`, default 20 s) and the `CLEAN_RECREATE` guards.
 
 ## [5.0.0] — 2026-10-28
 
