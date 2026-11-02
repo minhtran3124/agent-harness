@@ -60,8 +60,7 @@
           "text": "Output states the action the record requires",
           "any_of": [
             "pipe-free",
-            "grep -e",
-            "60s"
+            "grep -e"
           ]
         }
       ]
@@ -146,7 +145,6 @@
           "type": "action",
           "text": "Output states the action the record requires",
           "any_of": [
-            "blind",
             "deterministic scorer",
             "truth.md"
           ]
@@ -236,8 +234,7 @@
           "text": "Output states the action the record requires",
           "any_of": [
             "git show :",
-            "fail-closed",
-            "index"
+            "fail-closed"
           ]
         },
         {
@@ -316,8 +313,24 @@
       "no_match_run": "printed 'no match' and 'Search surface:', and a Verdict: line first",
       "git_status": "0 lines for tracked paths after the runs; only tests/evals/recall/ is untracked output"
     },
-    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on SKILL.md at the commit above (the first with-skill run used an earlier SKILL.md and is kept in runs/2026-11-02/superseded-skill-v1/). The baseline arm was run once and does not depend on SKILL.md. Cost of the with-skill re-run: 2.42 USD.",
-    "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
+    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on SKILL.md at the commit above (the first with-skill run used an earlier SKILL.md and is kept in runs/2026-11-02/superseded-skill-v1/). The baseline arm was run once and does not depend on SKILL.md. Cost of the with-skill re-run: 2.42 USD. Three generic phrases (index, blind, 60s) were removed from the action assertions after review; the rescored action rates did not change (10/12 with skill, 11/12 without).",
+    "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'",
+    "spot_check": {
+      "why": "Code review and intent review found that eval 11 listed an out-of-date record in Do first, that bug records had no section for their Fix, and that the no-match case contradicted itself. SKILL.md was changed after the table above was measured. The table was not re-measured.",
+      "skill_changes": [
+        "out-of-date rule: superseded, or a needed command or file is missing (a missing affects path alone is not enough)",
+        "Fix of a bug record can go in Do first",
+        "new Verdict value: out-of-date match",
+        "headings for empty parts are not printed",
+        "no-match output starts with Verdict: no match"
+      ],
+      "runs": "13 spot runs over 4 iterations (about 2.20 USD); only the last 3 are saved, in runs/2026-11-02/spot-check-final/. The earlier iterations were not saved.",
+      "final_result": {
+        "11": "Verdict: out-of-date match; the record is only under Possibly stale",
+        "07": "3 / 3 / 3 items",
+        "02": "3 / 3 / 3 items"
+      }
+    }
   },
   "scoring": {
     "rule": "Phrase match, same rule for both arms. A path assertion hits when the record path appears anywhere in the output. An action assertion hits when at least one any_of phrase appears in the output (case-insensitive), anywhere. A stale_premise assertion hits when the record path appears under the Possibly stale heading and not under Do first, Avoid or Check before done; it is scored on the with-skill arm only, because the baseline has no such sections (N/A).",
