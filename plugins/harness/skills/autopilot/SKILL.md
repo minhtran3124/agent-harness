@@ -14,7 +14,7 @@ skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the
 1. **Scope.** Parse `$ARGUMENTS`: a milestone, issue numbers, or free text (one ticket, no number).
    Get `<repo>` (`gh repo view --json nameWithOwner -q .nameWithOwner`), the remote name
    (`git remote -v`) and the checkout dir (`git rev-parse --show-toplevel`). For a milestone run
-   `gh issue list --repo <repo> --milestone "<name>" --state open --json number,title,labels`.
+   `gh issue list --repo <repo> --milestone '<name>' --state open --json number,title,labels` (`'`→`'\''`).
    Read each ticket: `gh issue view <n> --repo <repo> --json title,body,labels -q ...`.
    Base = the `base=` argument, else the current branch. Name it in the summary.
 2. **Triage.** One call per ticket, all in one message. A Haiku `researcher` finds facts (code the

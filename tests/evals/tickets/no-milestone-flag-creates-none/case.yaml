@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: no-milestone-flag-creates-none
+expected_outcome: |
+  No milestone is created or attached, and the next step names issue numbers.

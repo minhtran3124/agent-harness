@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: secret-in-brief-stops
+expected_outcome: |
+  A secret in a brief for a public repo stops the run, nothing is created, and the value is not repeated.
