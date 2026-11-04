@@ -1,0 +1,19 @@
+Verdict: reusable pattern
+
+**Do first**
+1. Follow the auto-score / manual-run playbook: labeled fixtures (`request.md` plus a parseable `truth.md`, with `any` for dimensions a fixture does not assert), blind subagent runs, then a deterministic unit-tested pure-Python scorer with no LLM. Dispatch each run with only the request and the skill, never `truth.md`. Record: `docs/solutions/harness/skill-eval-blind-run-scoring.md` (confirmed_at 2026-10-16). Command from the record: `python3 scripts/score_intake_eval.py --run <run_dir> [--strict]`.
+2. Make the safety-critical dimension a hard fail (`--strict`), and report the judgment dimensions (lane, confidence) separately. Run several blind runs per fixture, because one run hides borderline flips. Normalize LLM free text in the scorer by comparing alphanumerics only. Mark every decision the fixture already settles as `settled-by-fixture` before the first run, and score only the open rows. Record: `docs/solutions/harness/skill-eval-blind-run-scoring.md` (confirmed_at 2026-10-16).
+3. If the eval targets a reviewer or scorer prompt, add a canary and a historical replay. The canary is a fixture with each target defect planted once, clean controls beside them, and no pre-labels. It is the gate: every planted defect gets the expected severity and no control gets a finding. The replay reruns a case an old review approved and a later review caught. It is evidence only, not a gate. Record: `docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md` (confirmed_at 2026-10-16). Gate check from the record: `grep -q "^Canary result: pass$" specs/<slug>/canary.md`.
+
+**Check before done**
+- When N blind runs consistently disagree with a fixture, suspect the answer key before the skill. Revise `truth.md`, mark the earlier runs non-comparable, and do not tune the skill to a wrong key. Record the first scored run as the record, and do not re-run a fixture until it passes.
+- State every number as a claim about these fixtures and this skill only. It says nothing about the full chain or the real-world rate (`not_observed != absent`). Say in `### Not auto-verified` that one canary run is one sample.
+- Plant canary defects in the reviewer's exact wording, for example "computed by the code under test" and not just "copied from the output". Say which tree the replay could search.
+
+**Possibly stale**
+- `docs/solutions/harness/skill-eval-blind-run-scoring.md` and `docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md`: both have confirmed_at 2026-10-16, which is 19 days before 2026-11-04, so neither is over 30 days old. Their `affects` paths are missing, but the advice still holds.
+  - `scripts/score_intake_eval.py` is not in the repo. I found no file of that name anywhere under the worktree, including `plugins/harness/`. The scorer command in Do first #1 therefore cannot run as written, and the scorer must be written or found.
+  - The `evals dir:` entry is a malformed placeholder. The nearest existing locations are `tests/evals/recall/` and `tests/evals/tickets/`; `tests/evals/tickets/mocks/score.py` is a scorer-like file I did not open.
+  - `specs/gh-312-test-seams/canary.md` was not found by `find` (I did not search `specs/` by path).
+
+**Search surface:** `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/INDEX.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/critical-patterns.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/harness/skill-eval-blind-run-scoring.md`, `/home/minhtran/Documents/minh.tran/projects/.ship-agent-harness/recall-brief/t556/docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md`

@@ -1,20 +1,24 @@
 Verdict: known risk
 
 **Do first**
-- Make the hook file executable in git: `git update-index --chmod=+x <hook path>` (docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md, confirmed_at 2026-09-29). The record's cause is the same as yours: the file was created at mode `100644` and registered with no interpreter, so the runtime got "Permission denied" and exit 126.
-- Check the mode that git holds, not only the local file. Run `git ls-files -s -- <hook path>` and expect `100755`. A local `chmod +x` can hide a committed `100644`, and deploy copies the tracked mode (same record, confirmed_at 2026-09-29).
-- Test the hook the way the runtime runs it: execute the path directly, for example `printf '%s' '{"tool_name":"Bash","tool_input":{"command":"ls"}}' | sh -c '<hook path>'`. If you only run `bash <hook path>`, the test passes even when the execute bit is missing (same record, confirmed_at 2026-09-29).
+- Check the hook's git index mode, not just the working-tree mode. Run `git ls-files -s -- <hook path>`. If it shows `100644`, run `git update-index --chmod=+x <hook path>`. Then confirm the mode is `100755` in the diff. A local `chmod +x` alone doesn't fix deploys, because they copy the tracked mode. The record explains that a bare-command hook without the execute bit gives `Permission denied` and exit 126. Source: docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md (confirmed_at 2026-09-29).
+- Reproduce the failure the way the runtime runs it: execute the path directly, for example `sh -c '<hook path>'`. Don't use `bash <path>`, because that ignores the execute bit. Same record (2026-09-29).
+- Alternative that avoids the problem: register the hook with an explicit interpreter instead of a bare path. This repo's `plugins/harness/hooks/hooks.json` already uses exec form with `command: "bash"` and `args: ["${CLAUDE_PLUGIN_ROOT}/hooks/<script>"]`. That form needs no execute bit. This comes from the current wiring test, not from the record's own advice.
 
 **Avoid**
-- Treating exit 126 as a block. Claude Code blocks a PreToolUse hook only on exit 2. With exit 126 the action goes ahead and the gate is silently skipped.
-- Testing with `bash hooks/x.sh`. It ignores the execute bit, so a green suite hid this defect through 13 task reviews and 200+ assertions.
-- Fixing only your local copy. `scripts/deploy-harness.sh` copies with `cp` and has no `chmod`, so every consumer install inherits the mode that is committed.
+- Don't test the hook with `bash hooks/x.sh`. It passes while the real bare-path run fails with exit 126.
+- Don't treat exit 126 as a block. Claude Code blocks only on exit 2, so the hook fails open and its gate silently does nothing.
+- Don't create hook files with an editor or the agent Write tool and commit without checking the mode. They default to `100644`.
 
 **Check before done**
-- Run `bash tests/scripts/settings-wiring.test.sh`. Its case "every settings.json hook command resolves to an executable file with a bash shebang" checks `-x` and index mode `100755` for every registered command.
-- Run `git diff --summary` and look for `create mode 100644 hooks/...` before you commit a new hook.
+- Run `bash tests/scripts/settings-wiring.test.sh`. It asserts that each registered script exists, has a shebang, and is `100755` in the index.
+- Run `git diff --summary` and look for `create mode 100644 ...hooks/...` before the first commit.
+- Run the hook through its registered form and confirm it gives exit 0 or a deliberate exit 2, not 126.
 
 **Possibly stale**
-- docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md is 36 days old (confirmed_at 2026-09-29, today 2026-11-04), which is over 30 days. Its `affects` path `hooks/commit-gate.sh` is not found anywhere in the repo. `tests/scripts/settings-wiring.test.sh` does exist. The index notes that `risk-corroboration.sh` was merged into `hooks/commit-gate.sh` in specs/simplify-hook-surface, so the hook may have been renamed or moved. The advice does not depend on that file, so it still holds.
+- The record's `affects` path `hooks/commit-gate.sh` is missing. No `commit-gate*` file exists anywhere in the repo. The hooks now live in `plugins/harness/hooks/` (clean-worktrees, merge-guard, pr-opened, secrets-scan, session-rules). critical-patterns.md notes that risk-corroboration was merged into commit-gate by specs/simplify-hook-surface.
+- The record's regression-test wording is partly out of date. `tests/scripts/settings-wiring.test.sh` still exists, but it now checks `plugins/harness/hooks/hooks.json` exec-form hooks rather than bare `settings.json` commands. The repo's own `settings.json` is now asserted to wire no hooks. The index-mode `100755` check still exists. The record's `$CLAUDE_PROJECT_DIR/.claude/hooks/... --profile` deploy derivation was not checked and may be gone.
+- The principle still holds: any bare-path command registration needs the execute bit in the index. The commands and file names in the record do not hold.
+- The record is 36 days old (2026-09-29 vs 2026-11-04), which is more than 30 days.
 
-**Search surface:** docs/solutions/INDEX.md, docs/solutions/critical-patterns.md, docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md, Glob tests/scripts/settings-wiring.test.sh (found), Glob **/hooks/commit-gate.sh (not found), Glob **/commit-gate.sh (not found)
+**Search surface:** docs/solutions/INDEX.md, docs/solutions/critical-patterns.md, docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md, tests/scripts/settings-wiring.test.sh (lines 1-32), plugins/harness/hooks/ (directory listing)

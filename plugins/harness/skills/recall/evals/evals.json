@@ -277,7 +277,7 @@
   ],
   "last_run": {
     "date": "2026-11-02",
-    "skill_md_commit": "78356e4",
+    "skill_md_commit": "08cc6f5",
     "results": {
       "path": {
         "with_skill": "12/12",
@@ -287,49 +287,32 @@
         ]
       },
       "action": {
-        "with_skill": "8/12",
+        "with_skill": "11/12",
         "without_skill": "11/12",
         "with_skill_misses": [
-          2,
-          5,
-          8,
-          11
+          5
         ],
         "without_skill_misses": [
           12
         ],
-        "note": "Evals 2, 5 and 11: the matching record says it is superseded, so the skill lists it only under Possibly stale and gives no action, although the advice still holds and the baseline states it. Eval 8: the advice is right but worded differently from the phrases (phrase miss)."
+        "note": "Eval 5: the advice is right (two separate Bash calls) but worded differently from the phrases (phrase miss). Eval 12 is a stale-only prompt, so the baseline miss is expected."
       },
       "stale_premise": {
-        "with_skill": "2/2",
-        "without_skill": "N/A (the baseline has no Possibly stale section)"
+        "with_skill": "1/2",
+        "without_skill": "N/A (the baseline has no Possibly stale section)",
+        "with_skill_misses": [
+          11
+        ],
+        "note": "Eval 11: the skill now judges each piece of advice. It puts the principle (read the gate mode from the index) in Do first, because the principle needs no missing file, and lists the rest in Possibly stale. The assertion expects the whole record under Possibly stale. Neither reading is clearly wrong, and the assertion was not changed after the run."
       }
     },
     "format_checks": {
-      "verdict_first_line": "12/12 with-skill outputs start with 'Verdict:'",
-      "item_caps": "No part holds more than 3 items in any of the 12 outputs. 5 outputs (evals 2, 3, 5, 11, 12) have Verdict: out-of-date match and no item in the three main parts.",
-      "listed_without_opening": "Eval 8 lists a record that it says it did not open, which the skill forbids.",
+      "verdict_first_line": "12/12 with-skill outputs start with 'Verdict:'; several add a sentence after it on the same line",
+      "item_caps": "No part holds more than 3 top-level items in any of the 12 outputs. Eval 12 holds none (Verdict: out-of-date match).",
       "no_match_run": "printed 'Verdict: no match' and 'Search surface:', and nothing else"
     },
-    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on the final SKILL.md at the commit above (about 2.43 USD). The earlier with-skill runs, on earlier SKILL.md versions, are kept in runs/2026-11-02/superseded-skill-v1/ (broken skill) and superseded-skill-v2/ (77fe2fd). The baseline arm was run once and does not depend on SKILL.md. Three generic phrases (index, blind, 60s) were removed from the action assertions after review. The baseline is the same prompt, repo, flags and tools, without the /harness:recall call.",
-    "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'",
-    "spot_check": {
-      "why": "Code review and intent review found that eval 11 listed an out-of-date record in Do first, that bug records had no section for their Fix, and that the no-match case contradicted itself. SKILL.md was changed after the table above was measured. The table was not re-measured.",
-      "skill_changes": [
-        "out-of-date rule: superseded, or a needed command or file is missing (a missing affects path alone is not enough)",
-        "Fix of a bug record can go in Do first",
-        "new Verdict value: out-of-date match",
-        "headings for empty parts are not printed",
-        "no-match output starts with Verdict: no match"
-      ],
-      "runs": "13 spot runs over 4 iterations (about 2.20 USD); only the last 3 are saved, in runs/2026-11-02/spot-check-final/. The earlier iterations were not saved.",
-      "final_result": {
-        "11": "Verdict: out-of-date match; the record is only under Possibly stale",
-        "07": "3 / 3 / 3 items",
-        "02": "3 / 3 / 3 items"
-      },
-      "status": "Superseded: the full with-skill run above was done on the final SKILL.md and replaces the spot check. Files in runs/2026-11-02/spot-check-final/ are kept as a record."
-    }
+    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on the final SKILL.md at the commit above (about 2.11 USD). Earlier with-skill runs, on earlier SKILL.md versions, are kept in runs/2026-11-02/superseded-skill-v1/, -v2/ (77fe2fd) and -v3/ (78356e4). The baseline arm was run once and does not depend on SKILL.md. Three generic phrases (index, blind, 60s) were removed from the action assertions after review. Items are counted at the top level of each part. The baseline is the same prompt, repo, flags and tools, without the /harness:recall call.",
+    "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
   },
   "scoring": {
     "rule": "Phrase match, same rule for both arms. A path assertion hits when the record path appears anywhere in the output. An action assertion hits when at least one any_of phrase appears in the output (case-insensitive), anywhere. A stale_premise assertion hits when the record path appears under the Possibly stale heading and not under Do first, Avoid or Check before done; it is scored on the with-skill arm only, because the baseline has no such sections (N/A).",
