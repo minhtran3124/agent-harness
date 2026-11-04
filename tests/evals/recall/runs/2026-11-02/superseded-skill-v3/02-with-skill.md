@@ -1,0 +1,7 @@
+Verdict: out-of-date match
+
+**Possibly stale.**
+- `docs/solutions/harness/hook-root-must-not-come-from-install-location.md` (confirmed_at 2026-09-09, 56 days old) is the record that fits your symptom, but it is out of date. Its footer says it is superseded by specs/simplify-hook-surface. The hooks it names are gone: `commit-quality-gate.sh`, `risk-corroboration.sh`, `session-knowledge.sh`, `blast-radius-check.sh` and `branch-guard.sh` are not in the repo. Its regression test `tests/hooks/repo-root-resolution.test.sh` is also missing. `plugins/harness/hooks/` now holds only `session-rules.sh`, `pr-opened.sh`, `clean-worktrees.sh`, `merge-guard.sh` and `secrets-scan.sh`.
+- `docs/solutions/harness/ratchet-matches-spelling-not-property.md` (confirmed_at 2026-09-09, 56 days old) is only a loose match. It covers a lint that matches a variable name instead of the defect, not your symptom. I left it out of the action parts for that reason. It is also over 30 days old. Of its `affects` paths, `scripts/check-hook-root-source.sh` exists. `hooks/session-knowledge.sh` and `tests/hooks/repo-root-resolution.test.sh` do not.
+
+**Search surface:** `docs/solutions/INDEX.md`, `docs/solutions/critical-patterns.md`, `docs/solutions/harness/hook-root-must-not-come-from-install-location.md`, `docs/solutions/harness/ratchet-matches-spelling-not-property.md`. I also globbed for the affected hook files, the regression test and `plugins/harness/**/*.{sh,json}`. I grepped `scripts/check-hook-root-source.sh`.

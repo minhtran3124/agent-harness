@@ -21,16 +21,29 @@ Read only. Never write, edit or run a command.
 2. Read `docs/solutions/critical-patterns.md`.
 3. Match the task text against Applicable When, the module (from `critical-patterns.md` and the record frontmatter) and Tags. Match on the symptom, not on the record title.
 4. Open at most 3 matching records. Read each one before you list it.
+5. For each opened record, check its `affects` paths with Glob or Grep. A file can have moved, so search for its name under `plugins/harness/` before you call the path missing.
+6. Judge each piece of advice in an opened record, not the whole record. A piece of advice is out of date when it needs a command or file that does not exist in the repo. A principle that needs no missing command or file still holds, even when the record is old, is marked superseded, or has a missing `affects` path. Ask: can the situation in the task still happen here?
+7. Note each record's age: compare `confirmed_at` with today's date from the session context.
 
 ## Output
 
-Print these three parts, in this order.
+Write for this task, not about the records. Print these parts in this order. Keep the headings in English.
 
-1. **Matches.** One line per record: the record path, then one line on why it applies.
-2. **Things to avoid.** Take them from the opened records whose `problem_type` is `failure` or `bug`. Write one line per item.
-3. **Search surface:** one line that lists every file you read.
+1. `Verdict:` the first line, one line only: known risk, reusable pattern, existing decision, `out-of-date match` (no piece of advice from any matching record still holds), or `no match` (no record matches).
+2. **Do first.** At most 3 actions, from `knowledge` records and from the Fix of `bug` records. Each action gives the record path, its `confirmed_at`, and the command when the record has one. Use the Correct Approach, Pattern, How to Use, Fix and Guardrail sections.
+3. **Avoid.** At most 3 items, from `failure` and `bug` records. Each item gives the consequence.
+4. **Check before done.** At most 3 checks, from Regression Test, Guardrail and Gotchas.
+5. **Already decided.** One line per `decision` record.
+6. **Possibly stale.** List each piece of advice that is out of date, each missing `affects` path, and each record more than 30 days old. Give the reason in one line.
+7. **Search surface:** every file you read, on one line.
 
-If no record matches, print `no match` in place of parts 1 and 2. Then still print the `Search surface:` line.
+Print nothing outside these parts. List only a record you opened: open it first, or leave it out. If a part has more than 3 items, keep the 3 that matter most for this task.
+
+Advice that still holds goes in parts 2 to 5, with the record's `confirmed_at`. Advice that is out of date goes only in Possibly stale, never in parts 2 to 5. Use the Fix, Correct Approach or Guardrail for the principle, and drop the steps that name a missing file or command.
+
+Do not print a heading, a note or `None` for a part that has no item. Verdict and Search surface always print.
+
+If no record matches, print `Verdict: no match` and the `Search surface:` line, and nothing else.
 
 ## Absence claims
 

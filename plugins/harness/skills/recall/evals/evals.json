@@ -5,103 +5,317 @@
       "id": 1,
       "problem_type": "bug",
       "prompt": "My hook shows 'Permission denied' / exit 126 after I registered it in settings.json as a bare path.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md",
+          "path": "docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "git update-index --chmod=+x",
+            "100755",
+            "chmod +x"
+          ]
+        }
       ]
     },
     {
       "id": 2,
       "problem_type": "bug",
       "prompt": "I installed the plugin from the marketplace cache and my script now reads and edits the wrong repo because it works out the project root from where the script lives.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/hook-root-must-not-come-from-install-location.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/hook-root-must-not-come-from-install-location.md",
+          "path": "docs/solutions/harness/hook-root-must-not-come-from-install-location.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "CLAUDE_PROJECT_DIR",
+            "git rev-parse --show-toplevel"
+          ]
+        }
       ]
     },
     {
       "id": 3,
       "problem_type": "failure",
       "prompt": "My ### Verify row in SUMMARY.md gets split into extra columns by the strict gate, and the whole-suite command in it times out.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md",
+          "path": "docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "pipe-free",
+            "grep -e"
+          ]
+        }
       ]
     },
     {
       "id": 4,
       "problem_type": "failure",
       "prompt": "Two implementer subagents ran in one shared worktree in the same wave, and one commit ended up with the other's files and a reset orphaned a commit.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/parallel-implementers-share-one-git-index.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/parallel-implementers-share-one-git-index.md",
+          "path": "docs/solutions/harness/parallel-implementers-share-one-git-index.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "git commit -- ",
+            "pathspec",
+            "its own worktree"
+          ]
+        }
       ]
     },
     {
       "id": 5,
       "problem_type": "failure",
       "prompt": "A Bash call that runs git add and git commit together gets denied by the PreToolUse hook while untracked python files sit in the tree.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md",
+          "path": "docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "two separate Bash",
+            "separate Bash"
+          ]
+        }
       ]
     },
     {
       "id": 6,
       "problem_type": "knowledge",
       "prompt": "My SKILL.md is over the 600 word limit and I need room for new sentences without losing meaning.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/deletion-test-for-word-ceiling.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/deletion-test-for-word-ceiling.md",
+          "path": "docs/solutions/harness/deletion-test-for-word-ceiling.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "deletion test",
+            "whole sentence",
+            "references/"
+          ]
+        }
       ]
     },
     {
       "id": 7,
       "problem_type": "knowledge",
       "prompt": "I want to build an eval that proves a prompt-driven skill works by measuring model judgment, with blind runs and a scorer that is not the model itself.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/skill-eval-blind-run-scoring.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/skill-eval-blind-run-scoring.md",
+          "path": "docs/solutions/harness/skill-eval-blind-run-scoring.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "deterministic scorer",
+            "truth.md"
+          ]
+        }
       ]
     },
     {
       "id": 8,
       "problem_type": "knowledge",
       "prompt": "I am adding a new file under hooks/ that is not wired into settings.json yet, and the risk gate still treats the change as high risk.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md",
+          "path": "docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "Lane: high-risk",
+            "high-risk up front",
+            "Rollback"
+          ]
+        }
       ]
     },
     {
       "id": 9,
       "problem_type": "decision",
       "prompt": "I need to change which model and effort the reviewer and intent reviewer roles use, and wonder whether review should use a different model than the implementer.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/review-model-diversity-dropped-decisions.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/review-model-diversity-dropped-decisions.md",
+          "path": "docs/solutions/harness/review-model-diversity-dropped-decisions.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "claude-opus-5-5",
+            "diversity rule",
+            "fresh context"
+          ]
+        }
       ]
     },
     {
       "id": 10,
       "problem_type": "decision",
       "prompt": "I want to add controlled-English (ASD-STE100) lint checks or vendor a third-party style skill, and need to know what was decided about the ratchet and pilot.",
-      "expected_output": "Lists the record path in Matches, ends with a Search surface: line.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
       "assertions": [
-        "Output lists docs/solutions/harness/ste100-adoption-decisions.md"
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/ste100-adoption-decisions.md",
+          "path": "docs/solutions/harness/ste100-adoption-decisions.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "Pilot then gate",
+            "UPSTREAM.md",
+            "synonym-rotation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "problem_type": "bug",
+      "stale_premise": true,
+      "prompt": "I am writing a commit-time hook that reads the gate mode from harness-manifest.json, and an unstaged edit of that file could loosen the decision for the committed tree.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
+      "assertions": [
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/gate-config-must-read-index.md",
+          "path": "docs/solutions/harness/gate-config-must-read-index.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "git show :",
+            "fail-closed"
+          ]
+        },
+        {
+          "type": "stale_premise",
+          "text": "Record is under Possibly stale and not under Do first, Avoid or Check before done",
+          "path": "docs/solutions/harness/gate-config-must-read-index.md",
+          "reason": "affects hooks/risk-corroboration.sh and tests/hooks/risk-corroboration.test.sh are absent at f042f46 (hooks/ no longer exists at the repo root; the record is marked superseded by specs/simplify-hook-surface); confirmed_at 2026-07-23 is also older than 30 days"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "problem_type": "knowledge",
+      "stale_premise": true,
+      "prompt": "I edited techstacks/README.md and want to keep it in step with its source twin templates/structure/techstacks-README.md that init-structure.sh scaffolds.",
+      "expected_output": "First line starts with Verdict:. Do first, Avoid and Check before done have at most 3 items each. Possibly stale holds records older than 30 days or with a premise that does not match the repo. Ends with a Search surface: line.",
+      "assertions": [
+        {
+          "type": "path",
+          "text": "Output names docs/solutions/harness/scaffold-template-instance-parity.md",
+          "path": "docs/solutions/harness/scaffold-template-instance-parity.md"
+        },
+        {
+          "type": "action",
+          "text": "Output states the action the record requires",
+          "any_of": [
+            "diff -q",
+            "both files",
+            "create-if-missing"
+          ]
+        },
+        {
+          "type": "stale_premise",
+          "text": "Record is under Possibly stale and not under Do first, Avoid or Check before done",
+          "path": "docs/solutions/harness/scaffold-template-instance-parity.md",
+          "reason": "the record is marked SUPERSEDED by ADR 0010 and techstacks/ does not exist at f042f46; confirmed_at 2026-08-17 is also older than 30 days"
+        }
       ]
     }
   ],
   "last_run": {
     "date": "2026-11-02",
-    "with_skill": "10/10",
-    "without_skill": "8/10",
-    "without_skill_misses": [
-      2,
-      5
-    ],
-    "no_match_run": "printed 'no match' and 'Search surface:'",
-    "note": "Author-written prompts; the hit rate can be biased upward. Baseline: same prompt, same repo, same tools (Read, Grep, Glob), without /harness:recall. Hit = expected record path appears in the output.",
+    "skill_md_commit": "08cc6f5",
+    "results": {
+      "path": {
+        "with_skill": "12/12",
+        "without_skill": "11/12",
+        "without_skill_misses": [
+          5
+        ]
+      },
+      "action": {
+        "with_skill": "11/12",
+        "without_skill": "11/12",
+        "with_skill_misses": [
+          5
+        ],
+        "without_skill_misses": [
+          12
+        ],
+        "note": "Eval 5: the advice is right (two separate Bash calls) but worded differently from the phrases (phrase miss). Eval 12 is a stale-only prompt, so the baseline miss is expected."
+      },
+      "stale_premise": {
+        "with_skill": "1/2",
+        "without_skill": "N/A (the baseline has no Possibly stale section)",
+        "with_skill_misses": [
+          11
+        ],
+        "note": "Eval 11: the skill now judges each piece of advice. It puts the principle (read the gate mode from the index) in Do first, because the principle needs no missing file, and lists the rest in Possibly stale. The assertion expects the whole record under Possibly stale. Neither reading is clearly wrong, and the assertion was not changed after the run."
+      }
+    },
+    "format_checks": {
+      "verdict_first_line": "12/12 with-skill outputs start with 'Verdict:'; several add a sentence after it on the same line",
+      "item_caps": "No part holds more than 3 top-level items in any of the 12 outputs. Eval 12 holds none (Verdict: out-of-date match).",
+      "no_match_run": "printed 'Verdict: no match' and 'Search surface:', and nothing else"
+    },
+    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on the final SKILL.md at the commit above (about 2.11 USD). Earlier with-skill runs, on earlier SKILL.md versions, are kept in runs/2026-11-02/superseded-skill-v1/, -v2/ (77fe2fd) and -v3/ (78356e4). The baseline arm was run once and does not depend on SKILL.md. Three generic phrases (index, blind, 60s) were removed from the action assertions after review. Items are counted at the top level of each part. The baseline is the same prompt, repo, flags and tools, without the /harness:recall call.",
     "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'"
+  },
+  "scoring": {
+    "rule": "Phrase match, same rule for both arms. A path assertion hits when the record path appears anywhere in the output. An action assertion hits when at least one any_of phrase appears in the output (case-insensitive), anywhere. A stale_premise assertion hits when the record path appears under the Possibly stale heading and not under Do first, Avoid or Check before done; it is scored on the with-skill arm only, because the baseline has no such sections (N/A).",
+    "limit": "A strict phrase match can miss a correct rewrite and can hit on an incidental phrase. Prompts and phrases are written by the same author as the skill, so rates can be biased upward."
   }
 }
