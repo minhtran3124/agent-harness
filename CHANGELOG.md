@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [5.6.0] — 2026-11-04
+
+- feat(skills): make /harness:recall output a direct task brief (PR #558)
+
 ## [5.5.0] — 2026-11-02
 
 - feat(skills): add /harness:recall to search docs/solutions/ before work starts (PR #555)
