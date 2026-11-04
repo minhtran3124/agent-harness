@@ -1,29 +1,22 @@
 Verdict: known risk
 
-**Do first.**
-- Pick one of two options before dispatch (`docs/solutions/harness/parallel-implementers-share-one-git-index.md`, confirmed_at 2026-09-29, no command in the record):
-  - Give each same-wave task its own worktree and merge at the wave boundary.
-  - Have each implementer commit only its own paths with `git commit -- <its Files list>`.
-- Put the ban on `git reset`, `git commit --amend` and `git stash` in the shared worktree into the implementer brief. If a commit swept foreign files, the implementer must report it and stop (same record).
-- If an orphan already exists, recover it this way (same record):
-  1. Check that the staged index is byte-identical to the orphaned commit's tree. For each file, compare `git show <sha>:<f> | git hash-object --stdin` with `git rev-parse :<f>`.
-  2. Re-commit the staged changes as a normal new commit.
-  3. Confirm `git diff <orphan> <new>` is empty.
-  4. Record the mixed commit as a deviation.
-  5. Do not run the denied reset yourself, and do not rewrite history.
+**Do first**
+- Give each same-wave implementer its own worktree and merge at the wave boundary. If that is not possible, tell each one to commit only its own files with `git commit -- <its Files list>`. They must never run `git reset`, `git commit --amend` or `git stash` in a shared worktree. Source: docs/solutions/harness/parallel-implementers-share-one-git-index.md (confirmed_at 2026-09-29).
+- If a commit has already taken a sibling's files, do not run a reset. Check that the staged index matches the orphaned commit's tree: `git show <sha>:<f> | git hash-object --stdin` against `git rev-parse :<f>` for each file. Then re-commit the staged changes as a normal new commit and confirm `git diff <orphan> <new>` is empty. Record the mixed commit as a deviation. Same record (confirmed_at 2026-09-29).
+- Add the guardrail rule to the implementer prompt. The record only proposes it. Same record (confirmed_at 2026-09-29).
 
-**Avoid.**
-- A plain `git commit` in a shared worktree. It records everything anyone staged, so a commit gets another task's files and its message is wrong.
-- `git reset --soft HEAD~1` to undo that. A sibling may already have moved `HEAD`, so the reset orphans the sibling's commit and leaves its files staged but uncommitted.
-- Running a reset for a subagent after it was denied. That is permission laundering.
+**Avoid**
+- A plain `git commit` in a shared worktree. It records the whole index, so it commits sibling tasks' staged files into a commit whose message describes only your task.
+- `git reset --soft HEAD~1` to undo that commit. A sibling may have committed on top, so the reset moves `HEAD` off the sibling's commit. That commit is orphaned and its files are left staged but not committed.
+- Running a reset that auto mode refused, on the subagent's behalf. This is permission laundering. Verify the index and re-commit instead.
 
-**Check before done.**
-- Check that each commit holds only its own task's Files list. The record says disjoint Files sets stop content conflicts but not index or `HEAD` races.
-- Check that the recovery commit's diff against the orphan is empty and that no commit is left dangling.
-- Check that the mixed commit is recorded as a deviation.
+**Check before done**
+- Each commit in the wave holds only that task's Files list. Confirm with `git show --stat` on every commit.
+- No commit in the wave is orphaned or dangling, and the index is clean after the last task.
+- The prompt's pathspec-commit rule has a presence case in `tests/scripts/context-propagation-regression.test.sh`, so the rule cannot silently drop out. The record lists this as part of the proposed guardrail. I did not check that file or its test.
 
-**Possibly stale.**
-- `docs/solutions/harness/parallel-implementers-share-one-git-index.md`: the `affects` path `skills/subagent-driven-development/implementer-prompt.md` has moved. The file is now `plugins/harness/skills/implement/implementer-prompt.md`. A grep of it found no `git reset`, `--amend`, `stash`, pathspec or `git commit` rule. The record's Guardrail was marked "proposed" and has not been added, so the risk is still open. The record is 34 days old.
-- `docs/solutions/harness/wave-boundary-verify-evidence.md` was read but not used. It concerns Verify rows in SUMMARY.md, not this symptom. It also notes that `commit-quality-gate.sh` was merged into `hooks/commit-gate.sh`, so its `affects` path is stale.
+**Possibly stale**
+- docs/solutions/harness/parallel-implementers-share-one-git-index.md is not out of date. It is 36 days old (confirmed_at 2026-09-29, today 2026-11-04), which is more than 30 days.
+- Its `affects` path `skills/subagent-driven-development/implementer-prompt.md` no longer exists. The file is now at `plugins/harness/skills/implement/implementer-prompt.md`. A search of that file for `git commit`, `git reset`, `amend` and `stash` found no match. So the proposed guardrail is not yet in the prompt, and the advice still applies.
 
-**Search surface:** `docs/solutions/INDEX.md`, `docs/solutions/critical-patterns.md`, `docs/solutions/harness/parallel-implementers-share-one-git-index.md`, `docs/solutions/harness/wave-boundary-verify-evidence.md`, `plugins/harness/skills/implement/implementer-prompt.md` (grep only)
+**Search surface:** docs/solutions/INDEX.md, docs/solutions/critical-patterns.md, docs/solutions/harness/parallel-implementers-share-one-git-index.md, plugins/harness/skills/implement/implementer-prompt.md (grepped only)

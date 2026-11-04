@@ -277,7 +277,7 @@
   ],
   "last_run": {
     "date": "2026-11-02",
-    "skill_md_commit": "77fe2fd",
+    "skill_md_commit": "78356e4",
     "results": {
       "path": {
         "with_skill": "12/12",
@@ -287,33 +287,31 @@
         ]
       },
       "action": {
-        "with_skill": "10/12",
+        "with_skill": "8/12",
         "without_skill": "11/12",
         "with_skill_misses": [
+          2,
           5,
-          12
+          8,
+          11
         ],
         "without_skill_misses": [
           12
         ],
-        "note": "Eval 5 is a phrase miss: the output gives the right advice (run git add in its own Bash call) in other words. Eval 12 is a stale-only prompt where no action is expected."
+        "note": "Evals 2, 5 and 11: the matching record says it is superseded, so the skill lists it only under Possibly stale and gives no action, although the advice still holds and the baseline states it. Eval 8: the advice is right but worded differently from the phrases (phrase miss)."
       },
       "stale_premise": {
-        "with_skill": "1/2",
-        "without_skill": "N/A (the baseline has no Possibly stale section)",
-        "with_skill_misses": [
-          11
-        ],
-        "note": "Eval 11: the record is listed in Possibly stale and also in Do first, with a command that names a file that no longer exists."
+        "with_skill": "2/2",
+        "without_skill": "N/A (the baseline has no Possibly stale section)"
       }
     },
     "format_checks": {
       "verdict_first_line": "12/12 with-skill outputs start with 'Verdict:'",
-      "item_caps": "11 of 12 outputs hold at most 3 items in each of Do first, Avoid and Check before done. Eval 7 holds 4 in Check before done. Eval 12 holds none, by design.",
-      "no_match_run": "printed 'no match' and 'Search surface:', and a Verdict: line first",
-      "git_status": "0 lines for tracked paths after the runs; only tests/evals/recall/ is untracked output"
+      "item_caps": "No part holds more than 3 items in any of the 12 outputs. 5 outputs (evals 2, 3, 5, 11, 12) have Verdict: out-of-date match and no item in the three main parts.",
+      "listed_without_opening": "Eval 8 lists a record that it says it did not open, which the skill forbids.",
+      "no_match_run": "printed 'Verdict: no match' and 'Search surface:', and nothing else"
     },
-    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on SKILL.md at the commit above (the first with-skill run used an earlier SKILL.md and is kept in runs/2026-11-02/superseded-skill-v1/). The baseline arm was run once and does not depend on SKILL.md. Cost of the with-skill re-run: 2.42 USD. Three generic phrases (index, blind, 60s) were removed from the action assertions after review; the rescored action rates did not change (10/12 with skill, 11/12 without).",
+    "note": "Author-written prompts and phrases; the rates can be biased upward. Phrase match is not a judge. One run per prompt on the with-skill arm, on the final SKILL.md at the commit above (about 2.43 USD). The earlier with-skill runs, on earlier SKILL.md versions, are kept in runs/2026-11-02/superseded-skill-v1/ (broken skill) and superseded-skill-v2/ (77fe2fd). The baseline arm was run once and does not depend on SKILL.md. Three generic phrases (index, blind, 60s) were removed from the action assertions after review. The baseline is the same prompt, repo, flags and tools, without the /harness:recall call.",
     "command": "claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'",
     "spot_check": {
       "why": "Code review and intent review found that eval 11 listed an out-of-date record in Do first, that bug records had no section for their Fix, and that the no-match case contradicted itself. SKILL.md was changed after the table above was measured. The table was not re-measured.",
@@ -329,7 +327,8 @@
         "11": "Verdict: out-of-date match; the record is only under Possibly stale",
         "07": "3 / 3 / 3 items",
         "02": "3 / 3 / 3 items"
-      }
+      },
+      "status": "Superseded: the full with-skill run above was done on the final SKILL.md and replaces the spot check. Files in runs/2026-11-02/spot-check-final/ are kept as a record."
     }
   },
   "scoring": {
