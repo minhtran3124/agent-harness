@@ -9,6 +9,10 @@ date: 2026-07-23
 
 # 0018. Loosening knob lives in the manifest and settings.local.json, not settings.json
 
+> Superseded in part by specs/simplify-hook-surface (2026-09-29): `hooks/risk-corroboration.sh` was folded into
+> `hooks/commit-gate.sh`; read `risk-corroboration.sh` below as that logic. Affects: `harness-manifest.json`,
+> `scripts/check_manifest.py`, `scripts/check_gate_modes_smoke.py`. Tags: gate-modes, manifest-as-authority.
+
 ## Context
 
 Review item said: add an `env` block to root `settings.json` with

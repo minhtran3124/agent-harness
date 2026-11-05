@@ -649,3 +649,10 @@ def test_date_absent_uses_today(tmp_path):
     adr, inp = setup(tmp_path, [dec(title="Undated")])
     assert run(adr, inp).returncode == 0
     assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()
+
+
+def test_gate_mode_adrs_keep_the_hook_surface_supersession_marker():
+    adr_dir = Path(__file__).resolve().parent.parent / "docs/adr"
+    for n in ("0017", "0018", "0019", "0020"):
+        text = next(adr_dir.glob(f"{n}-*.md")).read_text()
+        assert "Superseded in part by specs/simplify-hook-surface" in text, n
