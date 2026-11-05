@@ -7,8 +7,7 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 # Compound — durable session knowledge
 
 Use this skill when a non-obvious bug, reusable pattern, considered decision, or useful failure
-is worth preserving. Do not emit a document merely because a
-session ended.
+is worth preserving.
 
 ## Extract and select
 
@@ -32,8 +31,7 @@ For the bug track, when `specs/<slug>/diagnosis.md` exists, take the root cause 
 
 Skip incomplete or `[none]` tracks. Preserve a relevant active spec’s alternatives as decision
 inputs. A spec number labelled `prediction → measured` (a `prediction` kept beside its
-`measured <YYYY-MM-DD> <source>` value) is a learning source. The gap between the two is evidence
-about how the team estimates.
+`measured <YYYY-MM-DD> <source>` value) is a learning source.
 
 ## Write canonical records
 
@@ -65,8 +63,6 @@ Run the authority at the end of every run, even when the run wrote nothing:
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_solution_index.py
 ```
 
-Do not manually scan/sort/render `INDEX.md`. It excludes INDEX/critical patterns, preserves exact
-frontmatter values, and offers `--check`/`--dry-run` for review.
 `applicable_when` is required in every solution file. Run `python3 plugins/harness/scripts/rebuild_solution_index.py --check`
 and, in the harness repo, `python3 scripts/check_frontmatter_contract.py` before you finish. Details are in `docs/solutions/README.md`.
 
