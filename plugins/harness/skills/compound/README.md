@@ -94,7 +94,7 @@ Every emitted file carries this frontmatter:
 
 ```yaml
 ---
-problem_type: [bug | knowledge | decision | failure]
+problem_type: [bug | knowledge | failure]
 module: [primary module, e.g. kb/embedding, services/ai, skills/compound]
 tags: [3-6 kebab-case tags, comma-separated]
 severity: [critical | standard]
@@ -109,7 +109,6 @@ confirmed_at: YYYY-MM-DD
 
 **`applicable_when` is the primary discovery field.** It completes a specific sentence form:
 - Knowledge: "Use this pattern when…"
-- Decision: "Make this decision when…"
 - Failure: "Watch for this when…"
 - Bug: inherited from `CONTEXT_ANALYSIS` (same sentence as the session-level trigger)
 

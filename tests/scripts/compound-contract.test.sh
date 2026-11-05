@@ -28,6 +28,9 @@ if grep -q '`\[none\]`' "$ROOT/$SKILL" && grep -q 'not exactly `high`, `medium` 
 t "no template or solutions entry writes problem_type: decision (one decision store: docs/adr)"
 if grep -rlq '^problem_type: decision' "$D/templates" "$ROOT/docs/solutions" || [ -e "$D/templates/decision-track.md" ]; then fail "second decision store still written"; else pass; fi
 
+t "compound README and context analyzer do not offer problem_type decision"
+if grep -q 'problem_type: \[bug | knowledge | decision' "$D/README.md" || grep -q 'problem_types:.*applicable: bug, knowledge, decision' "$D/subagents/context-analyzer-prompt.md"; then fail "problem_type decision still offered"; else pass; fi
+
 t "docs/solutions/INDEX.md matches the solution docs (regenerated after a problem_type change)"
 if python3 "$ROOT/plugins/harness/scripts/rebuild_solution_index.py" --root "$ROOT" --check >/dev/null 2>&1; then pass; else fail "INDEX.md is stale; run rebuild_solution_index.py"; fi
 
