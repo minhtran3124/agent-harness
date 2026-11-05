@@ -49,7 +49,7 @@ def test_numbers_continue_after_0001(tmp_path):
     assert [o["number"] for o in out] == ["0002", "0003"]
     assert (adr / "0002-one.md").is_file() and (adr / "0003-two.md").is_file()
     text = (adr / "0002-one.md").read_text()
-    assert "status: proposed" in text and "# 0002. One" in text and "- a\n- b" in text
+    assert "status: accepted" in text and "# 0002. One" in text and "- a\n- b" in text
 
 
 def test_files_are_ordered_by_ticket_then_stage(tmp_path):
@@ -59,7 +59,7 @@ def test_files_are_ordered_by_ticket_then_stage(tmp_path):
     adr, inp = setup(tmp_path, ds)
     out = json.loads(run(adr, inp).stdout)
     assert [o["title"] for o in out] == ["d", "b", "a", "c"]
-    assert "status: proposed" in (adr / "0002-d.md").read_text()
+    assert "status: accepted" in (adr / "0002-d.md").read_text()
 
 
 def test_slug_rules_and_collision(tmp_path):
@@ -414,12 +414,11 @@ def test_needs_review_never_makes_a_file(tmp_path):
     assert md_files(adr) == []
 
 
-def test_status_proposed_when_needs_review(tmp_path):
+def test_status_always_accepted_even_when_needs_review(tmp_path):
     adr, inp = setup(tmp_path, [dec(needs_review=True)], existing=())
     run(adr, inp)
     text = (adr / "0001-use-a-queue.md").read_text()
-    assert "status: proposed" in text and "needs_review: true" in text
-    assert "status: accepted" not in text
+    assert "status: accepted" in text and "status: proposed" not in text
 
 
 def test_no_needs_review_status_in_docs_or_script():

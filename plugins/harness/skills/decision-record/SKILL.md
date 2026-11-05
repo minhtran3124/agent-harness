@@ -28,7 +28,7 @@ allowed-tools: Read, Write, Bash, Skill
    contract, or how users work, and (b) had at least two viable options, listed in options. The script
    also needs two real options and a title that is not a Boundary or `UAT not run` note.
    `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
-3. Born `accepted`, or `proposed` when `needs_review` is true. An ADR in the folder for the same numeric ticket with the same
+3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
    title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
 4. Every decision is one row in the `## Decisions` PR table (`ADR file`, `owner-confirmed`,
    `already recorded (ADR NNNN)` or `table only`).

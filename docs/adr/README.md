@@ -64,8 +64,7 @@ commit no longer matches a file here. Get a pruned ADR back with
 
 | Status | Meaning |
 |---|---|
-| `proposed` | A model made the decision and `needs_review` is true; the owner has not confirmed it. Change it to `accepted` (or write a superseding ADR) after the review. |
-| `accepted` | The decision stands. A new file is born `accepted` unless `needs_review` is true. |
+| `accepted` | The decision stands. A new file is always born `accepted`. To change a decision, write a superseding ADR. |
 | `superseded` | A later ADR replaced it. |
 
 Older files may carry a legacy status that is none of these; a later cleanup (#566) handles them.

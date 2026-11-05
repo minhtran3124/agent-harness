@@ -7,8 +7,8 @@ Duplicates (same ticket, same title slug or same non-empty context) are merged f
 A file is written only for a decision with adr true (it changes harness behavior, a data or config
 contract, or how users work) that lists at least two real options (not n/a), and whose title does
 not start with "Boundary: " or "UAT not run". needs_review is the separate owner-ask flag and never
-makes a file; confidence never decides this, it only marks a guess in the table. Files are born
-accepted, or proposed when needs_review is true (the owner has not looked yet). A decision whose ticket already has an ADR in the folder with the same title slug or the
+makes a file; confidence never decides this, it only marks a guess in the table. Files are always born
+accepted. A decision whose ticket already has an ADR in the folder with the same title slug or the
 same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file that supersedes the old one; this check covers numeric
 tickets only. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
@@ -258,7 +258,7 @@ def order(decisions: list) -> list:
 def render(template: str, d: dict, number: int, date: str) -> str:
     values = {k: as_text(d[k]) for k in REQUIRED}
     values["needs_review"] = "true" if d["needs_review"] else "false"
-    values["status"] = "proposed" if d["needs_review"] else "accepted"
+    values["status"] = "accepted"
     values["number"] = f"{number:04d}"
     values["date"] = date
     out = template
