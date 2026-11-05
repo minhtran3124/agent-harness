@@ -62,10 +62,13 @@ def test_ac3_same_decision_twice_gives_one_file(tmp_path):
 def test_ac3_second_run_reports_nothing_new_written(tmp_path):
     adr, inp = setup(tmp_path, [dec()])
     run(adr, inp)
-    r = run(adr, inp)
+    table = tmp_path / "table.md"
+    r = run(adr, inp, "--table-out", str(table))
     assert r.returncode == 0, r.stderr
     assert len(files(adr)) == 1
     assert "already recorded" not in (adr / files(adr)[0]).read_text()
+    assert json.loads(r.stdout) == []
+    assert "already recorded" in table.read_text()
 
 
 def test_ac4_boundary_decision_writes_no_file_but_has_table_row(tmp_path):
