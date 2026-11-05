@@ -147,6 +147,24 @@ def test_render_section(tmp_path):
     assert s.index("Plain") < s.index("Risky")
 
 
+def test_fill_count_replaces_placeholder(tmp_path):
+    written = tmp_path / "w.json"
+    written.write_text('[{"number": "0002"}, {"number": "0003"}]')
+    body = tmp_path / "b.md"
+    body.write_text("- [x] ADR files: {{ADR_COUNT}}\n")
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--fill-count", str(body), "--written", str(written)],
+        capture_output=True, text=True,
+    )
+    assert r.returncode == 0, r.stderr
+    assert body.read_text() == "- [x] ADR files: 2\n"
+    bad = subprocess.run(
+        [sys.executable, str(SCRIPT), "--fill-count", str(body), "--written", str(tmp_path / "none.json")],
+        capture_output=True, text=True,
+    )
+    assert bad.returncode == 2
+
+
 def test_default_template_matches_the_repo_template():
     """The built-in fallback is the same text as docs/adr/TEMPLATE.md."""
     import write_adrs

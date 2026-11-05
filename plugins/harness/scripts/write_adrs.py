@@ -16,6 +16,7 @@ decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten
 
 Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run] [--table-out FILE]
      python3 write_adrs.py --render-section written.json [--artifact URL]
+     python3 write_adrs.py --fill-count BODY.md --written written.json   (replaces {{ADR_COUNT}} in BODY.md)
 """
 
 import argparse
@@ -308,9 +309,23 @@ def main() -> int:
     ap.add_argument("--render-section", metavar="WRITTEN_JSON",
                     help="render the PR '## Decisions' section from this script's JSON output")
     ap.add_argument("--artifact", default="", help="artifact URL for the section (optional)")
+    ap.add_argument("--fill-count", metavar="BODY_FILE",
+                    help="replace {{ADR_COUNT}} in BODY_FILE with the number of entries in --written")
+    ap.add_argument("--written", metavar="WRITTEN_JSON", help="written JSON for --fill-count")
     args = ap.parse_args()
 
     try:
+        if args.fill_count:
+            try:
+                written = json.loads(Path(args.written or "").read_text())
+                body = Path(args.fill_count)
+                text = body.read_text()
+            except (OSError, json.JSONDecodeError) as e:
+                raise BadInput(f"cannot read --written or body: {e}")
+            if not isinstance(written, list):
+                raise BadInput("written JSON must be a list")
+            body.write_text(text.replace("{{ADR_COUNT}}", str(len(written))))
+            return 0
         if args.render_section:
             try:
                 written = json.loads(Path(args.render_section).read_text())
