@@ -15,4 +15,8 @@ grep -q 'critical-patterns.md' "$ROOT/$SKILL" && grep -q 'proposed:' "$ROOT/$SKI
 t "compound treats a prediction → measured pair as a learning source"
 grep -qF 'prediction → measured' "$ROOT/$SKILL" && pass || fail "prediction → measured source missing"
 
+t "compound decision-track docs use plugin-root paths, not repo-relative ones"
+D="$ROOT/plugins/harness/skills/compound"
+if grep -n 'plugins/harness/scripts/write_adrs\|`docs/adr/README.md`' "$D/templates/decision-consolidated.md" "$D/README.md" >/dev/null; then fail "repo-relative write_adrs path or docs/adr/README.md reference"; else pass; fi
+
 finish

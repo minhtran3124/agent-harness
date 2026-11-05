@@ -1,8 +1,8 @@
 # Decision track: ADR input
 
 The decision track does not write `docs/solutions/`. Write one JSON file and run
-`python3 plugins/harness/scripts/write_adrs.py --input FILE`. The script numbers the ADRs and writes
-them to `docs/adr/`. Shape and rules: `docs/adr/README.md`.
+`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input FILE`. The script numbers the ADRs and writes
+them to `docs/adr/` in the current project. Shape and rules: `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --help`.
 
 ```json
 {"run": "[slug]", "decisions": [{
