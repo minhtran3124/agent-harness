@@ -124,12 +124,13 @@ def test_ac4_merge_guard_test_comment_uses_new_numbers():
 
 
 def dangling_adr_refs(lines, names):
-    """Lines holding an ADR reference that does not resolve to a kept ADR."""
+    """Lines holding an ADR reference that does not resolve to an ADR file in the folder.
+    A number above 12 is fine when its file exists (later ADRs, 0013 and up, are allowed)."""
     bad = []
     for line in lines:
         for m in re.finditer(r"adr/(0\d{3})(-[\w.-]+\.md)?|ADR ?(0\d{3})", line):
             num = m.group(1) or m.group(3)
-            if int(num) > 12 or num not in KEPT:
+            if not any(n.startswith(f"{num}-") for n in names):
                 bad.append(line)
             elif m.group(2) and f"{num}{m.group(2)}" not in names:
                 bad.append(line)
@@ -150,6 +151,15 @@ def test_ac5_dangling_check_flags_high_numbers_without_filename():
     assert dangling_adr_refs(["see ADR 0999"], names)
     assert dangling_adr_refs(["see docs/adr/0500"], names)
     assert not dangling_adr_refs(["see ADR 0007"], names)
+
+
+def test_ac5_dangling_check_accepts_a_real_later_adr_and_flags_a_missing_one():
+    names = adr_files() + ["0013-later-decision.md"]
+    assert not dangling_adr_refs(["see ADR 0013"], names)
+    assert not dangling_adr_refs(["see docs/adr/0013-later-decision.md"], names)
+    assert dangling_adr_refs(["see docs/adr/0013-other.md"], names)
+    assert dangling_adr_refs(["see ADR 0014"], names)
+    assert dangling_adr_refs(["see ADR 0108"], names)   # a deleted old number stays dangling
 
 
 def _git_ok(root, *args):

@@ -1,7 +1,7 @@
 ---
 ticket: 545
 stage: intent
-status: needs-review
+status: accepted
 needs_review: true
 confidence: high
 decided_by: claude (ship workflow: intent)

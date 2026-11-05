@@ -1,7 +1,7 @@
 ---
 ticket: 545
 stage: implement
-status: needs-review
+status: accepted
 needs_review: true
 confidence: medium
 decided_by: claude (ship workflow: implement)

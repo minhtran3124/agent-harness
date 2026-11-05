@@ -112,7 +112,6 @@ where its content lives now.
 |---|---|
 | `accepted` | The decision stands. A new file is always born `accepted`. To change a decision, write a superseding ADR. |
 | `superseded` | A later ADR replaced it. |
-| `needs-review` | The decision was kept in the cleanup but an owner has not confirmed it yet. Confirm it (change to `accepted`) or supersede it. |
 
 ## How to supersede
 
