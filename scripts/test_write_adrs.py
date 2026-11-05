@@ -414,15 +414,160 @@ def test_needs_review_never_makes_a_file(tmp_path):
     assert md_files(adr) == []
 
 
+def frontmatter(text):
+    return text.split("---\n")[1]
+
+
 def test_status_always_accepted_even_when_needs_review(tmp_path):
     adr, inp = setup(tmp_path, [dec(needs_review=True)], existing=())
     run(adr, inp)
+    fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
+    assert "status: accepted" in fm and "status: proposed" not in fm
+    assert "needs_review" not in fm and "needs-review" not in fm
+
+
+def test_decision_body_may_mention_needs_review(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="Set the needs_review flag on the row")], existing=())
+    assert run(adr, inp).returncode == 0
     text = (adr / "0001-use-a-queue.md").read_text()
-    assert "status: accepted" in text and "status: proposed" not in text
-    assert "needs_review" not in text and "needs-review" not in text
+    assert "needs_review flag" in text and "needs_review" not in frontmatter(text)
+
+
+def test_stale_template_placeholder_fails_loudly(tmp_path):
+    adr, inp = setup(tmp_path, [dec()], existing=())
+    (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text().replace("status: {status}", "status: {status}\nneeds_review: {needs_review}"))
+    r = run(adr, inp)
+    assert r.returncode == 2 and "needs_review" in r.stderr
+    assert md_files(adr) == []
 
 
 def test_no_needs_review_status_in_docs_or_script():
     root = SCRIPT.parent.parent.parent.parent
     for p in (root / "docs/adr/README.md", root / "docs/adr/TEMPLATE.md", SCRIPT):
         assert "needs-review" not in p.read_text(), p
+
+
+# --- supersede mechanism: review fixes (#565) ----------------------------------------------------
+
+def adr_text(title="Use a queue", ticket=1, context="c", decision="a", extra_fm="", status="status: accepted\n", nl="\n"):
+    t = (f"---\nticket: {ticket}\nstage: design\n{status}{extra_fm}confidence: medium\ndecided_by: claude\ndate: 2026-01-01\n---\n\n"
+         f"# 0001. {title}\n\n## Context\n\n{context}\n\n## Options\n\n- a\n- b\n\n## Decision\n\n{decision}\n\n"
+         "## Why\n\nw\n\n## Consequences\n\nq\n\n## How to reverse\n\nrevert\n")
+    return t.replace("\n", nl)
+
+
+def feed(adr, inp, *decisions, extra=()):
+    inp.write_text(json.dumps({"decisions": list(decisions)}))
+    return run(adr, inp, *extra)
+
+
+def snapshot(adr):
+    return {p.name: p.read_bytes() for p in adr.iterdir()}
+
+
+def test_revert_to_old_text_is_not_skipped_by_a_superseded_adr(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="a")], existing=())
+    run(adr, inp)
+    assert len(json.loads(feed(adr, inp, dec(decision="b")).stdout)) == 1
+    r = feed(adr, inp, dec(decision="a"))
+    assert r.returncode == 0, r.stderr
+    assert [o["number"] for o in json.loads(r.stdout)] == ["0003"]
+    assert "status: superseded" in (adr / "0002-use-a-queue.md").read_text()
+    assert "Supersedes ADR 0002." in (adr / "0003-use-a-queue.md").read_text()
+    assert json.loads(feed(adr, inp, dec(decision="a")).stdout) == []
+
+
+def test_rerun_after_supersede_matches_by_context_without_the_supersedes_line(tmp_path):
+    adr, inp = setup(tmp_path, [dec(title="A", context="x", decision="a")], existing=())
+    run(adr, inp)
+    assert len(json.loads(feed(adr, inp, dec(title="B", context="x", decision="b")).stdout)) == 1
+    before = snapshot(adr)
+    r = feed(adr, inp, dec(title="C", context="x", decision="b"))   # matches 0002 by context only
+    assert r.returncode == 0 and json.loads(r.stdout) == []
+    assert snapshot(adr) == before
+
+
+def test_running_the_same_input_twice_writes_nothing_the_second_time(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="a")], existing=())
+    run(adr, inp)
+    feed(adr, inp, dec(decision="b"))
+    before = snapshot(adr)
+    r = feed(adr, inp, dec(decision="b"))
+    assert r.returncode == 0 and json.loads(r.stdout) == []
+    assert snapshot(adr) == before
+
+
+def test_changed_decision_supersedes_every_live_match(tmp_path):
+    adr, inp = setup(tmp_path, [dec(title="T1", context="X", decision="a")], existing=())
+    run(adr, inp)
+    feed(adr, inp, dec(title="T2", context="Y", decision="a"))
+    assert md_files(adr) == ["0001-t1.md", "0002-t2.md"]
+    r = feed(adr, inp, dec(title="T1", context="Y", decision="b"))   # slug hits 0001, context hits 0002
+    assert r.returncode == 0, r.stderr
+    new = (adr / "0003-t1.md").read_text()
+    assert "Supersedes ADR 0001, 0002." in new
+    for n, name in (("0001", "0001-t1.md"), ("0002", "0002-t2.md")):
+        old = (adr / name).read_text()
+        assert "status: superseded" in old and "superseded_by: 0003" in old, n
+
+
+def test_two_changed_decisions_mark_their_own_old_adrs(tmp_path):
+    adr, inp = setup(tmp_path, [dec(title="T1", decision="a"), dec(title="T2", decision="a")], existing=())
+    run(adr, inp)
+    r = feed(adr, inp, dec(title="T1", decision="b"), dec(title="T2", decision="b"))
+    assert r.returncode == 0, r.stderr
+    assert "superseded_by: 0003" in (adr / "0001-t1.md").read_text()
+    assert "superseded_by: 0004" in (adr / "0002-t2.md").read_text()
+
+
+def test_old_adr_without_a_status_line_is_still_marked_superseded(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
+    (adr / "0001-use-a-queue.md").write_text(adr_text(status=""))
+    assert feed(adr, inp, dec(decision="b")).returncode == 0
+    fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
+    assert "status: superseded" in fm and "superseded_by: 0002" in fm
+
+
+def test_stale_superseded_by_on_a_live_adr_is_replaced(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
+    (adr / "0001-use-a-queue.md").write_text(adr_text(extra_fm="superseded_by: 0009\n"))
+    assert feed(adr, inp, dec(decision="b")).returncode == 0
+    fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
+    assert fm.count("superseded_by:") == 1 and "superseded_by: 0002" in fm and "status: superseded" in fm
+
+
+def test_crlf_old_adr_is_marked_and_keeps_its_line_endings(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
+    (adr / "0001-use-a-queue.md").write_bytes(adr_text(nl="\r\n").encode())
+    assert feed(adr, inp, dec(decision="b")).returncode == 0
+    raw = (adr / "0001-use-a-queue.md").read_bytes().decode()
+    assert "status: superseded\r\n" in raw and "superseded_by: 0002\r\n" in raw
+    assert raw.count("\n") == raw.count("\r\n")
+
+
+def test_dry_run_changes_no_file_for_a_changed_decision(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="a")], existing=())
+    run(adr, inp)
+    before = snapshot(adr)
+    r = feed(adr, inp, dec(decision="b"), extra=("--dry-run",))
+    assert r.returncode == 0, r.stderr
+    assert [o["number"] for o in json.loads(r.stdout)] == ["0002"]
+    assert snapshot(adr) == before
+
+
+def test_unmarkable_old_adr_stops_the_run_before_any_write(tmp_path):
+    import os
+    import pytest
+    if os.geteuid() == 0:
+        pytest.skip("root ignores file modes")
+    adr, inp = setup(tmp_path, [dec(decision="a")], existing=())
+    run(adr, inp)
+    old = adr / "0001-use-a-queue.md"
+    old.chmod(0o444)
+    before = snapshot(adr)
+    try:
+        r = feed(adr, inp, dec(decision="b"))
+    finally:
+        old.chmod(0o644)
+    assert r.returncode == 2 and "0001" in r.stderr
+    assert snapshot(adr) == before

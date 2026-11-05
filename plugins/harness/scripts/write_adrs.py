@@ -22,6 +22,7 @@ Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-ru
 import argparse
 import datetime
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -126,8 +127,15 @@ def _context_key(d: dict) -> str:
     return _norm_context(d["context"])
 
 
+SUPERSEDES_RE = re.compile(r"\A\s*Supersedes ADR [\d, ]+\.\s*")
+
+
 def existing_keys(adr_dir: Path) -> list:
-    """Read each NNNN-*.md: (number, ticket, title slug, context, decision). A file it cannot parse is skipped."""
+    """Read each NNNN-*.md: (number, ticket, title slug, context, decision, superseded). A file it cannot parse is skipped.
+
+    The context is read without the leading "Supersedes ADR N." line this script adds, so a later run
+    compares the original context text.
+    """
     keys = []
     if not adr_dir.is_dir():
         return keys
@@ -144,30 +152,34 @@ def existing_keys(adr_dir: Path) -> list:
                 continue
             cm = re.search(r"^## Context\n(.*?)(?=^## |\Z)", text, re.M | re.S)
             dm = re.search(r"^## Decision\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-            keys.append((m.group(1), tk.group(1), slugify(tm.group(1)), _norm_context(cm.group(1)) if cm else "",
-                         _norm_context(dm.group(1)) if dm else ""))
+            ctx = SUPERSEDES_RE.sub("", cm.group(1), count=1) if cm else ""
+            superseded = bool(re.search(r"^status:[ \t]*superseded[ \t]*$", fm.group(1), re.M))
+            keys.append((m.group(1), tk.group(1), slugify(tm.group(1)), _norm_context(ctx),
+                         _norm_context(dm.group(1)) if dm else "", superseded))
         except (OSError, UnicodeError):
             continue
     return keys
 
 
 def recorded_match(d: dict, keys: list):
-    """Match against existing ADRs of the same numeric ticket with the same title slug or context.
+    """Match against the live (not superseded) ADRs of the same numeric ticket with the same title slug or context.
 
-    Returns None (no match), (number, True) when a match has the same decision text, or
-    (number, False) with the newest matching number when the decision text changed. A changed
-    decision is new content: it gets a new ADR that supersedes the matched one.
+    Returns None (no match), (number, True) when a live match has the same decision text, or
+    ([numbers], False) with every live matching number when the decision text changed. A changed
+    decision is new content: it gets a new ADR that supersedes all of them. A superseded ADR never
+    matches, so a decision that reverts to an older text is written again.
     """
     ticket = str(d["ticket"]).strip()
     if not ticket.isdigit():
         return None   # 'run' and other non-numeric tickets repeat across runs
     slug, ctx = slugify(d["title"]), _context_key(d)
     dec = " ".join(as_text(d["decision"]).lower().split())
-    hits = [(n, dtext) for n, t, s, c, dtext in keys if t == ticket and (s == slug or (ctx and c == ctx))]
+    hits = [(n, dtext) for n, t, s, c, dtext, sup in keys
+            if t == ticket and not sup and (s == slug or (ctx and c == ctx))]
     for n, dtext in hits:
         if not dtext or dtext == dec:
             return n, True
-    return (hits[-1][0], False) if hits else None
+    return ([n for n, _ in hits], False) if hits else None
 
 
 def recorded_number(d: dict, keys: list):
@@ -175,15 +187,63 @@ def recorded_number(d: dict, keys: list):
     return m[0] if m and m[1] else None
 
 
-def mark_superseded(adr_dir: Path, old: str, new: str) -> None:
-    """Set status superseded and superseded_by in the old ADR frontmatter (README: How to supersede)."""
-    for p in adr_dir.glob(f"{old}-*.md"):
-        text = p.read_text()
-        m = re.match(r"---\n(.*?)\n---\n", text, re.S)
-        if not m or re.search(r"^superseded_by:", m.group(1), re.M):
-            continue
-        fm = re.sub(r"^status:.*$", "status: superseded", m.group(1), flags=re.M)
-        p.write_text(f"---\n{fm}\nsuperseded_by: {new}\n---\n" + text[m.end():])
+FRONTMATTER_RE = re.compile(r"\A---(\r?\n)(.*?)\r?\n---\r?\n", re.S)
+
+
+def superseded_text(text: str, new: str):
+    """The old ADR text with status superseded and superseded_by set, or None when it has no frontmatter.
+
+    Handles CRLF (the line ending of the file is kept), a missing status line (one is added) and a
+    stale superseded_by line (it is replaced, so the key appears once).
+    """
+    m = FRONTMATTER_RE.match(text)
+    if not m:
+        return None
+    nl, fm = m.group(1), m.group(2)
+    lines = [ln for ln in fm.split(nl) if not ln.startswith("superseded_by:")]
+    if any(ln.startswith("status:") for ln in lines):
+        lines = ["status: superseded" if ln.startswith("status:") else ln for ln in lines]
+    else:
+        lines.append("status: superseded")
+    lines.append(f"superseded_by: {new}")
+    return f"---{nl}" + nl.join(lines) + f"{nl}---{nl}" + text[m.end():]
+
+
+def plan_supersede(adr_dir: Path, old: str, new: str):
+    """Check that the old ADR can be marked, before anything is written. Returns (path, new text).
+
+    Raises BadInput when the file is missing, is not writable or has no frontmatter, so the run stops
+    with exit 2 and writes nothing, rather than leaving two live ADRs for one decision.
+    """
+    paths = sorted(adr_dir.glob(f"{old}-*.md"))
+    if len(paths) != 1:
+        raise BadInput(f"cannot mark ADR {old} superseded: found {len(paths)} files")
+    p = paths[0]
+    try:
+        with open(p, newline="", encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeError) as e:
+        raise BadInput(f"cannot mark ADR {old} superseded: {e}")
+    if not os.access(p, os.W_OK):
+        raise BadInput(f"cannot mark ADR {old} superseded: {p} is not writable")
+    out = superseded_text(text, new)
+    if out is None:
+        raise BadInput(f"cannot mark ADR {old} superseded: {p} has no frontmatter")
+    return p, out
+
+
+def mark_superseded(path: Path, text: str) -> None:
+    """Write the text from plan_supersede (the old ADR with status superseded and superseded_by).
+
+    Order and failure behaviour: main() runs plan_supersede for every old ADR first, so a file that
+    cannot be marked stops the run with exit 2 before any write. Only then does it write the new
+    ADRs, and after that this function marks the old ones. If this write still fails (a race),
+    main() exits 2 and names the old file, so the failure is loud and the owner sees which ADR to
+    mark by hand. The new file is written first on purpose: a dangling superseded_by is worse
+    than a loud failure.
+    """
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        f.write(text)
 
 
 def dedupe(decisions: list) -> list:
@@ -256,7 +316,7 @@ def order(decisions: list) -> list:
 
 
 def render(template: str, d: dict, number: int, date: str) -> str:
-    values = {k: as_text(d[k]) for k in REQUIRED}
+    values = {k: as_text(d[k]) for k in REQUIRED if k != "needs_review"}   # needs_review is not an ADR field
     values["status"] = "accepted"
     values["number"] = f"{number:04d}"
     values["date"] = date
@@ -266,7 +326,17 @@ def render(template: str, d: dict, number: int, date: str) -> str:
     return out
 
 
+def check_template(template: str) -> None:
+    """Fail on a placeholder the script does not fill (for example a stale {needs_review} line)."""
+    known = set(REQUIRED) | {"status", "number", "date"}
+    known.discard("needs_review")
+    bad = sorted(set(re.findall(r"\{([a-z_]+)\}", template)) - known)
+    if bad:
+        raise BadInput("TEMPLATE.md has a placeholder the script does not fill: " + ", ".join("{" + b + "}" for b in bad))
+
+
 def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
+    check_template(template)
     decisions = order(validate(data))
     number = next_number(adr_dir)
     taken = {p.name for p in adr_dir.iterdir()} if adr_dir.is_dir() else set()
@@ -287,6 +357,7 @@ def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
                 "stage": d["stage"],
                 "title": d["title"],
                 "needs_review": d["needs_review"],
+                "_supersedes": d.get("_supersedes", []),
                 "_text": render(template, d, number, date),
             }
         )
@@ -368,7 +439,6 @@ def main() -> int:
         merged = dedupe(validate(data))
         keys = existing_keys(adr_dir)
         recorded = {}
-        supersedes = {}
         kept = []
         for d in merged:
             if not needs_adr(d):
@@ -377,11 +447,16 @@ def main() -> int:
             if m and m[1]:
                 recorded[id(d)] = m[0]
             elif m:
-                kept.append({**d, "context": f"Supersedes ADR {m[0]}.\n\n{as_text(d['context'])}"})
-                supersedes[(str(d["ticket"]), d["title"])] = m[0]
+                kept.append({**d, "context": f"Supersedes ADR {', '.join(m[0])}.\n\n{as_text(d['context'])}",
+                             "_supersedes": m[0]})
             else:
                 kept.append(d)
         items = plan({**data, "decisions": kept}, adr_dir, template, datetime.date.today().isoformat()) if kept else []
+        marks = {}   # old ADR path -> new text; the first new ADR to name an old one wins
+        for it in items:
+            for old in it.get("_supersedes", []):
+                path, text = plan_supersede(adr_dir, old, it["number"])
+                marks.setdefault(path, text)
         if not args.dry_run:
             adr_dir.mkdir(parents=True, exist_ok=True)
             for it in items:
@@ -392,13 +467,15 @@ def main() -> int:
             for it in items:
                 with open(it["path"], "x") as f:
                     f.write(it["_text"])
-                old = supersedes.get((str(it["ticket"]), it["title"]))
-                if old:
-                    mark_superseded(adr_dir, old, it["number"])
+            for path, text in marks.items():
+                try:
+                    mark_superseded(path, text)
+                except OSError as e:
+                    raise BadInput(f"new ADR written but {path} could not be marked superseded, mark it by hand: {e}")
     except (BadInput, OSError) as e:
         print(f"write_adrs: {e}", file=sys.stderr)
         return 2
-    print(json.dumps([{k: v for k, v in it.items() if k != "_text"} for it in items], indent=2))
+    print(json.dumps([{k: v for k, v in it.items() if not k.startswith("_")} for it in items], indent=2))
     return 0
 
 
