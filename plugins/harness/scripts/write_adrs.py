@@ -326,17 +326,25 @@ def render(template: str, d: dict, number: int, date: str) -> str:
     return out
 
 
-def check_template(template: str) -> None:
-    """Fail on a placeholder the script does not fill (for example a stale {needs_review} line)."""
+def prepare_template(template: str) -> str:
+    """Drop a legacy `needs_review: {needs_review}` line and warn about it. Warn about any other
+    placeholder the script does not fill and leave it as written. A project template written for an
+    older plugin must not stop the ADR stage, so this never raises."""
+    cleaned = re.sub(r"(?m)^[ \t]*needs_review:[ \t]*\{needs_review\}[ \t]*\r?\n", "", template)
+    if cleaned != template:
+        print("warning: TEMPLATE.md has the old line `needs_review: {needs_review}`; dropped it "
+              "(needs_review is not an ADR field)", file=sys.stderr)
     known = set(REQUIRED) | {"status", "number", "date"}
     known.discard("needs_review")
-    bad = sorted(set(re.findall(r"\{([a-z_]+)\}", template)) - known)
-    if bad:
-        raise BadInput("TEMPLATE.md has a placeholder the script does not fill: " + ", ".join("{" + b + "}" for b in bad))
+    unknown = sorted(set(re.findall(r"\{([a-z_]+)\}", cleaned)) - known)
+    if unknown:
+        print("warning: TEMPLATE.md has a placeholder the script does not fill, left as written: "
+              + ", ".join("{" + b + "}" for b in unknown), file=sys.stderr)
+    return cleaned
 
 
 def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
-    check_template(template)
+    template = prepare_template(template)
     decisions = order(validate(data))
     number = next_number(adr_dir)
     taken = {p.name for p in adr_dir.iterdir()} if adr_dir.is_dir() else set()

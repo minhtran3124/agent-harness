@@ -433,12 +433,34 @@ def test_decision_body_may_mention_needs_review(tmp_path):
     assert "needs_review flag" in text and "needs_review" not in frontmatter(text)
 
 
-def test_stale_template_placeholder_fails_loudly(tmp_path):
+def test_stale_needs_review_line_is_dropped_with_a_warning(tmp_path):
+    # A project TEMPLATE.md written for an older plugin must not stop the ADR stage.
     adr, inp = setup(tmp_path, [dec()], existing=())
     (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text().replace("status: {status}", "status: {status}\nneeds_review: {needs_review}"))
     r = run(adr, inp)
-    assert r.returncode == 2 and "needs_review" in r.stderr
-    assert md_files(adr) == []
+    assert r.returncode == 0, r.stderr
+    assert "warning" in r.stderr and "needs_review" in r.stderr
+    assert len(md_files(adr)) == 1
+    text = (adr / "0001-use-a-queue.md").read_text()
+    assert "{needs_review}" not in text and "needs_review:" not in frontmatter(text)
+
+
+def test_stale_needs_review_line_with_crlf_template_is_dropped(tmp_path):
+    adr, inp = setup(tmp_path, [dec()], existing=())
+    old = TEMPLATE.read_text().replace("status: {status}", "status: {status}\nneeds_review: {needs_review}")
+    (adr / "TEMPLATE.md").write_bytes(old.replace("\n", "\r\n").encode())
+    r = run(adr, inp)
+    assert r.returncode == 0, r.stderr
+    assert "{needs_review}" not in (adr / "0001-use-a-queue.md").read_text()
+
+
+def test_unknown_template_placeholder_warns_and_is_kept(tmp_path):
+    adr, inp = setup(tmp_path, [dec()], existing=())
+    (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text() + "\nOwner: {owner}\n")
+    r = run(adr, inp)
+    assert r.returncode == 0, r.stderr
+    assert "{owner}" in r.stderr
+    assert "Owner: {owner}" in (adr / "0001-use-a-queue.md").read_text()
 
 
 def test_no_needs_review_status_in_docs_or_script():
