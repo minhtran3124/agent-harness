@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: intent)
 date: 2026-10-29
 ---
 
-# 0010. Remove techstacks/ and agents/PROJECT.md; project rules come from the repo's own files
+# 0007. Remove techstacks/ and agents/PROJECT.md; project rules come from the repo's own files
 
 ## Context
 

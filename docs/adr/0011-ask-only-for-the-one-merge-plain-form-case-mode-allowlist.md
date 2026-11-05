@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-31
 ---
 
-# 0129. Ask only for the one-merge, plain-form case; mode allowlist
+# 0011. Ask only for the one-merge, plain-form case; mode allowlist
 
 ## Context
 

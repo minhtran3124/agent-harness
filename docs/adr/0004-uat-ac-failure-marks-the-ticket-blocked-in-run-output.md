@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0006. UAT AC failure marks the ticket blocked in run output
+# 0004. UAT AC failure marks the ticket blocked in run output
 
 ## Context
 

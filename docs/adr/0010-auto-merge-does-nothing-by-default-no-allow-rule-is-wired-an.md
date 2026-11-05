@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-30
 ---
 
-# 0111. Auto-merge does nothing by default: no allow rule is wired and hook firing for workflow agents is unproven
+# 0010. Auto-merge does nothing by default: no allow rule is wired and hook firing for workflow agents is unproven
 
 ## Context
 

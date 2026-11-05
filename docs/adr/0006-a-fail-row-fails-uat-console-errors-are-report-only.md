@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: review-fix); text corrected to match the code
 date: 2026-10-29
 ---
 
-# 0009. A FAIL row fails UAT; console errors are report-only
+# 0006. A FAIL row fails UAT; console errors are report-only
 
 ## Context
 

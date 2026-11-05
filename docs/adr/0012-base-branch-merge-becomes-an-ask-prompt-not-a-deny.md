@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: intent)
 date: 2026-10-31
 ---
 
-# 0130. Base-branch merge becomes an ask prompt, not a deny
+# 0012. Base-branch merge becomes an ask prompt, not a deny
 
 ## Context
 

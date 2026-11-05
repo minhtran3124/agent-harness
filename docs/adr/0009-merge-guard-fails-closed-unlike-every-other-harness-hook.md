@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: design)
 date: 2026-10-30
 ---
 
-# 0109. Merge guard fails closed, unlike every other harness hook
+# 0009. Merge guard fails closed, unlike every other harness hook
 
 ## Context
 
