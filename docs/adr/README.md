@@ -73,7 +73,7 @@ where its content lives now.
 | 0101 | deleted: a "UAT not run" event for #500; lives in that PR body |
 | 0102 | deleted: a "UAT not run" event for #503; lives in that PR body |
 | 0103 | deleted: a "UAT not run" event for #505; lives in that PR body |
-| 0104 | deleted: the `Refs` keyword is in the citation rule in `scripts/check_release_summary.py` and `skills/release-notes/references/fact-list-schema.md` |
+| 0104 | deleted: the `Refs` keyword is in `skills/release-notes/references/fact-list-schema.md` |
 | 0105 | deleted: duplicate of 0106; the rule is in `scripts/check_release_summary.py` |
 | 0106 | deleted: the bare-number rule is in `scripts/check_release_summary.py` |
 | 0107 | deleted: a "UAT not run" event for #514; lives in that PR body |

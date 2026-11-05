@@ -186,3 +186,9 @@ def test_ac6_readme_maps_all_38_old_numbers():
         assert "deleted" in row(old).lower(), old
     assert re.search(r"old numbers?.*(PR|pull request).*(no longer|not) match|"
                      r"(PR|pull request).*old numbers?.*(no longer|not) match", text, re.I | re.S)
+
+
+def test_map_row_0104_does_not_cite_script_without_refs():
+    row = [l for l in read("docs/adr/README.md").splitlines() if l.startswith("| 0104 ")][0]
+    assert "check_release_summary.py" not in row
+    assert "fact-list-schema.md" in row
