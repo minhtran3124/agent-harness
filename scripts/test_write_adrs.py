@@ -347,6 +347,16 @@ def test_second_run_against_same_folder_writes_one_file(tmp_path):
     assert "already recorded (ADR 0001)" in table.read_text()
 
 
+def test_changed_decision_same_title_gets_a_new_file(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="a")], existing=())
+    run(adr, inp)
+    inp.write_text(json.dumps({"decisions": [dec(decision="b, a different choice")]}))
+    r = run(adr, inp)
+    assert r.returncode == 0, r.stderr
+    assert len(json.loads(r.stdout)) == 1
+    assert len(md_files(adr)) == 2
+
+
 def test_folder_dedupe_matches_by_context_and_list_context(tmp_path):
     adr, inp = setup(tmp_path, [dec(title="First", context=["x", "y"])], existing=())
     run(adr, inp)

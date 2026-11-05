@@ -9,7 +9,7 @@ contract, or how users work) that lists at least two real options (not n/a), and
 not start with "Boundary: " or "UAT not run". needs_review is the separate owner-ask flag and never
 makes a file; confidence never decides this, it only marks a guess in the table. Files are born
 accepted, or proposed when needs_review is true (the owner has not looked yet). A decision whose ticket already has an ADR in the folder with the same title slug or the
-same non-empty context is skipped (table note "already recorded"); this check covers numeric
+same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file; this check covers numeric
 tickets only. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
@@ -127,7 +127,7 @@ def _context_key(d: dict) -> str:
 
 
 def existing_keys(adr_dir: Path) -> list:
-    """Read each NNNN-*.md: (number, ticket, title slug, context). A file it cannot parse is skipped."""
+    """Read each NNNN-*.md: (number, ticket, title slug, context, decision). A file it cannot parse is skipped."""
     keys = []
     if not adr_dir.is_dir():
         return keys
@@ -143,20 +143,27 @@ def existing_keys(adr_dir: Path) -> list:
             if not (tk and tm):
                 continue
             cm = re.search(r"^## Context\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-            keys.append((m.group(1), tk.group(1), slugify(tm.group(1)), _norm_context(cm.group(1)) if cm else ""))
+            dm = re.search(r"^## Decision\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+            keys.append((m.group(1), tk.group(1), slugify(tm.group(1)), _norm_context(cm.group(1)) if cm else "",
+                         _norm_context(dm.group(1)) if dm else ""))
         except (OSError, UnicodeError):
             continue
     return keys
 
 
 def recorded_number(d: dict, keys: list):
-    """Number of an existing ADR for the same numeric ticket with the same title slug or context."""
+    """Number of an existing ADR for the same numeric ticket with the same title slug or context.
+
+    The decision text must match too: a changed decision is new content, so it gets a new ADR
+    instead of being skipped in favour of a stale file.
+    """
     ticket = str(d["ticket"]).strip()
     if not ticket.isdigit():
         return None   # 'run' and other non-numeric tickets repeat across runs
     slug, ctx = slugify(d["title"]), _context_key(d)
-    for number, t, s, c in keys:
-        if t == ticket and (s == slug or (ctx and c == ctx)):
+    dec = " ".join(as_text(d["decision"]).lower().split())
+    for number, t, s, c, dtext in keys:
+        if t == ticket and (s == slug or (ctx and c == ctx)) and (not dtext or dtext == dec):
             return number
     return None
 
