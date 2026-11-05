@@ -615,3 +615,27 @@ def test_unmarkable_old_adr_stops_the_run_before_any_write(tmp_path):
         old.chmod(0o644)
     assert r.returncode == 2 and "0001" in r.stderr
     assert snapshot(adr) == before
+
+
+def test_date_valid_is_kept(tmp_path):
+    adr, inp = setup(tmp_path, [dec(title="Dated", date="2026-07-17")])
+    r = run(adr, inp)
+    assert r.returncode == 0, r.stderr
+    assert "date: 2026-07-17\n" in (adr / "0002-dated.md").read_text()
+
+
+def test_date_invalid_exits_2(tmp_path):
+    for i, bad in enumerate(["2026-13-01", "17/07/2026", "2026-7-1", 20260717]):
+        d = tmp_path / f"c{i}"
+        d.mkdir()
+        adr, inp = setup(d, [dec(title="Bad", date=bad)])
+        r = run(adr, inp)
+        assert r.returncode == 2 and "date" in r.stderr
+        assert not (adr / "0002-bad.md").exists()
+
+
+def test_date_absent_uses_today(tmp_path):
+    import datetime
+    adr, inp = setup(tmp_path, [dec(title="Undated")])
+    assert run(adr, inp).returncode == 0
+    assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()

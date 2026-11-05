@@ -2,7 +2,8 @@
 """Write ADR files for one run, with numbers assigned by code.
 
 Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
-why, consequences, how_to_reverse, confidence, needs_review, adr, decided_by, owner_confirmed?}]}.
+why, consequences, how_to_reverse, confidence, needs_review, adr, decided_by, owner_confirmed?, date?}]}.
+`date` is optional (ISO YYYY-MM-DD, kept in the ADR front matter); without it the ADR gets today's date. It does not enter dedupe.
 Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the highest confidence (ties to the first).
 A file is written only for a decision with adr true (it changes harness behavior, a data or config
 contract, or how users work) that lists at least two real options (not n/a), and whose title does
@@ -74,6 +75,19 @@ def as_text(value) -> str:
     return str(value).strip()
 
 
+DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def valid_date(value) -> bool:
+    if not isinstance(value, str) or not DATE_RE.fullmatch(value):
+        return False
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
 def validate(data) -> list:
     if not isinstance(data, dict):
         raise BadInput("input must be a JSON object")
@@ -92,6 +106,8 @@ def validate(data) -> list:
             raise BadInput(f"decisions[{i}].adr must be true or false")
         if "owner_confirmed" in d and not isinstance(d["owner_confirmed"], bool):
             raise BadInput(f"decisions[{i}].owner_confirmed must be true or false")
+        if "date" in d and d["date"] is not None and not valid_date(d["date"]):
+            raise BadInput(f"decisions[{i}].date must be an ISO date YYYY-MM-DD")
         if d["confidence"] not in CONFIDENCE:
             raise BadInput(
                 f"decisions[{i}].confidence must be one of {', '.join(CONFIDENCE)}"
@@ -366,7 +382,7 @@ def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
                 "title": d["title"],
                 "needs_review": d["needs_review"],
                 "_supersedes": d.get("_supersedes", []),
-                "_text": render(template, d, number, date),
+                "_text": render(template, d, number, d.get("date") or date),
             }
         )
         number += 1
