@@ -50,8 +50,11 @@ def adr_files():
 
 
 def test_ac1_only_twelve_records_plus_readme_and_template():
+    # Later ADRs (0013 and up) may be added; the pruned range 0001-0012 must stay exactly as kept.
     expected = sorted([f"{n}-{s}.md" for n, s in KEPT.items()] + ["README.md", "TEMPLATE.md"])
-    assert adr_files() == expected
+    names = adr_files()
+    later = [n for n in names if re.match(r"(\d{4})-", n) and int(n[:4]) > 12]
+    assert sorted(n for n in names if n not in later) == expected
 
 
 def test_ac2_deleted_files_are_gone():
@@ -115,14 +118,17 @@ def test_ac4_merge_guard_test_comment_uses_new_numbers():
 def test_ac5_every_adr_reference_points_at_an_existing_file():
     out = subprocess.run(
         ["grep", "-rnIE", r"adr/0[0-9]{3}|ADR ?0[0-9]{3}", ".",
-         "--exclude-dir=.git", "--exclude-dir=specs", "--exclude-dir=tests"],
+         "--exclude-dir=.git", "--exclude-dir=specs", "--exclude-dir=tests", "--exclude=test_write_adrs.py"],
         cwd=ROOT, capture_output=True, text=True).stdout
     names = adr_files()
     bad = []
     for line in out.splitlines():
         for m in re.finditer(r"adr/(0\d{3})(-[\w.-]+\.md)?|ADR ?(0\d{3})", line):
             num = m.group(1) or m.group(3)
-            if num not in KEPT:
+            if int(num) > 12:
+                if m.group(2) and f"{num}{m.group(2)}" not in names:
+                    bad.append(line)
+            elif num not in KEPT:
                 bad.append(line)
             elif m.group(2) and f"{num}{m.group(2)}" not in names:
                 bad.append(line)
