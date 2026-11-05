@@ -6,6 +6,7 @@ repo's own check scripts. Run: python3 -m pytest tests/acceptance/test_adr_store
 """
 import collections
 import datetime
+import importlib.util
 import json
 import re
 import subprocess
@@ -18,6 +19,18 @@ SK = ROOT / "plugins/harness/skills"
 ADR = ROOT / "docs/adr"
 SOL = ROOT / "docs/solutions"
 BASE = "ccf0b7a"  # commit the ticket branched from
+
+
+def _load_run_logs_unchanged():
+    """Reuse the #566 helper: it falls back to the fork point with main when BASE is absent."""
+    spec = importlib.util.spec_from_file_location(
+        "test_adr_prune_566", ROOT / "tests/acceptance/test_adr_prune_566.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.run_logs_unchanged
+
+
+run_logs_unchanged = _load_run_logs_unchanged()
 
 MOVED = [
     "harness-bootstrap/meta-repo-signal-remapping-decisions.md",
@@ -202,8 +215,11 @@ def test_ac4_recall_evals_paths_exist():
 
 
 def test_ac4_recall_run_logs_unchanged():
-    r = sh("git", "diff", "--name-only", BASE, "--", "tests/evals/recall/runs")
-    assert r.returncode == 0 and r.stdout.strip() == "", r.stdout
+    assert run_logs_unchanged(ROOT, base=BASE)
+
+
+def test_ac4_run_logs_check_survives_missing_base():
+    assert run_logs_unchanged(ROOT, base="deadbeef")
 
 
 # ---------- AC5 ----------
