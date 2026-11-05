@@ -14,12 +14,23 @@ only writer.
 
 Not every decision gets a file. `write_adrs.py` first merges duplicates (same ticket and the same
 title slug or identical non-empty context; the highest `confidence` is kept (high, then medium, then low), a tie keeps the first,
-`needs_review` carries over, and `owner_confirmed` survives only if every merged item has it). It
-then writes a file only for a decision that has `needs_review: true`: it is critical, affects
-another ticket, a public contract, stored data, security or cost, or is a trade-off that is costly
-to reverse. `confidence` never decides this. Every merged
-decision, with or without a file, is one row in the `## Decisions` table of the PR body. A row for
-an owner-confirmed decision without a file says `owner-confirmed`.
+`adr` and `needs_review` carry over, and `owner_confirmed` survives only if every merged item has it).
+It then writes a file only for a decision with `adr: true`. A decision is `adr` only when it (a)
+changes harness behavior, a data or config contract, or how users work, and (b) had at least two
+viable options, listed in `options`. A scope note (Boundary) and a "UAT not run" event are never
+`adr`. The script also checks what it can check exactly: it needs at least two options that are not
+`n/a`, and it refuses a title that starts with `Boundary: ` or `UAT not run`. `confidence` never
+decides this.
+
+The script also reads this folder. A decision whose ticket already has an ADR here with the same
+title slug or the same non-empty context is skipped, so a re-run writes no duplicate. Only numeric
+tickets are checked this way; run-level decisions (ticket `run`) are not. To record a changed
+decision for the same ticket, retitle it or supersede the old ADR.
+
+`needs_review` is a separate flag: it asks the owner to look at a decision before the merge. It
+does not make a file. Every merged decision, with or without a file, is one row in the `## Decisions`
+table of the PR body. A row says `ADR file`, `owner-confirmed`, `already recorded (ADR NNNN)` or
+`table only`.
 
 ## Design records
 
@@ -30,7 +41,7 @@ A design record is an ADR with `stage: design`. `brainstorming` at depth L retur
 ## Pruned records
 
 The prune kept every record that is critical, a public contract, a safety rule or a real
-trade-off, even when it was not flagged `needs_review`. Only a flagged decision gets a new file.
+trade-off, even when it was not flagged. Only a decision that passes the gate above gets a new file.
 
 On 2026-10-29 the folder was pruned and renumbered 0001 to 0010: most old ADRs recorded small,
 reversible choices that now live in the code, tests and PR history. An old number in a PR body or
@@ -42,16 +53,17 @@ commit no longer matches a file here. Get a pruned ADR back with
 - File name: `NNNN-<slug>.md`. `NNNN` has 4 digits and is sequential.
 - The script finds the highest existing `NNNN` in this folder and continues from the next number.
   `README.md` and `TEMPLATE.md` are not counted.
-- Order inside one run: `needs_review: true` first, then by ticket, then by stage.
+- Order inside one run: by ticket, then by stage.
 - The script refuses to overwrite a file. Do not renumber an existing ADR; a prune is the only exception.
 
 ## Status values
 
 | Status | Meaning |
 |---|---|
-| `accepted` | The decision stands. Default for `needs_review: false`. |
-| `needs-review` | A human must confirm it. Set when `needs_review: true`. |
+| `accepted` | The decision stands. Every new file is born `accepted`. |
 | `superseded` | A later ADR replaced it. |
+
+Older files may carry a legacy status that is neither of these; a later cleanup (#566) handles them.
 
 ## How to supersede
 
@@ -61,6 +73,6 @@ commit no longer matches a file here. Get a pruned ADR back with
 
 ## How a reviewer reads them
 
-Open the `## Decisions` section in the PR body. It lists `needs-review` ADRs first. For each ADR
-read Decision, Why and How to reverse. Confirm it (set `status: accepted`, `needs_review: false`),
-reverse it with the stated steps, or supersede it.
+Open the `## Decisions` section in the PR body. For each ADR read Decision, Why and How to reverse.
+Reverse a decision with the stated steps, or supersede it. Open owner questions are not ADR files:
+they are listed under `## Needs your decision` in the PR body.

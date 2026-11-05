@@ -13,7 +13,7 @@ def dec(**kw):
     d = {
         "ticket": 1, "stage": "design", "title": "Use a queue", "context": "c",
         "options": ["a", "b"], "decision": "a", "why": "w", "consequences": "q",
-        "how_to_reverse": "git revert", "confidence": "medium", "needs_review": True,
+        "how_to_reverse": "git revert", "confidence": "medium", "needs_review": True, "adr": True,
         "decided_by": "claude",
     }
     d.update(kw)
@@ -49,17 +49,17 @@ def test_numbers_continue_after_0001(tmp_path):
     assert [o["number"] for o in out] == ["0002", "0003"]
     assert (adr / "0002-one.md").is_file() and (adr / "0003-two.md").is_file()
     text = (adr / "0002-one.md").read_text()
-    assert "status: needs-review" in text and "# 0002. One" in text and "- a\n- b" in text
+    assert "status: accepted" in text and "# 0002. One" in text and "- a\n- b" in text
 
 
 def test_files_are_ordered_by_ticket_then_stage(tmp_path):
     ds = [dec(title="a", ticket=2), dec(title="b", ticket=1, stage="plan"),
           dec(title="c", ticket=9), dec(title="d", ticket=1, stage="design"),
-          dec(title="e", ticket=1, needs_review=False)]   # table only: no file
+          dec(title="e", ticket=1, adr=False)]   # table only: no file
     adr, inp = setup(tmp_path, ds)
     out = json.loads(run(adr, inp).stdout)
     assert [o["title"] for o in out] == ["d", "b", "a", "c"]
-    assert "status: needs-review" in (adr / "0002-d.md").read_text()
+    assert "status: accepted" in (adr / "0002-d.md").read_text()
 
 
 def test_slug_rules_and_collision(tmp_path):
@@ -94,7 +94,7 @@ def test_refuse_overwrite(tmp_path, monkeypatch, capsys):
     (adr / "0002-one.md").write_text("keep")
     # simulate a race: the plan was made before another writer created the file
     item = {"number": "0002", "path": str(adr / "0002-one.md"), "ticket": 1, "stage": "design",
-            "title": "One", "needs_review": False, "_text": "new"}
+            "title": "One", "needs_review": False, "adr": True, "_text": "new"}
     monkeypatch.setattr(write_adrs, "plan", lambda *a: [item])
     monkeypatch.setattr(sys, "argv", ["w", "--input", str(inp), "--adr-dir", str(adr)])
     assert write_adrs.main() == 2
@@ -113,7 +113,8 @@ def test_numbering_skips_existing_slug(tmp_path):
 def test_bad_input_exit_2(tmp_path):
     adr, inp = setup(tmp_path, [dec()], existing=())
     for bad in ({"decisions": []}, {"decisions": [dec(confidence="x")]},
-                {"decisions": [dec(needs_review="yes")]},
+                {"decisions": [dec(needs_review="yes")]}, {"decisions": [dec(adr="yes")]},
+                {"decisions": [{k: v for k, v in dec().items() if k != "adr"}]},
                 {"decisions": [{k: v for k, v in dec().items() if k != "why"}]}):
         inp.write_text(json.dumps(bad))
         r = run(adr, inp)
@@ -131,7 +132,7 @@ def test_dry_run_writes_nothing(tmp_path):
 
 
 def test_render_section(tmp_path):
-    adr, inp = setup(tmp_path, [dec(title="Plain"), dec(title="Risky", needs_review=True, ticket=5)])
+    adr, inp = setup(tmp_path, [dec(title="Plain"), dec(title="Risky", ticket=5)])
     written = tmp_path / "w.json"
     written.write_text(run(adr, inp, "--dry-run").stdout)
     r = subprocess.run(
@@ -171,16 +172,18 @@ def wa():
 
 def test_needs_adr_filter():
     w = wa()
-    assert not w.needs_adr(dec(confidence="high", needs_review=False))
-    assert w.needs_adr(dec(confidence="high", needs_review=True))
-    # confidence alone never makes a file
-    assert not w.needs_adr(dec(confidence="medium", needs_review=False))
-    assert not w.needs_adr(dec(confidence="low", needs_review=False))
-    assert not w.needs_adr(dec(confidence="low", needs_review=False, owner_confirmed=True))
-    assert "table only (low confidence, check)" in w.decisions_table([dec(confidence="low", needs_review=False)])
-    # needs_review wins over owner_confirmed: file, table row and PR section must agree
-    assert w.needs_adr(dec(confidence="low", needs_review=True, owner_confirmed=True))
-    assert "ADR file" in w.decisions_table([dec(needs_review=True, owner_confirmed=True)])
+    assert w.needs_adr(dec(confidence="low", needs_review=False))   # adr alone decides, not confidence
+    assert not w.needs_adr(dec(adr=False, needs_review=True))
+    assert not w.needs_adr(dec(adr=False, owner_confirmed=True))
+    assert "table only (low confidence, check)" in w.decisions_table([dec(confidence="low", adr=False, needs_review=False)])
+    # adr wins over owner_confirmed: file, table row and PR section must agree
+    assert w.needs_adr(dec(confidence="low", owner_confirmed=True))
+    assert "ADR file" in w.decisions_table([dec(owner_confirmed=True)])
+    assert not w.needs_adr(dec(options=["a"]))
+    assert not w.needs_adr(dec(options=["a", " N/A "]))
+    assert not w.needs_adr(dec(title="Boundary: x"))
+    assert not w.needs_adr(dec(title="UAT not run for #7"))
+    assert not w.needs_adr(dec(boundary=True))
 
 
 def test_owner_confirmed_validation(tmp_path):
@@ -228,15 +231,15 @@ def test_merge_keeps_highest_confidence_and_ties_to_first():
 
 def test_merge_carries_needs_review():
     w = wa()
-    out = w.dedupe([dec(title="Same", confidence="high", needs_review=False),
+    out = w.dedupe([dec(title="Same", confidence="high", needs_review=False, adr=False),
                     dec(title="Same", confidence="low", needs_review=True)])
     assert out[0]["confidence"] == "high" and out[0]["needs_review"] is True
 
 
 def test_merge_owner_confirmed_only_when_all_confirmed():
     w = wa()
-    mixed = w.dedupe([dec(title="Same", confidence="high", owner_confirmed=True, needs_review=False),
-                      dec(title="Same", confidence="low", needs_review=False)])
+    mixed = w.dedupe([dec(title="Same", confidence="high", owner_confirmed=True, needs_review=False, adr=False),
+                      dec(title="Same", confidence="low", needs_review=False, adr=False)])
     assert mixed[0]["confidence"] == "high" and not mixed[0].get("owner_confirmed")
     assert not w.needs_adr(mixed[0])
     both = w.dedupe([dec(title="Same", owner_confirmed=True), dec(title="Same", owner_confirmed=True)])
@@ -245,15 +248,15 @@ def test_merge_owner_confirmed_only_when_all_confirmed():
 
 def test_table_owner_confirmed_row_and_escaping():
     w = wa()
-    t = w.decisions_table([dec(title="A|B", owner_confirmed=True, needs_review=False, decision="line\nbreak"),
-                           dec(title="C", confidence="high", needs_review=False), dec(title="D")])
+    t = w.decisions_table([dec(title="A|B", owner_confirmed=True, needs_review=False, adr=False, decision="line\nbreak"),
+                           dec(title="C", confidence="high", needs_review=False, adr=False), dec(title="D")])
     assert t.splitlines()[0].startswith("| Ticket | Title")
     assert "| #1 | A\\|B | line break | w | owner-confirmed |" in t
     assert "| table only |" in t and "| ADR file |" in t
 
 
 def test_zero_adr_run_writes_nothing_and_prints_empty_list(tmp_path):
-    adr, inp = setup(tmp_path, [dec(confidence="high", needs_review=False), dec(title="Two", confidence="low", needs_review=False)])
+    adr, inp = setup(tmp_path, [dec(confidence="high", needs_review=False, adr=False), dec(title="Two", confidence="low", needs_review=False, adr=False)])
     before = sorted(p.name for p in adr.iterdir())
     table = tmp_path / "t.md"
     r = run(adr, inp, "--table-out", str(table))
@@ -267,12 +270,12 @@ def test_six_decisions_give_one_adr_file_and_five_table_rows(tmp_path):
     """2 near-duplicates merge to 1, so 6 decisions are 5 table rows; only the needs_review one gets a
     file, not the low-confidence guess."""
     ds = [
-        dec(title="Insert the step", confidence="high", needs_review=False, context="c1"),
-        dec(title="Insert the step", stage="plan", confidence="high", needs_review=False, context="c2"),   # near-duplicate
-        dec(title="Owner said so", confidence="low", needs_review=False, owner_confirmed=True),
+        dec(title="Insert the step", confidence="high", needs_review=False, adr=False, context="c1"),
+        dec(title="Insert the step", stage="plan", confidence="high", needs_review=False, adr=False, context="c2"),   # near-duplicate
+        dec(title="Owner said so", confidence="low", needs_review=False, adr=False, owner_confirmed=True),
         dec(title="Touches contract", confidence="high", needs_review=True),
-        dec(title="Guessed", confidence="low", needs_review=False),
-        dec(title="Plain", confidence="high", needs_review=False),
+        dec(title="Guessed", confidence="low", needs_review=False, adr=False),
+        dec(title="Plain", confidence="high", needs_review=False, adr=False),
     ]
     adr, inp = setup(tmp_path, ds)
     table = tmp_path / "t.md"
@@ -301,3 +304,88 @@ def test_skill_doc_matches_dedupe_and_owner_confirmed_rules():
     assert "highest `confidence`" in flat
     assert "lowest `confidence`" not in flat
     assert "`needs_review` wins over `owner_confirmed`" in flat
+
+
+# --- the adr gate, born accepted, folder dedupe (#565) ----------------------------------------
+
+def md_files(adr):
+    return sorted(p.name for p in adr.glob("[0-9][0-9][0-9][0-9]-*.md"))
+
+
+def test_merge_ors_adr():
+    w = wa()
+    out = w.dedupe([dec(title="Same", confidence="high", adr=False), dec(title="Same", confidence="low")])
+    assert out[0]["confidence"] == "high" and out[0]["adr"] is True
+
+
+def test_second_run_against_same_folder_writes_one_file(tmp_path):
+    adr, inp = setup(tmp_path, [dec()], existing=())
+    assert run(adr, inp).returncode == 0
+    table = tmp_path / "t.md"
+    r = run(adr, inp, "--table-out", str(table))
+    assert r.returncode == 0 and json.loads(r.stdout) == []
+    assert md_files(adr) == ["0001-use-a-queue.md"]
+    assert "already recorded (ADR 0001)" in table.read_text()
+
+
+def test_folder_dedupe_matches_by_context_and_list_context(tmp_path):
+    adr, inp = setup(tmp_path, [dec(title="First", context=["x", "y"])], existing=())
+    run(adr, inp)
+    inp.write_text(json.dumps({"decisions": [dec(title="Other title", context=["x", "y"])]}))
+    assert json.loads(run(adr, inp).stdout) == []
+    assert len(md_files(adr)) == 1
+
+
+def test_same_title_other_ticket_gets_a_file(tmp_path):
+    adr, inp = setup(tmp_path, [dec(ticket=1)], existing=())
+    run(adr, inp)
+    inp.write_text(json.dumps({"decisions": [dec(ticket=2)]}))
+    assert len(json.loads(run(adr, inp).stdout)) == 1
+    assert len(md_files(adr)) == 2
+
+
+def test_run_level_tickets_are_not_deduped_against_the_folder(tmp_path):
+    adr, inp = setup(tmp_path, [dec(ticket="run")], existing=())
+    run(adr, inp)
+    assert len(json.loads(run(adr, inp).stdout)) == 1
+    assert len(md_files(adr)) == 2
+
+
+def test_malformed_existing_adr_is_ignored(tmp_path):
+    adr, inp = setup(tmp_path, [dec()], existing=("0001-bad.md",))
+    (adr / "0001-bad.md").write_bytes(b"\xff\xfe not an adr")
+    r = run(adr, inp)
+    assert r.returncode == 0, r.stderr
+    assert len(json.loads(r.stdout)) == 1
+
+
+def test_boundary_and_uat_get_no_file_but_a_table_row(tmp_path):
+    ds = [dec(title="Boundary: leave X", needs_review=True), dec(title="Scope", boundary=True),
+          dec(title="UAT not run for #7"), dec(title="One option", options=["a"]),
+          dec(title="No options", options=["n/a"]), dec(title="Real")]
+    adr, inp = setup(tmp_path, ds, existing=())
+    table = tmp_path / "t.md"
+    r = run(adr, inp, "--table-out", str(table))
+    assert r.returncode == 0, r.stderr
+    assert [o["title"] for o in json.loads(r.stdout)] == ["Real"]
+    rows = [l for l in table.read_text().splitlines() if l.startswith("| #")]
+    assert len(rows) == 6 and sum("table only" in l for l in rows) == 5
+
+
+def test_needs_review_never_makes_a_file(tmp_path):
+    adr, inp = setup(tmp_path, [dec(adr=False, needs_review=True)], existing=())
+    assert json.loads(run(adr, inp).stdout) == []
+    assert md_files(adr) == []
+
+
+def test_status_always_accepted_even_if_needs_review(tmp_path):
+    adr, inp = setup(tmp_path, [dec(needs_review=True)], existing=())
+    run(adr, inp)
+    text = (adr / "0001-use-a-queue.md").read_text()
+    assert "status: accepted" in text and "needs_review: true" in text
+
+
+def test_no_needs_review_status_in_docs_or_script():
+    root = SCRIPT.parent.parent.parent.parent
+    for p in (root / "docs/adr/README.md", root / "docs/adr/TEMPLATE.md", SCRIPT):
+        assert "needs-review" not in p.read_text(), p
