@@ -257,7 +257,6 @@ def order(decisions: list) -> list:
 
 def render(template: str, d: dict, number: int, date: str) -> str:
     values = {k: as_text(d[k]) for k in REQUIRED}
-    values["needs_review"] = "true" if d["needs_review"] else "false"
     values["status"] = "accepted"
     values["number"] = f"{number:04d}"
     values["date"] = date
@@ -313,7 +312,7 @@ def render_section(written: list, artifact: str = "") -> str:
 
 # Same text as docs/adr/TEMPLATE.md in the harness repo (a test keeps them equal), so a consuming
 # repo that has no docs/adr/TEMPLATE.md can still write ADRs.
-DEFAULT_TEMPLATE = '---\nticket: {ticket}\nstage: {stage}\nstatus: {status}\nneeds_review: {needs_review}\nconfidence: {confidence}\ndecided_by: {decided_by}\ndate: {date}\n---\n\n# {number}. {title}\n\n## Context\n\n{context}\n\n## Options\n\n{options}\n\n## Decision\n\n{decision}\n\n## Why\n\n{why}\n\n## Consequences\n\n{consequences}\n\n## How to reverse\n\n{how_to_reverse}\n'
+DEFAULT_TEMPLATE = '---\nticket: {ticket}\nstage: {stage}\nstatus: {status}\nconfidence: {confidence}\ndecided_by: {decided_by}\ndate: {date}\n---\n\n# {number}. {title}\n\n## Context\n\n{context}\n\n## Options\n\n{options}\n\n## Decision\n\n{decision}\n\n## Why\n\n{why}\n\n## Consequences\n\n{consequences}\n\n## How to reverse\n\n{how_to_reverse}\n'
 
 
 def load_template(adr_dir: Path) -> str:

@@ -31,7 +31,7 @@ no duplicate. If the decision text changed, the script writes a new ADR that nam
 its Context and marks the old one `superseded` with `superseded_by`. Only numeric tickets are
 checked this way; run-level decisions (ticket `run`) are not.
 
-`needs_review` is a separate flag: it asks the owner to look at a decision before the merge. It
+`needs_review` is a separate flag on the decision, not a field of the ADR file: it asks the owner to look at a decision before the merge. It
 does not make a file. Every merged decision, with or without a file, is one row in the `## Decisions`
 table of the PR body. A row says `ADR file`, `owner-confirmed`, `already recorded (ADR NNNN)` or
 `table only`.

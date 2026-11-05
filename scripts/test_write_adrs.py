@@ -419,6 +419,7 @@ def test_status_always_accepted_even_when_needs_review(tmp_path):
     run(adr, inp)
     text = (adr / "0001-use-a-queue.md").read_text()
     assert "status: accepted" in text and "status: proposed" not in text
+    assert "needs_review" not in text and "needs-review" not in text
 
 
 def test_no_needs_review_status_in_docs_or_script():
