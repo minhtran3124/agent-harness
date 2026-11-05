@@ -25,4 +25,7 @@ if grep -q 'How_to_Reverse' "$D/subagents/decision-extractor-prompt.md" && grep 
 t "no template or solutions entry writes problem_type: decision (one decision store: docs/adr)"
 if grep -rlq '^problem_type: decision' "$D/templates" "$ROOT/docs/solutions" || [ -e "$D/templates/decision-track.md" ]; then fail "second decision store still written"; else pass; fi
 
+t "docs/solutions/INDEX.md matches the solution docs (regenerated after a problem_type change)"
+if python3 "$ROOT/plugins/harness/scripts/rebuild_solution_index.py" --root "$ROOT" --check >/dev/null 2>&1; then pass; else fail "INDEX.md is stale; run rebuild_solution_index.py"; fi
+
 finish
