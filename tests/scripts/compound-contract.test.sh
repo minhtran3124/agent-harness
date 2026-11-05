@@ -19,4 +19,7 @@ t "compound decision-track docs use plugin-root paths, not repo-relative ones"
 D="$ROOT/plugins/harness/skills/compound"
 if grep -n 'plugins/harness/scripts/write_adrs\|`docs/adr/README.md`' "$D/templates/decision-consolidated.md" "$D/README.md" >/dev/null; then fail "repo-relative write_adrs path or docs/adr/README.md reference"; else pass; fi
 
+t "compound decision track sources how_to_reverse/confidence from the extractor and links ADRs, not solutions"
+if grep -q 'How_to_Reverse' "$D/subagents/decision-extractor-prompt.md" && grep -q 'Never invent a value' "$ROOT/$SKILL" && grep -q 'ADR path' "$ROOT/$SKILL"; then pass; else fail "decision track fields or ADR link missing"; fi
+
 finish

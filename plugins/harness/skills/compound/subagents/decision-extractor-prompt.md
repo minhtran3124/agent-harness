@@ -63,6 +63,10 @@ DECISION_TRACK:
   Consequences: |
     [What does this decision enable or constrain going forward? Be honest about
     trade-offs. Leave [none] if consequences are not clear from the session.]
+  How_to_Reverse: |
+    [How to undo this decision. Leave [none] if the session does not show it.]
+  Confidence: |
+    [high | medium | low: how sure the session evidence makes you of this decision.]
 ```
 
 ## Rules
