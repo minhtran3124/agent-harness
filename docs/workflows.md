@@ -8,7 +8,7 @@ no human in the loop. `/autopilot` asks the owner everything first, then launche
 ## args
 
 `{repo, repoDir, remote, base, slug, tickets: [{n, title, depth: S|M|L, group, deps, confirmed}],
-testCmd, lintCmd, fullTestCmd, advisorModel, noAsk, local}`. Tickets of one `group` run in parallel;
+testCmd, lintCmd, fullTestCmd, advisorModel, noAsk, local, profile?}`. `profile.stages` overrides the model and effort per stage, except `implement` and `fix`. Tickets of one `group` run in parallel;
 groups run in ascending order. One ticket: its PR is the final PR. Several: branch `feat/<slug>`,
 sibling PRs into it, a merge agent after each group, one final PR into `base`.
 
@@ -55,6 +55,20 @@ readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- m
    The final PR body lists each ticket's verify result in a `## Verify` section (after `## Review`,
    before `## Intent review`): kind, result, base check, stills folder and whether the GIF was built
    and attached. Local mode and tickets that never ran the stage add no line.
+   Two stages sit inside the per-ticket pipeline:
+   - **Blind acceptance tests** (depth M and L): before implement, a `qa-writer` reads only the ticket, its
+     acceptance criteria and, at depth L, the design. It never reads the plan or the application source. It commits
+     tests under `tests/acceptance/` (or the directory the project's rules name) with the subject
+     `Add acceptance tests for #<n>` on the ticket branch. The implementer starts on that branch and may not touch
+     that directory. After implement, a Haiku check lists every commit that touched it; any commit with another
+     subject blocks the ticket. A QA writer that returns `ready: false` or fails never stops the ticket. The script
+     enforces this, not a hook.
+   - **Security gate** (risky tickets, after verify, before the PR): a ticket is risky when its title, owner-confirmed
+     decisions or intent name login, sessions, permissions, payments, secrets, tokens or personal data, or the
+     implementer touched a path matching `RISKY_PATH`. A read-only `security-reviewer` (Opus, high effort) reads the
+     diff. A critical or high finding blocks the ticket, opens no PR and records a `needs_review` decision. Medium and
+     low findings and follow-ups go into a `## Security gate` section of the PR body. The reviewer's read-only
+     promise comes from its prompt (it has Bash for `git diff`), not from a hook.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more get one fix agent each; re-review only the fix commits; at most 2 rounds.

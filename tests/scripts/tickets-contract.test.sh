@@ -48,7 +48,7 @@ t "a changed section is listed for the owner, not edited"
 grep -q 'list them for the owner' "$PROCESS" && pass || fail "changed-section rule missing"
 
 t "approval keeps one go question and puts overlaps in one multi-select"
-grep -q 'multi-select' "$PROCESS" && grep -q 'in the question text' "$SKILL" && pass || fail "approval rule missing"
+grep -q 'multi-select' "$PROCESS" && grep -q 'review-layout.md' "$SKILL" && pass || fail "approval rule missing"
 
 t "the kept conditions from the ticket are back"
 grep -q 'merge the tickets' "$PROCESS" && grep -q 'not by layer' "$PROCESS" && grep -q 'Ask the owner only for decisions' "$SKILL" \

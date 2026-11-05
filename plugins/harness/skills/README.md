@@ -103,6 +103,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 |---|---|---|
 | `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket, the same list in `intent.md` and `decision.md`, + a short decision list for the caller |
 | `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` and a design ADR in `docs/adr/` (depth L) |
+| `own` | **User-invoked only** (`/harness:own <grill \| brainstorm> <target>`). Runs `grilling` or `brainstorming` in ownership mode: on at most 3 big decisions (hard to reverse, or low agent confidence) the owner answers first, then sees the agent's recommendation and a counter-argument, then decides. `brainstorm` adds the owner's sketch, design-breaking assumptions and an optional teach-back. Never in autopilot or `--no-ask` runs | The base skill's output, plus owner first answer, agent recommendation and counter-argument per big decision in `decision.md`; `## Owner reasoning` in `design.md` (brainstorm) |
 | `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
 | `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
 
@@ -162,6 +163,7 @@ intake             ──► READY → depth S and M: writing-plans · L: brains
                                 Input-type: bug fix → diagnosing-bugs (before the plan)
 grilling                   ──► "Confirmed decisions" comment + decision list → caller (terminal)
 brainstorming              ──► xia2 → writing-plans
+own                        ──► same handoff as its base skill (grilling or brainstorming)
 xia2                       ──► research brief → writing-plans
 writing-plans              ──► implement
 implement                  ──► /code-review → intent-review → finishing-a-development-branch

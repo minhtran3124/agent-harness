@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(gh issue view *), Bash(gh iss
 
 # Grilling
 
-Interview the owner until the open decisions are settled. Do nothing else until the owner confirms.
+Interview the owner until the open decisions are settled. Act on nothing until the owner confirms.
 
 The caller names `Mode: interactive` (default) or `Mode: auto`.
 
@@ -30,6 +30,7 @@ The owner reads each question in a small terminal tab.
 - `AskUserQuestion` takes at most 4 questions per call. Ask the 4 that block most first, the rest in the next call. Never merge decisions to fit.
 - Grill one ticket at a time. When the caller batches tickets, the header names the ticket.
 - Text fallback: one block per decision, one option per line.
+- Evidence: option `preview`, see `references/review-layout.md`.
 
 ## Facts and decisions
 
@@ -47,7 +48,7 @@ The tree is deep when it has more than about 3 levels or more than about 10 open
 
 ## Stop
 
-Stop when the frontier is empty and the owner confirms. A "yes" to the last round counts as confirmation. Act on nothing before that.
+Stop when the frontier is empty and the owner confirms. A "yes" to the last round counts as confirmation.
 
 ## Output
 

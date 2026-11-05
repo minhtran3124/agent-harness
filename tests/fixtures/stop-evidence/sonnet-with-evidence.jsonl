@@ -1,0 +1,6 @@
+{"type":"user","message":{"role":"user","content":"fix the bug in src/app.py"}}
+{"type":"assistant","message":{"model":"claude-sonnet-5-5","role":"assistant","content":[{"type":"tool_use","id":"toolu_01","name":"Edit","input":{"file_path":"src/app.py","old_string":"a","new_string":"b"}}]}}
+{"type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01","type":"tool_result","content":"The file src/app.py has been updated."}]}}
+{"type":"assistant","message":{"model":"claude-sonnet-5-5","role":"assistant","content":[{"type":"tool_use","id":"toolu_02","name":"Bash","input":{"command":"python -m pytest -q"}}]}}
+{"type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_02","type":"tool_result","content":"3 passed in 0.12s"}]}}
+{"type":"assistant","message":{"model":"claude-sonnet-5-5","role":"assistant","content":[{"type":"text","text":"Done."}]}}

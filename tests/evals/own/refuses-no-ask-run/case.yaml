@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: refuses-no-ask-run
+context:
+  scaffold_script: place-files.sh
+expected_outcome: |
+  The agent stops because --no-ask leaves no owner to answer. It says the skill needs an owner who answers, makes no decisions and writes no specs files.

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: brainstorm-asks-sketch-then-teach-back
+context:
+  scaffold_script: place-files.sh
+expected_outcome: |
+  The agent asks for the owner's sketch before presenting approaches, ties the approaches to the sketch, runs owner-first on the approach choice, lists design-breaking assumptions with checks, asks for a teach-back and names gaps without grading. design.md has Owner reasoning and breaking-assumption sections.

@@ -52,6 +52,10 @@ A workflow that stopped early (blocked, interrupted, or ended with review `not r
 anything. If you finish its work by hand, you also owe its skipped stages: run `/code-review` on the
 PR, then intent-review, before you report done. Do not wait for the owner to ask.
 
+"Done" needs real command output. After you change code, run the check that proves it works and show its
+output before you report done. The `stop-evidence.sh` Stop hook blocks the end of a session that changed
+code and ran no command. If you cannot run the check, say so and say why.
+
 ## 5. User-facing text and corrections
 
 Write for a teammate catching up: lead with the outcome, in complete sentences, without shorthand
