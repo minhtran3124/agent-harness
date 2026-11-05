@@ -26,9 +26,10 @@ gets a table-only row and no ADR file. The script also checks what it can check 
 decides this.
 
 The script also reads this folder. A decision whose ticket already has an ADR here with the same
-title slug or the same non-empty context is skipped, so a re-run writes no duplicate. Only numeric
-tickets are checked this way; run-level decisions (ticket `run`) are not. To record a changed
-decision for the same ticket, retitle it or supersede the old ADR.
+title slug or the same non-empty context and the same decision text is skipped, so a re-run writes
+no duplicate. If the decision text changed, the script writes a new ADR that names the old one in
+its Context and marks the old one `superseded` with `superseded_by`. Only numeric tickets are
+checked this way; run-level decisions (ticket `run`) are not.
 
 `needs_review` is a separate flag: it asks the owner to look at a decision before the merge. It
 does not make a file. Every merged decision, with or without a file, is one row in the `## Decisions`

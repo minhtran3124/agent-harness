@@ -9,7 +9,7 @@ contract, or how users work) that lists at least two real options (not n/a), and
 not start with "Boundary: " or "UAT not run". needs_review is the separate owner-ask flag and never
 makes a file; confidence never decides this, it only marks a guess in the table. Files are born
 accepted, or proposed when needs_review is true (the owner has not looked yet). A decision whose ticket already has an ADR in the folder with the same title slug or the
-same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file; this check covers numeric
+same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file that supersedes the old one; this check covers numeric
 tickets only. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
@@ -151,21 +151,39 @@ def existing_keys(adr_dir: Path) -> list:
     return keys
 
 
-def recorded_number(d: dict, keys: list):
-    """Number of an existing ADR for the same numeric ticket with the same title slug or context.
+def recorded_match(d: dict, keys: list):
+    """Match against existing ADRs of the same numeric ticket with the same title slug or context.
 
-    The decision text must match too: a changed decision is new content, so it gets a new ADR
-    instead of being skipped in favour of a stale file.
+    Returns None (no match), (number, True) when a match has the same decision text, or
+    (number, False) with the newest matching number when the decision text changed. A changed
+    decision is new content: it gets a new ADR that supersedes the matched one.
     """
     ticket = str(d["ticket"]).strip()
     if not ticket.isdigit():
         return None   # 'run' and other non-numeric tickets repeat across runs
     slug, ctx = slugify(d["title"]), _context_key(d)
     dec = " ".join(as_text(d["decision"]).lower().split())
-    for number, t, s, c, dtext in keys:
-        if t == ticket and (s == slug or (ctx and c == ctx)) and (not dtext or dtext == dec):
-            return number
-    return None
+    hits = [(n, dtext) for n, t, s, c, dtext in keys if t == ticket and (s == slug or (ctx and c == ctx))]
+    for n, dtext in hits:
+        if not dtext or dtext == dec:
+            return n, True
+    return (hits[-1][0], False) if hits else None
+
+
+def recorded_number(d: dict, keys: list):
+    m = recorded_match(d, keys)
+    return m[0] if m and m[1] else None
+
+
+def mark_superseded(adr_dir: Path, old: str, new: str) -> None:
+    """Set status superseded and superseded_by in the old ADR frontmatter (README: How to supersede)."""
+    for p in adr_dir.glob(f"{old}-*.md"):
+        text = p.read_text()
+        m = re.match(r"---\n(.*?)\n---\n", text, re.S)
+        if not m or re.search(r"^superseded_by:", m.group(1), re.M):
+            continue
+        fm = re.sub(r"^status:.*$", "status: superseded", m.group(1), flags=re.M)
+        p.write_text(f"---\n{fm}\nsuperseded_by: {new}\n---\n" + text[m.end():])
 
 
 def dedupe(decisions: list) -> list:
@@ -351,13 +369,17 @@ def main() -> int:
         merged = dedupe(validate(data))
         keys = existing_keys(adr_dir)
         recorded = {}
+        supersedes = {}
         kept = []
         for d in merged:
             if not needs_adr(d):
                 continue
-            number = recorded_number(d, keys)
-            if number:
-                recorded[id(d)] = number
+            m = recorded_match(d, keys)
+            if m and m[1]:
+                recorded[id(d)] = m[0]
+            elif m:
+                kept.append({**d, "context": f"Supersedes ADR {m[0]}.\n\n{as_text(d['context'])}"})
+                supersedes[(str(d["ticket"]), d["title"])] = m[0]
             else:
                 kept.append(d)
         items = plan({**data, "decisions": kept}, adr_dir, template, datetime.date.today().isoformat()) if kept else []
@@ -371,6 +393,9 @@ def main() -> int:
             for it in items:
                 with open(it["path"], "x") as f:
                     f.write(it["_text"])
+                old = supersedes.get((str(it["ticket"]), it["title"]))
+                if old:
+                    mark_superseded(adr_dir, old, it["number"])
     except (BadInput, OSError) as e:
         print(f"write_adrs: {e}", file=sys.stderr)
         return 2

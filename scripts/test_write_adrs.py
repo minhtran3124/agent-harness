@@ -355,6 +355,13 @@ def test_changed_decision_same_title_gets_a_new_file(tmp_path):
     assert r.returncode == 0, r.stderr
     assert len(json.loads(r.stdout)) == 1
     assert len(md_files(adr)) == 2
+    old = (adr / "0001-use-a-queue.md").read_text()
+    new = (adr / "0002-use-a-queue.md").read_text()
+    assert "status: superseded" in old and "superseded_by: 0002" in old
+    assert "Supersedes ADR 0001." in new
+    # a third run with the newest decision is already recorded
+    assert json.loads(run(adr, inp).stdout) == []
+    assert len(md_files(adr)) == 2
 
 
 def test_folder_dedupe_matches_by_context_and_list_context(tmp_path):
