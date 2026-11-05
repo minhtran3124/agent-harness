@@ -96,6 +96,14 @@ def test_ac4_solutions_cite_adr_0007_with_path():
         assert "ADR 0010" not in text and "adr/0010-remove" not in text, f
 
 
+def test_ac4_solutions_index_rows_cite_adr_0007():
+    rows = [l for l in read("docs/solutions/INDEX.md").splitlines()
+            if "scaffold-template-instance-parity" in l or "techstacks-project-owned-stack-profiles" in l]
+    assert len(rows) == 2
+    for r in rows:
+        assert "SUPERSEDED by ADR 0007" in r and "ADR 0010" not in r, r
+
+
 def test_ac4_hooks_doc_line_points_at_new_0010():
     lines = [l for l in read("docs/hooks.md").splitlines() if "not proven" in l]
     assert lines
