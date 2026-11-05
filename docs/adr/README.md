@@ -18,7 +18,10 @@ title slug or identical non-empty context; the highest `confidence` is kept (hig
 It then writes a file only for a decision with `adr: true`. A decision is `adr` only when it (a)
 changes harness behavior, a data or config contract, or how users work, and (b) had at least two
 viable options, listed in `options`. A scope note (Boundary) and a "UAT not run" event are never
-`adr`. The script also checks what it can check exactly: it needs at least two options that are not
+`adr`. A decision the agent marks `dangerous` or `contradicts_confirmed` is never `adr` either: the
+workflow (`takeDecisions` in `ship.js`) sets `adr` to false for it, because the part was not done.
+It still shows in the PR table and under "Needs your decision" with `needs_review: true`, so it
+gets a table-only row and no ADR file. The script also checks what it can check exactly: it needs at least two options that are not
 `n/a`, and it refuses a title that starts with `Boundary: ` or `UAT not run`. `confidence` never
 decides this.
 

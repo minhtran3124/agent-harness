@@ -318,6 +318,14 @@ test('e9b: a dangerous or contradicting decision sent with adr true reaches the 
   }
 })
 
+test('e9c: ADR_WHEN and the ADR README state the dangerous/contradicting carve-out', async () => {
+  const { calls } = await run({}, null)
+  const c = named(calls, /^intent:1$/)[0]
+  assert(c.prompt.includes('dangerous or contradicts_confirmed are never adr'), 'RULES omit the carve-out')
+  const readme = fs.readFileSync(path.join(__dirname, '../../docs/adr/README.md'), 'utf8')
+  assert(/dangerous.*contradicts_confirmed[\s\S]*never `adr`|never `adr` either/.test(readme), 'README omits the carve-out')
+})
+
 test('e7: RULES gives one source for project rules, not the owner checkout and the worktree at once', async () => {
   const { calls } = await run()
   const c = calls.find(x => x.prompt.includes('Rules (all of them apply)'))
