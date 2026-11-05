@@ -135,12 +135,24 @@ def test_ac5_every_adr_reference_points_at_an_existing_file():
     assert not bad, bad[:10]
 
 
+def _git_ok(root, *args):
+    return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
+
+
 def run_logs_unchanged(root, base=BASE):
     """Existing run logs are not modified or deleted. New run dirs are allowed.
-    When base is not in this clone (shallow or squash-merged), compare with HEAD."""
-    have = subprocess.run(["git", "cat-file", "-e", f"{base}^{{commit}}"],
-                          cwd=root, capture_output=True).returncode == 0
-    ref = base if have else "HEAD"
+    When base is not in this clone (shallow or squash-merged), compare with the
+    merge-base against the main branch; only when that is also missing, with HEAD."""
+    ref = None
+    if _git_ok(root, "cat-file", "-e", f"{base}^{{commit}}").returncode == 0:
+        ref = base
+    else:
+        for main in ("github/main", "origin/main", "main"):
+            mb = _git_ok(root, "merge-base", "HEAD", main)
+            if mb.returncode == 0 and mb.stdout.strip():
+                ref = mb.stdout.strip()
+                break
+    ref = ref or "HEAD"
     r = subprocess.run(["git", "diff", "--quiet", "--diff-filter=MD", ref, "--",
                         "tests/evals/recall/runs"], cwd=root, capture_output=True)
     return r.returncode == 0
@@ -166,6 +178,23 @@ def test_ac5_run_logs_check_survives_missing_base_and_new_runs(tmp_path):
     assert run_logs_unchanged(tmp_path, base="deadbeef")
     assert run_logs_unchanged(tmp_path, base="HEAD")
     (runs / "a.md").write_text("changed")
+    assert not run_logs_unchanged(tmp_path, base="deadbeef")
+
+
+def test_ac5_run_logs_check_detects_committed_edit_when_base_missing(tmp_path):
+    def git(*a):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                       cwd=tmp_path, check=True, capture_output=True)
+    runs = tmp_path / "tests/evals/recall/runs/d1"
+    runs.mkdir(parents=True)
+    (runs / "a.md").write_text("a")
+    git("init", "-q", "-b", "main")
+    git("add", ".")
+    git("commit", "-qm", "base")
+    git("checkout", "-q", "-b", "feat")
+    (runs / "a.md").write_text("changed")
+    git("add", ".")
+    git("commit", "-qm", "edit a run log")
     assert not run_logs_unchanged(tmp_path, base="deadbeef")
 
 
