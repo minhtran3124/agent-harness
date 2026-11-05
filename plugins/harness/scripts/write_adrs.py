@@ -326,17 +326,25 @@ def render(template: str, d: dict, number: int, date: str) -> str:
     return out
 
 
-def check_template(template: str) -> None:
-    """Fail on a placeholder the script does not fill (for example a stale {needs_review} line)."""
+def prepare_template(template: str) -> str:
+    """Drop every template line that holds the old `{needs_review}` placeholder and warn on stderr
+    (needs_review is no longer an ADR field, and a project TEMPLATE.md written for an older plugin must
+    not stop the ADR stage). Any other placeholder the script does not fill still fails with exit 2, so
+    a typo never reaches a committed ADR."""
+    cleaned = re.sub(r"(?m)^[^\n]*\{needs_review\}[^\n]*(?:\n|\Z)", "", template)
+    if cleaned != template:
+        print("warning: TEMPLATE.md has a line with {needs_review}; dropped it "
+              "(needs_review is not an ADR field)", file=sys.stderr)
     known = set(REQUIRED) | {"status", "number", "date"}
     known.discard("needs_review")
-    bad = sorted(set(re.findall(r"\{([a-z_]+)\}", template)) - known)
+    bad = sorted(set(re.findall(r"\{([a-z_]+)\}", cleaned)) - known)
     if bad:
         raise BadInput("TEMPLATE.md has a placeholder the script does not fill: " + ", ".join("{" + b + "}" for b in bad))
+    return cleaned
 
 
 def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
-    check_template(template)
+    template = prepare_template(template)
     decisions = order(validate(data))
     number = next_number(adr_dir)
     taken = {p.name for p in adr_dir.iterdir()} if adr_dir.is_dir() else set()
