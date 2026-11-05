@@ -314,8 +314,15 @@ test('e9b: a dangerous or contradicting decision sent with adr true reaches the 
   for (const t of ['Flag-danger', 'Flag-contra']) {
     const i = p.indexOf('"title":"' + t + '"')
     assert(i >= 0, t + ' missing')
-    assert(p.slice(i, p.indexOf('}', i)).includes('"adr":false'), t + ' keeps adr true')
+    const seg = p.slice(i, p.indexOf('}', i))
+    assert(seg.includes('"adr":false'), t + ' keeps adr true')
+    assert(seg.includes('"needs_review":true'), t + ' is not flagged for the owner')
+    assert(seg.includes('"owner_confirmed":false'), t + ' stays owner_confirmed')
   }
+  // control: the same decision without a flag keeps adr true, so the flag is what turns it off
+  const { calls: c2 } = await run({ tickets: [T(1, 1), T(2, 2)] }, c => (c.label === 'final-pr' ? ok({ pr: 900, url: 'https://x/pull/900', decisions: [mk('Plain-adr', {})] }) : undefined))
+  const p2 = named(c2, /^adr$/)[0].prompt, j = p2.indexOf('"title":"Plain-adr"')
+  assert(j >= 0 && p2.slice(j, p2.indexOf('}', j)).includes('"adr":true'), 'an unflagged adr decision lost adr')
 })
 
 test('e9c: ADR_WHEN and the ADR README state the dangerous/contradicting carve-out', async () => {
