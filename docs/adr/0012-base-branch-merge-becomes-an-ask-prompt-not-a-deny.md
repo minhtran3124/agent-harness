@@ -29,7 +29,7 @@ The owner's Yes in the prompt is the approval and the agent cannot produce it. T
 
 ## Consequences
 
-An agent can merge into main after the owner confirms one PR. This changes a hard rule in CLAUDE.md and parts of ADR 0108 and 0109, so a human reviews the PR.
+An agent can merge into main after the owner confirms one PR. This changes a hard rule in CLAUDE.md and parts of ADR 0008 and 0009, so a human reviews the PR.
 
 ## How to reverse
 
