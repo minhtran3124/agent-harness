@@ -56,7 +56,7 @@ Apply those `process.md` sections.
 
 Show one table: #, type, title, size, priority, deps, `Verify:`, status (`new` / `exists #n` / `overlap #n` / `wait #n`); then repo, visibility, counts, new labels, close label names, milestone or "none".
 
-Ask one AskUserQuestion. Put the repo, the counts, the milestone and each overlap in the question text, because the dialog can hide the table. If the repo is public, say so. The "go" option names the exact count, e.g. "Create 12 issues".
+Ask one AskUserQuestion: put the table rows in the "go" option `preview`, and `question`: at most 2 sentences, the repo (say PUBLIC if public), counts, milestone and overlap count, per `${CLAUDE_PLUGIN_ROOT}/skills/grilling/references/review-layout.md`. The "go" option names the exact count, e.g. "Create 12 issues".
 
 If the dialog is not available, or the reply is not the go option, stop and create nothing.
 

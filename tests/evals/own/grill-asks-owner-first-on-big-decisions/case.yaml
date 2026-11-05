@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: grill-asks-owner-first-on-big-decisions
+context:
+  scaffold_script: place-files.sh
+expected_outcome: |
+  The agent names at most 3 big decisions, asks each one open-ended with no options or recommendation, gives its own recommendation and a counter-argument only after the owner answers, then asks for a final choice. Small decisions keep a recommended answer. decision.md records owner first answer, agent recommendation and counter-argument for each big decision.

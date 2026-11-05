@@ -17,10 +17,17 @@ export const meta = {
 // Constants. Models and effort are chosen here, per stage, never inside a stage.
 // ---------------------------------------------------------------------------
 const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
-  verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku' }
+  verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku',
+  qa: 'sonnet', security: 'opus' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
-  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high' }
-// Depth L is the difficulty signal: design and plan run on Opus there; every other stage and depth uses MODEL.
+  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', security: 'high' }
+// args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage. These stages
+// are locked to their defaults and a profile cannot change them.
+const LOCKED_STAGES = ['implement', 'fix']
+const PROFILE_MODELS = ['haiku', 'sonnet', 'opus']
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+// Depth L is the difficulty signal: design and plan run on Opus there, whatever the profile says;
+// every other stage and depth uses MODEL.
 function stageModel(stage, depth) {
   return depth === 'L' && (stage === 'design' || stage === 'plan') ? 'opus' : MODEL[stage]
 }
@@ -30,6 +37,9 @@ const CI_WAIT_MS = 600000  // the ticket gate waits at most this long for CI (on
 const CI_INTERVAL = 30     // seconds between gh pr checks polls
 // Paths whose change makes the review level 'high'.
 const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/workflows)(\/|$)|settings\.json$|\.sql$|\.env/i
+// A ticket is risky for the security gate when its text names one of these areas, or the implementer touched a RISKY_PATH file.
+const RISK_TEXT = /\b(log ?in|log ?out|sign[- ]?in|sign[- ]?up|password|passwd|auth\w*|session|cookie|jwt|oauth|permission|privilege|role|admin|payment|billing|invoice|checkout|stripe|secret|api[- ]?key|token|credential|personal data|pii|gdpr|bulk delete|delete all|purge)\b/i
+const QA_SUBJECT = n => `Add acceptance tests for #${n}`   // the only commit subject allowed to touch the acceptance tests
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
 // The one wording of the ADR gate, used by the stage rules and the decision schema.
 const NEEDS_REVIEW_WHEN = 'affects another ticket, a public contract or interface, stored data, security or cost, or is a trade-off that is costly to reverse, or contradicts the ticket text or an owner-confirmed answer'
@@ -139,6 +149,25 @@ const REVIEW_SCHEMA = stageSchema({
 const FIX_SCHEMA = stageSchema({
   fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, base_sha: STR, commit: STR, test_added: STR,
 }, ['fix_status'])
+const QA_SCHEMA = stageSchema({
+  ready: { type: 'boolean', description: 'true only when acceptance tests were committed and each fails for the right reason. false when the ticket has nothing to test from outside, the repo has no way to run such a test, or the public interface is too thin.' },
+  reason: { type: 'string', description: 'When ready is false: why.' },
+  dir: { type: 'string', description: 'The acceptance-test directory the tests live in, relative to the repo root.' },
+  files: strList,
+  tests: { type: 'array', items: { type: 'object', properties: { name: STR, covers: STR }, required: ['name', 'covers'] } },
+}, ['ready'])
+const TESTGUARD_SCHEMA = { type: 'object',
+  properties: { commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } } },
+  required: ['commits'] }
+const SECURITY_SCHEMA = { type: 'object',
+  properties: {
+    why_risky: STR, risk_note: STR,
+    findings: { type: 'array', items: { type: 'object',
+      properties: { severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] }, path: STR, line: NUM, summary: STR, fix: STR },
+      required: ['severity', 'summary'] } },
+    followups: strList,
+  },
+  required: ['findings', 'risk_note'] }
 const REQUEST_SCHEMA = { type: 'object', properties: { body: STR }, required: ['body'] }
 const INTENT_REVIEW_SCHEMA = { type: 'object',
   properties: {
@@ -177,8 +206,28 @@ function validateArgs(a) {
     if (!Number.isInteger(t.group)) throw new Error(`ship: ticket #${t.n} needs an integer group`)
     if (t.deps !== undefined && !Array.isArray(t.deps)) throw new Error(`ship: ticket #${t.n} deps must be an array`)
   }
+  validateProfile(a.profile)
+}
+function validateProfile(p) {
+  if (p === undefined) return
+  if (!p || typeof p !== 'object' || Array.isArray(p)) throw new Error('ship: args.profile must be an object')
+  const stages = p.stages === undefined ? {} : p.stages
+  if (!stages || typeof stages !== 'object' || Array.isArray(stages)) throw new Error('ship: args.profile.stages must be an object')
+  for (const [stage, cfg] of Object.entries(stages)) {
+    if (LOCKED_STAGES.includes(stage)) throw new Error(`ship: args.profile.stages.${stage} is locked (${MODEL[stage]}/${EFFORT[stage]}) and cannot be set`)
+    if (!(stage in MODEL)) throw new Error(`ship: args.profile.stages.${stage} is not a stage; use one of ${Object.keys(MODEL).filter(s => !LOCKED_STAGES.includes(s)).join(', ')}`)
+    if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) throw new Error(`ship: args.profile.stages.${stage} must be an object`)
+    for (const k of Object.keys(cfg)) if (k !== 'model' && k !== 'effort') throw new Error(`ship: args.profile.stages.${stage}.${k} is not a field; use model or effort`)
+    if (cfg.model !== undefined && !PROFILE_MODELS.includes(cfg.model)) throw new Error(`ship: args.profile.stages.${stage}.model must be one of ${PROFILE_MODELS.join(', ')}`)
+    if (cfg.effort !== undefined && !EFFORTS.includes(cfg.effort)) throw new Error(`ship: args.profile.stages.${stage}.effort must be one of ${EFFORTS.join(', ')}`)
+  }
 }
 validateArgs(args)
+// Apply the profile. MODEL and EFFORT are built fresh for each run, so this changes only this run.
+for (const [stage, cfg] of Object.entries((args.profile && args.profile.stages) || {})) {
+  if (cfg.model) MODEL[stage] = cfg.model
+  if (cfg.effort) EFFORT[stage] = cfg.effort
+}
 
 const { repo, repoDir, pluginDir, remote, base, slug, testCmd, lintCmd, fullTestCmd, advisorModel } = args
 // The harness files (skills, agents, scripts) live in the plugin directory, not in the target repo.
@@ -204,12 +253,13 @@ const parentDir = trimmed.split('/').slice(0, -1).join('/')
 const wtRoot = `${parentDir}/.ship-${trimmed.split('/').pop()}/${slugOf(slug)}`
 const worktrees = new Set()   // every dir the script told an agent to create; the owner removes them
 const notCwd = dir => `Your session working directory is NOT the target repo. Run every command with \`git -C <path>\` or after \`cd ${dir || repoDir}\`; never edit ${repoDir} itself.`
-// branch: create it; null: detached checkout of `from` (an existing ref).
-function newWt(name, branch, from) {
+// branch: create it; null: detached checkout of `from` (an existing ref). existing: check out the branch that already exists (the QA writer made it).
+function newWt(name, branch, from, existing) {
   const dir = `${wtRoot}/${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')}`
   worktrees.add(dir)
+  const add = existing ? `${dir} ${branch}` : `${branch ? `-b ${branch} ` : '--detach '}${dir} ${from}`
   return { dir, setup:
-    `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} worktree add ${branch ? `-b ${branch} ` : '--detach '}${dir} ${from}\n\n` +
+    `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} worktree add ${add}\n\n` +
     `Run the two commands above first, in that order. If ${dir} already exists (an earlier attempt of this stage), do not recreate it: cd into it and continue. Your worktree is ${dir}. ${notCwd(dir)}\n\n` }
 }
 // Publish the current HEAD to an existing branch (fast-forward only).
@@ -375,13 +425,58 @@ async function advisePlan(t, design, plan) {
     `Design:\n${design.design_md}\n\nPlan:\n${plan.plan_md}`)
 }
 
-function stageImplement(t, branch, planText, boundary) {
-  const w = newWt(`t${t.n}`, branch, integRef)
+// Blind acceptance tests (depth M and L). The QA writer sees the ticket, its criteria and the public interface, never the source or the plan.
+function stageQa(t, intent, design, branch) {
+  const w = newWt(`qa-${t.n}`, null, integRef)
+  const criteria = (intent.acceptance || []).map((a, i) => `AC${i + 1}: ${a}`).join('\n') || '(none listed: use the ticket text)'
+  const iface = design && design.design_md ? `Design (read only its public-interface part; ignore the rest):\n${design.design_md}\n` : 'No design exists for this depth: the ticket text and criteria are the whole public interface.\n'
+  const build = advice => w.setup + head(t, null,
+    `Stage: qa. Act as the QA writer (${pluginDir}/agents/qa-writer.md) and stay blind: read no application source and no plan.\n` +
+    `Your worktree is detached. Commit the tests there with the exact subject ${QA_SUBJECT(t.n)}, then run: git branch ${branch} HEAD. Never push.\n` +
+    `Acceptance criteria:\n${criteria}\n${iface}` +
+    `Return ready, dir, files and tests (name and covers). Return ready false with a reason when nothing can be tested from outside.${advice}`, w.dir)
+  return runStage(t, 'qa', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// The implementer must not touch the acceptance tests. Only commits with the QA subject may; any other commit is a violation.
+async function stageTestGuard(t, impl, qa) {
+  const tb = impl.branch
+  const res = await call(
+    `git -C ${repoDir} log --format='%h %s' ${integRef}..${tb} -- ${qa.dir}\n\n${notCwd()}\nRun the command above. Return one entry (sha, subject) per line it prints. Do not edit anything.`,
+    { label: lbl(`#${t.n} acceptance-test check`, t.title), phase: 'Tickets', schema: TESTGUARD_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  return ((res && res.commits) || []).filter(c => c.subject.trim() !== QA_SUBJECT(t.n))
+}
+
+const securityNotes = {}   // ticket number -> the gate result, for the PR body
+function isRisky(t, intent, impl) {
+  const text = [t.title, t.confirmed, intent && intent.goal, ...((intent && intent.acceptance) || [])].filter(Boolean).join('\n')
+  const paths = ((impl && impl.files) || []).filter(f => RISKY_PATH.test(f))
+  return RISK_TEXT.test(text) || paths.length > 0
+}
+// Security gate for a risky ticket. critical or high findings block; medium and low go to the PR body as follow-ups.
+async function stageSecurity(t, impl, branch) {
+  const tb = impl.branch || branch
+  const w = newWt(`sec-${t.n}`, null, tb)
+  const role = `${pluginDir}/agents/security-reviewer.md`
+  const prompt = `${w.setup}Role: read ${role} and act as that role. Read-only: edit nothing.\n` +
+    `Ticket #${t.n}: ${t.title}${t.confirmed && t.confirmed.trim() ? `\nOwner-confirmed decisions:\n${t.confirmed}` : ''}\n` +
+    `Diff range: ${integRef}..${tb}. Read it with: git -C ${w.dir} diff ${integRef}..${tb}\n` +
+    `Return findings (severity critical, high, medium or low), followups, why_risky and risk_note.`
+  const res = await call(prompt, { label: lbl(`#${t.n} security gate`, t.title), phase: 'Tickets', schema: SECURITY_SCHEMA, model: MODEL.security, effort: EFFORT.security, agentType: 'harness:security-reviewer' }, role)
+  if (!res) throw new Blocked('security gate: the reviewer returned nothing')
+  const blocking = (res.findings || []).filter(f => f.severity === 'critical' || f.severity === 'high')
+  securityNotes[t.n] = { ...res, blocking }
+  return securityNotes[t.n]
+}
+
+function stageImplement(t, branch, planText, boundary, qa) {
+  const w = newWt(`t${t.n}`, branch, integRef, !!qa)
+  const qaRule = qa ? `Acceptance tests already exist on your branch under ${qa.dir}/ (${(qa.files || []).join(', ')}). Make them pass. Never edit, skip, delete or weaken anything under ${qa.dir}/. If one is wrong, return a decision titled 'Flawed acceptance test: <name>' with needs_review true and leave that part undone.\n` : ''
   const build = advice => w.setup + head(t, 'implement',
     `Stage: implement. You cannot start other agents, so act as the implementer yourself (${pluginDir}/agents/implementer.md): take the plan steps one at a time. ` +
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
-    `Return ${w.dir} as worktree, and your branch.\n\n${boundary || ''}\n${planText}${advice}`, w.dir)
+    `Return ${w.dir} as worktree, and your branch.\n\n${qaRule}${boundary || ''}\n${planText}${advice}`, w.dir)
   return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
 }
 
@@ -765,8 +860,35 @@ async function runTicket(t) {
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +
         `Follow this plan:\n${plan.plan_md}`
     }
-    const impl = spec.impl = await stageImplement(t, branch, planText, boundary)
+    // Depth M and L: blind acceptance tests first. A QA failure never stops the ticket; it only means no blind tests.
+    let qa = null
+    if (t.depth !== 'S') {
+      try {
+        const r = await stageQa(t, intent, spec.design, branch)
+        if (r && r.ready && r.dir) qa = spec.qa = r
+        else log(`#${t.n} qa: no acceptance tests (${(r && r.reason) || 'not ready'})`)
+      } catch (e) { log(`#${t.n} qa: no acceptance tests (${e && e.message ? e.message : String(e)})`) }
+    }
+    const impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
+    if (qa) {
+      const bad = await stageTestGuard(t, impl, qa)
+      if (bad.length) throw new Blocked(`the implementer changed ${qa.dir}/ in ${bad.map(c => `${c.sha} ${c.subject}`).join('; ')}`)
+    }
     const verifyResult = spec.verify = await verifyTicket(t, impl)
+    if (isRisky(t, intent, impl)) {
+      const sec = await stageSecurity(t, impl, branch)
+      if (sec.blocking.length) {
+        const text = sec.blocking.map(f => `${f.severity} ${f.path || ''}${f.line ? `:${f.line}` : ''} ${f.summary}`).join('; ')
+        addDecision(t.n, 'security', {
+          title: `Security gate failed for #${t.n}`, context: sec.risk_note || text,
+          decision: 'The workflow does not open a PR for this ticket. Fix the findings on its branch, then open the PR yourself.',
+          why: 'A critical or high security finding on a risky ticket must not reach a PR without a human decision.',
+          consequences: `Ticket #${t.n} is blocked; tickets that depend on it are skipped.`,
+          how_to_reverse: 'Accept the finding in writing and open the PR by hand.', needs_review: true, confidence: 'high',
+        })
+        throw new Blocked(`security gate failed: ${text}`)
+      }
+    }
     const fin = spec.fin = await stageFinish(t, impl, verifyResult)
     const attached = await stageAttach(t, fin, verifyResult)
     const result = { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file, ...(verifyResult ? { verify: { ...verifyResult, attached } } : {}) }
@@ -1228,6 +1350,16 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
       const baseText = v.base === 'failed' ? 'failed on base as required' : v.base === 'passed' ? 'passed on base (weak test)' : 'not run'
       const gifText = !v.gif ? 'not built' : v.attached ? 'built and attached' : 'built, not attached'
       L.push(`- ${ref(r.n)} ${v.kind}: ${v.result}; base: ${baseText}; stills: ${v.dir}; GIF: ${gifText}`)
+    }
+  }
+  const sec = Object.entries(securityNotes)
+  if (sec.length) {
+    L.push('', '## Security gate', '')
+    for (const [n, x] of sec) {
+      L.push(`- ${ref(Number(n))}: ${x.blocking.length ? 'FAILED' : 'passed'}${x.why_risky ? `. ${x.why_risky}` : ''}`)
+      if (x.risk_note) L.push(`  - ${x.risk_note}`)
+      for (const f of (x.findings || []).filter(f => !x.blocking.includes(f))) L.push(`  - follow-up [${f.severity}]${f.path ? ` ${f.path}${f.line ? `:${f.line}` : ''}` : ''}: ${f.summary}`)
+      for (const f of x.followups || []) L.push(`  - follow-up: ${f}`)
     }
   }
   L.push('', '## Intent review', '', `Verdict: ${intent.verdict}${intent.fixRound ? ' (one fix round ran, not re-reviewed)' : ''}`)

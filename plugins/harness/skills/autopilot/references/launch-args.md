@@ -12,8 +12,12 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
   tickets: [ { n: 346, title: "...", depth: "S|M|L", group: 1, deps: [345],
                confirmed: "owner-confirmed decisions text incl. the Verify: row, may be empty" } ],
   testCmd: "<related-tests command or template>", lintCmd: "<lint command>",
-  fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false }
+  fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false,
+  profile: { stages: { review: { model: "opus", effort: "high" } } } }
 ```
+
+- `advisorModel` is the profile's `advisor`. `profile` is optional and holds the profile's `stages`
+  (see `profile.md`). Leave it out when `stages` is empty.
 
 - `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
 - One ticket means single mode: no integration branch (ADR 0001, decision 5).

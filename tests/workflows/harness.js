@@ -34,6 +34,7 @@ const FIXED_LABELS = {
   'CI snapshot': 'ci-snapshot', 'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
 }
 const TICKET_VERBS = {
+  'acceptance-test check': 'acceptance-test check', 'security gate': 'security gate',
   'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
   'UAT fix': 'uat-fix', 'UAT rerun': 'uat-rerun', 'UAT': 'uat',
 }
@@ -83,6 +84,9 @@ function defaults(c, st) {
   if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [] })
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
+  if (l.startsWith('qa:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
+  if (l.startsWith('acceptance-test check:')) return { commits: [{ sha: 'qa1', subject: `Add acceptance tests for #${n}` }] }
+  if (l.startsWith('security gate:')) return { why_risky: 'touches secrets', risk_note: 'NOTE', findings: [], followups: [] }
   if (/^uat(-rerun)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
   if (l.startsWith('uat-fix:')) return ok({ fix_status: 'fixed', base_sha: 'ubase', commit: 'ucommit' })
   if (l.startsWith('gif:')) return ok({ gif: '' })
@@ -787,6 +791,42 @@ test('k: argument validation', async () => {
   await bad({ tickets: [T(1, 1, [], { depth: 'XL' })] }, /depth/)
 })
 
+test('p1: a profile overrides the stages it names; implement, fix and the rest keep their defaults', async () => {
+  const profile = { stages: { review: { model: 'opus', effort: 'high' }, intent: { model: 'opus' } } }
+  const { calls } = await run({ profile, tickets: [T(1, 1, [], { depth: 'M' })] }, c => {
+    if (/^g?review:/.test(c.label) && !/retry/.test(c.label)) return ok({ findings: [{ id: 'F1', file: 'a.js', line: 1, score: 90, summary: 's', pre_existing: false }], skill_invoked: true, skill_error: '' })
+  })
+  const reviews = calls.filter(c => /^g?review:/.test(c.label))
+  assert(reviews.length > 0 && reviews.every(c => c.opts.model === 'opus' && c.opts.effort === 'high'), labelsOf(calls).join())
+  const intents = named(calls, /^intent:1$/)
+  assert(intents.length > 0 && intents.every(c => c.opts.model === 'opus' && c.opts.effort === 'medium'), 'intent on opus/medium')
+  const impl = named(calls, /^implement:1$/)
+  assert(impl.length > 0 && impl.every(c => c.opts.model === 'sonnet' && c.opts.effort === 'medium'), 'implement on sonnet/medium')
+  const fixes = calls.filter(c => /^g?fix:/.test(c.label))
+  assert(fixes.length > 0 && fixes.every(c => c.opts.model === 'sonnet' && c.opts.effort === 'medium'), labelsOf(calls).join())
+  assert(named(calls, /^suite$/).every(c => c.opts.model === 'haiku'), 'suite on haiku')
+})
+
+test('p2: at depth L, design and plan stay on opus even when the profile names another model', async () => {
+  const profile = { stages: { design: { model: 'haiku' }, plan: { model: 'sonnet' } } }
+  const { calls } = await run({ profile, tickets: [T(1, 1, [], { depth: 'L' })] }, null)
+  for (const s of ['design', 'plan']) {
+    const cs = named(calls, new RegExp(`^${s}:1$`))
+    assert(cs.length > 0 && cs.every(c => c.opts.model === 'opus'), `${s} on opus`)
+  }
+})
+
+test('p3: profile validation rejects locked stages, unknown stages and bad values', async () => {
+  const bad = async (stages, re) => { await assert.rejects(() => run({ profile: { stages } }, null), re) }
+  await bad({ implement: { model: 'opus' } }, /stages\.implement is locked/)
+  await bad({ fix: { effort: 'high' } }, /stages\.fix is locked/)
+  await bad({ nope: { model: 'opus' } }, /stages\.nope is not a stage/)
+  await bad({ review: { model: 'fable' } }, /review\.model must be one of/)
+  await bad({ review: { effort: 'huge' } }, /review\.effort must be one of/)
+  await bad({ review: { modle: 'opus' } }, /review\.modle is not a field/)
+  await assert.rejects(() => run({ profile: [] }, null), /args\.profile must be an object/)
+})
+
 test('l: pluginDir is used for the role files, the skills and the ADR script, and is checked in Setup', async () => {
   const { calls } = await run({ pluginDir: '/other/plugin' }, null)
   assert.strictEqual(calls[0].label, 'plugin-check')
@@ -1432,6 +1472,88 @@ test('schemas are well-formed (object root, required within properties)', async 
   let seen = 0
   for (const c of calls) if (c.schema) { assert.strictEqual(c.schema.type, 'object', c.label); check(c.schema, c.label); seen++ }
   assert(seen > 10)
+})
+
+const st = (r, n) => r.result.tickets.find(t => t.n === n).status
+
+test('qa: depth M writes blind tests before implement and implement starts on that branch', async () => {
+  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, null)
+  const ls = labelsOf(calls)
+  assert(ls.indexOf('plan:1') < ls.indexOf('qa:1') && ls.indexOf('qa:1') < ls.indexOf('implement:1'), ls.join(','))
+  const q = named(calls, /^qa:1$/)[0]
+  assert.strictEqual(q.opts.agentType, 'harness:qa-writer')
+  assert(q.prompt.includes('Add acceptance tests for #1') && q.prompt.includes('git branch feat/1-ticket-1 HEAD') && q.prompt.includes('--detach'), q.prompt)
+  assert(!q.prompt.includes('PLAN-MD'), 'the QA writer must never see the plan')
+  const i = named(calls, /^implement:1$/)[0]
+  assert(/worktree add \S+ feat\/1-ticket-1\n/.test(i.prompt) && !/worktree add -b/.test(i.prompt), 'implement checks out the existing branch')
+  assert(i.prompt.includes('Never edit, skip, delete or weaken anything under tests/acceptance/'))
+  assert.strictEqual(named(calls, /^acceptance-test check:1$/).length, 1)
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('qa: depth S runs no QA writer and creates the branch the old way', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [])] }, null)
+  assert.strictEqual(named(calls, /^qa:/).length, 0)
+  assert(/worktree add -b feat\/1-ticket-1 /.test(named(calls, /^implement:1$/)[0].prompt))
+})
+
+test('qa: ready false leaves implement unchanged and does not stop the ticket', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'qa:1' ? ok({ ready: false, reason: 'docs only' }) : undefined))
+  const i = named(r.calls, /^implement:1$/)[0]
+  assert(/worktree add -b /.test(i.prompt) && !i.prompt.includes('Acceptance tests already exist'))
+  assert.strictEqual(named(r.calls, /^acceptance-test check:/).length, 0)
+  assert.strictEqual(st(r, 1), 'done')
+})
+
+test('qa: a QA writer that throws never stops the ticket', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'qa:1' ? new Error('boom') : undefined))
+  assert.strictEqual(st(r, 1), 'done')
+})
+
+test('qa: an implementer commit that touches the acceptance tests blocks the ticket', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'acceptance-test check:1'
+    ? { commits: [{ sha: 'qa1', subject: 'Add acceptance tests for #1' }, { sha: 'bad2', subject: 'make it pass' }] } : undefined))
+  assert.strictEqual(st(r, 1), 'blocked')
+  assert(r.result.tickets.find(t => t.n === 1).reason.includes('bad2'), 'the reason names the commit')
+  assert.strictEqual(named(r.calls, /^finish:/).length, 0, 'no PR for a ticket that edited the tests')
+})
+
+test('security: a ticket that names a risky area runs the gate on Opus before the PR', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { title: 'Add login with a password' })] }, null)
+  const ls = labelsOf(r.calls)
+  assert(ls.indexOf('verify:1') < ls.indexOf('security gate:1') && ls.indexOf('security gate:1') < ls.indexOf('finish:1'), ls.join(','))
+  const s = named(r.calls, /^security gate:1$/)[0]
+  assert.strictEqual(s.opts.agentType, 'harness:security-reviewer')
+  assert.strictEqual(s.opts.model, 'opus')
+  assert.strictEqual(st(r, 1), 'done')
+})
+
+test('security: a ticket that touches a risky path runs the gate even when its text is plain', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { title: 'Rename a label' })] }, c => (c.label === 'implement:1'
+    ? ok({ worktree: '/wt/1', branch: 'b1', files: ['plugins/harness/hooks/x.sh'], commits: [], verify: [] }) : undefined))
+  assert.strictEqual(named(r.calls, /^security gate:1$/).length, 1)
+})
+
+test('security: a plain ticket runs no security gate', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { title: 'Rename a label' })] }, null)
+  assert.strictEqual(named(r.calls, /^security gate:/).length, 0)
+})
+
+test('security: a high finding blocks the ticket, opens no PR and records a needs_review decision', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { title: 'Add login' })] }, c => (c.label === 'security gate:1'
+    ? { why_risky: 'login', risk_note: 'RN', findings: [{ severity: 'high', path: 'a.js', line: 3, summary: 'no auth check' }], followups: [] } : undefined))
+  assert.strictEqual(st(r, 1), 'blocked')
+  assert(r.result.tickets.find(t => t.n === 1).reason.includes('no auth check'))
+  assert.strictEqual(named(r.calls, /^finish:/).length, 0)
+  assert(r.result.decisions.some(d => d.stage === 'security' && d.needs_review === true))
+})
+
+test('security: medium and low findings pass the gate and reach the PR body as follow-ups', async () => {
+  const r = await run({ tickets: [T(1, 1, [], { title: 'Add login' })] }, c => (c.label === 'security gate:1'
+    ? { why_risky: 'login', risk_note: 'RN', findings: [{ severity: 'medium', path: 'a.js', summary: 'weak cookie flag' }], followups: ['rotate keys'] } : undefined))
+  assert.strictEqual(st(r, 1), 'done')
+  const adr = named(r.calls, /^adr$/)[0].prompt
+  assert(adr.includes('## Security gate') && adr.includes('weak cookie flag') && adr.includes('rotate keys'), adr.slice(0, 400))
 })
 
 ;(async () => {

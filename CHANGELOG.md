@@ -7,6 +7,13 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+- feat(skills): add /harness:own, which runs grilling or brainstorming with the owner answering
+  each big decision first
+- feat(hooks): add stop-evidence.sh, a Stop hook that requires real command output after a code change
+- feat(workflow): add qa-writer (blind acceptance tests) and security-reviewer (risky-ticket gate) stages to ship.js
+- feat(autopilot): add an autopilot profile (`profile.json`) for orchestrator and stage models
+- feat(skills): print evidence first and keep confirm questions short (option `preview`)
+
 ## [5.6.0] — 2026-11-04
 
 - feat(skills): make /harness:recall output a direct task brief (PR #558)

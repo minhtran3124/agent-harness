@@ -1,7 +1,7 @@
 # Hooks and permissions
 
 The short hook table is in `CLAUDE.md`; `scripts/lint-doc-truth.sh` keeps that table in step with
-`plugins/harness/hooks/` and its `hooks.json`. The harness has five small hooks plus a `permissions.deny` list. Everything else is judgment, not
+`plugins/harness/hooks/` and its `hooks.json`. The harness has six small hooks plus a `permissions.deny` list. Everything else is judgment, not
 a mechanical gate.
 
 ## Hook details
@@ -51,6 +51,25 @@ exits 0 before any parsing, so it costs nothing. There is no environment-variabl
 `Verifies:` the PR base and default branch of every judged merge. `Does not verify:` the owner's own `!` or terminal
 merges (the hook never sees them), a local `git merge`, a merge through the web UI or another client, a command built at
 run time, or whether the PR is ready (the workflow gate checks that). Local mode has no PRs, so the guard does not apply there.
+
+### `stop-evidence.sh` (Stop)
+
+Enforces "Done needs real command output" in the main session. It acts when `git status` shows a changed code
+file (files under `docs/` and `specs/`, `*.md` and `*.txt` are ignored) and the transcript holds no tool result
+from a Bash call. The model of the main session comes from the transcript, because the Stop input has no model field.
+- A Sonnet (or unknown) main session runs a judge: `claude -p --model opus` with `stop-evidence-judge.md`. The judge
+  answers `pass`, `light` or `severe`. `light` blocks once (it passes when `stop_hook_active` is true). `severe` blocks
+  every time, up to the limit of consecutive Stop-hook continuations that Claude Code sets.
+- An Opus main session runs no judge and gets one light block, unless the risk floor matches.
+- Risk floor: a changed path under `hooks/` or `scripts/`, or an auth or secret word (`password`, `secret`, `api key`,
+  `credential`, `jwt`, `oauth`, `auth*`, `login`, `sign in`) in an added line. When the judge fails or times out
+  (`STOP_EVIDENCE_JUDGE_TIMEOUT`, 90 s), a floor match blocks and anything else passes.
+- `STOP_EVIDENCE_GUARD` is set for the judge run, so the judge does not trigger the hook again.
+
+`Verifies:` that no command output exists after a code change. `Does not verify:` that a command passed, that its
+output fits the final diff (the judge decides that), or hooks in Workflow agents (not proven, see ADR 0007).
+It reads a transcript format that Claude Code does not document; an unreadable transcript fails open.
+Test: `bash tests/hooks/stop-evidence.test.sh`.
 
 ### `pr-opened.sh` (PostToolUse, Bash)
 
@@ -115,7 +134,7 @@ delivered this way is not verified in a live session.
 
 ## One fixed hook set
 
-The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `pr-opened.sh` and `clean-worktrees.sh` (PostToolUse and SessionStart). Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
+The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `stop-evidence.sh`, `pr-opened.sh` and `clean-worktrees.sh` (PostToolUse and SessionStart). Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
 
 ## Permissions
 
