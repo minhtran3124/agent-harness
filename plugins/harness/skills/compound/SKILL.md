@@ -41,7 +41,7 @@ Read the selected `templates/` file before writing. Use the context category/slu
 `docs/solutions/<category>/`. On a high-overlap collision, update the existing record. Otherwise,
 allocate the next numeric suffix.
 
-The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/`. Map each decision to `templates/decision-consolidated.md` and run `plugins/harness/scripts/write_adrs.py`.
+The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/`. Map each decision to `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md` and run `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py`.
 
 Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
 code. Do not change a literal string that a test or hook matches.
