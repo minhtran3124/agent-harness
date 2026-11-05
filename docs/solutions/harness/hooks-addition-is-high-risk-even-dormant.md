@@ -25,6 +25,6 @@ Dormancy does not exempt a hook from the gate: a hook present on disk but absent
 
 ## Related
 - docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md
-- docs/solutions/harness/gap-closure-decisions.md
+- docs/adr/0016-ship-a-new-hook-dormant-and-wire-settings-json-in-a-separate.md
 
 > Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh

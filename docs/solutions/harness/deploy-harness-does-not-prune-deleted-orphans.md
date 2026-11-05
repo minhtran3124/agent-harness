@@ -34,4 +34,4 @@ A **per-deploy manifest** at `.claude/.harness-deployed` listing the top-level `
 When adding deletion to any sync tool, do not derive "ownership" from the current source inventory (indistinguishable from a consumer addition). Record what the tool itself deployed and prune only `previous_own_manifest ∖ current_source`. Never blind-prune.
 
 ## Related
-- docs/solutions/harness/resync-protected-files-decisions.md
+- docs/adr/0021-stop-shipping-proposed-files-from-the-harness.md

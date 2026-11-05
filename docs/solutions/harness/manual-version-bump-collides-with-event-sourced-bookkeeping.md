@@ -69,4 +69,4 @@ the harder mechanical backstop, tracked in the improvement backlog.
 
 ## Related
 
-- docs/solutions/harness/resync-protected-files-decisions.md
+- docs/adr/0022-never-hand-edit-version-or-changelog-md-when-finishing-a-bra.md

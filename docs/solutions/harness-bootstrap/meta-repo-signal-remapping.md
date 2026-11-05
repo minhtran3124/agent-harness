@@ -47,6 +47,6 @@ grep "Lane:" hooks/risk-corroboration.sh
 - Structural scaffolding is create-if-missing: `specs/README.md` and `specs/STATE.md` were created; existing `docs/solutions/*` and `agent-memory/README.md` were correctly skipped.
 
 ## Related
-- docs/solutions/harness-bootstrap/meta-repo-signal-remapping-decisions.md
+- docs/adr/0013-convention-pointers-for-the-harness-repo-harness-native-docs.md
 
 > Superseded by specs/simplify-hook-surface (2026-09-29): commit-quality-gate.sh, risk-corroboration.sh, blast-radius-check.sh merged into hooks/commit-gate.sh
