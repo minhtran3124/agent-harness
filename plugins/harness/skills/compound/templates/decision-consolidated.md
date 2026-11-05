@@ -6,7 +6,7 @@ them to `docs/adr/` in the current project. Shape and rules: `python3 ${CLAUDE_P
 
 ```json
 {"run": "[slug]", "decisions": [{
-  "ticket": "[issue number, or a non-numeric placeholder]",
+  "ticket": "[issue number, or the fixed placeholder compound; never run]",
   "stage": "[stage name]",
   "title": "[short title]",
   "context": "[Context from DECISION_TRACK_N]",

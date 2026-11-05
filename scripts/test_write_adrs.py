@@ -387,6 +387,16 @@ def test_run_level_tickets_are_not_deduped_against_the_folder(tmp_path):
     assert len(md_files(adr)) == 2
 
 
+def test_placeholder_ticket_identical_decision_is_skipped_changed_is_not_superseding(tmp_path):
+    adr, inp = setup(tmp_path, [dec(ticket="compound")], existing=())
+    run(adr, inp)
+    assert json.loads(run(adr, inp).stdout) == []
+    assert len(md_files(adr)) == 1
+    inp.write_text(json.dumps({"decisions": [dec(ticket="compound", decision="something else")]}))
+    assert len(json.loads(run(adr, inp).stdout)) == 1
+    assert "status: superseded" not in (adr / "0001-use-a-queue.md").read_text()
+
+
 def test_malformed_existing_adr_is_ignored(tmp_path):
     adr, inp = setup(tmp_path, [dec()], existing=("0001-bad.md",))
     (adr / "0001-bad.md").write_bytes(b"\xff\xfe not an adr")

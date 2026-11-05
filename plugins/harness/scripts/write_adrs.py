@@ -10,8 +10,8 @@ contract, or how users work) that lists at least two real options (not n/a), and
 not start with "Boundary: " or "UAT not run". needs_review is the separate owner-ask flag and never
 makes a file; confidence never decides this, it only marks a guess in the table. Files are always born
 accepted. A decision whose ticket already has an ADR in the folder with the same title slug or the
-same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file that supersedes the old one; this check covers numeric
-tickets only. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
+same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file that supersedes the old one; this check covers every ticket except
+"run"; a non-numeric placeholder ticket is only skipped on an identical decision and never supersedes. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
@@ -186,12 +186,15 @@ def recorded_match(d: dict, keys: list):
     matches, so a decision that reverts to an older text is written again.
     """
     ticket = str(d["ticket"]).strip()
-    if not ticket.isdigit():
-        return None   # 'run' and other non-numeric tickets repeat across runs
+    if ticket.lower() == "run":
+        return None   # autopilot run-level decisions repeat across runs
     slug, ctx = slugify(d["title"]), _context_key(d)
     dec = " ".join(as_text(d["decision"]).lower().split())
     hits = [(n, dtext) for n, t, s, c, dtext, sup in keys
             if t == ticket and not sup and (s == slug or (ctx and c == ctx))]
+    if not ticket.isdigit():
+        # A placeholder ticket (a /compound run) skips only an identical decision: it never supersedes.
+        return next(((n, True) for n, dtext in hits if dtext == dec), None)
     for n, dtext in hits:
         if not dtext or dtext == dec:
             return n, True
