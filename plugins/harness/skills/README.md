@@ -191,7 +191,7 @@ Skills read from and write to `docs/solutions/`:
 writes ──► compound
            docs/solutions/<category>/<slug>.md, critical-patterns.md,
            INDEX.md (rebuilt by scripts/rebuild_solution_index.py)
-           front-matter: problem_type (bug | knowledge | decision | failure),
+           front-matter: problem_type (bug | knowledge | failure),
                          module, tags, severity, applicable_when,
                          affects, supersedes, confidence, confirmed_at
 

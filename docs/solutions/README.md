@@ -35,7 +35,7 @@ Every solution file begins with:
 
 ```yaml
 ---
-problem_type: bug | knowledge | decision | failure
+problem_type: bug | knowledge | failure
 module: <area of codebase>
 tags: [<keyword>, <keyword>]
 severity: critical | standard
@@ -66,7 +66,6 @@ Run both from the repository root. Each exits 0 when clean.
 |---|---|
 | `bug` | Problem, Root_Cause, Fix |
 | `knowledge` | Pattern, How_to_Use |
-| `decision` | Context, Options_Considered, Decision_and_Rationale |
 | `failure` | Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach, Guardrail |
 
 ## Confidence Decay
