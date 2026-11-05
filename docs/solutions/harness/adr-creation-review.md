@@ -68,9 +68,9 @@ reviewer. Every decision still gets a row in the `## Decisions` PR table.
   for hooks in Workflow agents, but 0007 was then "Infrastructure failure of UAT does not fail the
   ticket". The old number pointed at the wrong file. The #566 prune renumbered the folder again and
   fixed that line.
-- **Two stores (#458):** decisions also live as `problem_type: decision` entries in
-  `docs/solutions/` (for example `harness/gap-closure-decisions.md`). `brainstorming` reads that
-  track, `xia2` reads both, and nothing links the two.
+- **Two stores (#458, fixed by #567):** decisions also lived as `problem_type: decision` entries in
+  `docs/solutions/` (for example the gap-closure note, now ADR 0015). #567 moved all of them to
+  `docs/adr/`, so decisions have one store and `docs/solutions/` keeps lessons.
 - **Token cost:** only `xia2` searches `docs/adr/`, and only when it runs. The folder is 38 files and
   grows with every run that flags a decision; most of the growth is the noise above.
 

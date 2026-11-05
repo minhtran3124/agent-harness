@@ -33,7 +33,7 @@ Examples that do NOT qualify:
 
 ## Your Job
 
-Extract structured content for the decision-track. Do NOT write any files. Return text only.
+Extract structured content for the decision-track. Do NOT write any files. Return text only. The orchestrator turns each block into one ADR in `docs/adr/`.
 
 ## Output Format
 

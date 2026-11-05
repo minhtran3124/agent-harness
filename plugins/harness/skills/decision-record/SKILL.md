@@ -17,6 +17,8 @@ allowed-tools: Read, Write, Bash, Skill
 | Contradicts a confirmed answer, or is dangerous | Do not do that part. `needs_review: true`, `adr: false`. |
 | A scope note (title starts with `Boundary: `) or a `UAT not run` event | `needs_review: true`, `adr: false`. Never a file. |
 
+One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/`.
+
 ## Which decisions get a file
 
 `write_adrs.py` applies this rule; agents do not filter.
@@ -51,10 +53,10 @@ Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design 
 ## The ADR stage
 
 1. Save all `decisions[]` of the run, each with `decided_by`, as `{"run": "<slug>", "decisions": [...]}`.
-2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file> [--dry-run] [--table-out <file>]`. Exit 2 means bad input: fix it and run again.
+2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file> [--dry-run] [--table-out <file>]`. Exit 2 means bad input.
 3. Commit the new files in `docs/adr/` to the PR branch.
 4. Build the artifact when the Artifact tool exists (`references/artifact.md`). Run `write_adrs.py --render-section <written.json> [--artifact <url>]`; put the output, then the table file, in the PR body as `## Decisions`.
-5. Run `write_adrs.py --fill-count <body-file> --written <written.json>`. It fills `{{ADR_COUNT}}`; never fill it by hand.
+5. Run `write_adrs.py --fill-count <body-file> --written <written.json>`. It fills `{{ADR_COUNT}}`.
 
 ## Auto mode
 

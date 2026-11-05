@@ -1,44 +1,26 @@
----
-problem_type: decision
-module: [module from CONTEXT_ANALYSIS]
-tags: [union of tags from all DECISION_TRACK blocks + CONTEXT_ANALYSIS — deduplicated]
-severity: [severity from CONTEXT_ANALYSIS]
-applicable_when: [applicable_when from CONTEXT_ANALYSIS]
-affects:
-  - [union of affected files across all DECISION_TRACK blocks — one per line]
-supersedes: null
-confidence: high
-confirmed_at: [today's date YYYY-MM-DD]
----
+# Decision track: ADR input
 
-## Applicable When
-[applicable_when from CONTEXT_ANALYSIS]
+The decision track does not write `docs/solutions/`. Write one JSON file and run
+`python3 plugins/harness/scripts/write_adrs.py --input FILE`. The script numbers the ADRs and writes
+them to `docs/adr/`. Shape and rules: `docs/adr/README.md`.
 
-## Decision 1
-### Context
-[Context from DECISION_TRACK_1]
-### Options Considered
-[Options_Considered from DECISION_TRACK_1]
-### Decision & Rationale
-[Decision_and_Rationale from DECISION_TRACK_1]
-### Applicable When
-[Applicable_When from DECISION_TRACK_1]
-### Consequences
-[Consequences from DECISION_TRACK_1 — omit section if [none]]
+```json
+{"run": "[slug]", "decisions": [{
+  "ticket": "[issue number, or a non-numeric placeholder]",
+  "stage": "[stage name]",
+  "title": "[short title]",
+  "context": "[Context from DECISION_TRACK_N]",
+  "options": ["[one string per option from Options_Considered; at least two]"],
+  "decision": "[the chosen option]",
+  "why": "[the rationale from Decision_and_Rationale]",
+  "consequences": "[Consequences; n/a when [none]]",
+  "how_to_reverse": "[how to undo it]",
+  "confidence": "high | medium | low",
+  "needs_review": false,
+  "adr": true,
+  "decided_by": "claude",
+  "date": "[optional, YYYY-MM-DD; default today]"
+}]}
+```
 
-## Decision 2
-### Context
-[Context from DECISION_TRACK_2]
-### Options Considered
-[Options_Considered from DECISION_TRACK_2]
-### Decision & Rationale
-[Decision_and_Rationale from DECISION_TRACK_2]
-### Applicable When
-[Applicable_When from DECISION_TRACK_2]
-### Consequences
-[Consequences from DECISION_TRACK_2 — omit section if [none]]
-
-(Repeat ## Decision N pattern for each additional DECISION_TRACK_N block.)
-
-## Related
-[Paths from RELATED_DOCS.existing_files — omit section if empty]
+Add one object per DECISION_TRACK_N block. Applicable_When goes at the end of the context.

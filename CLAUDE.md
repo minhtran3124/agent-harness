@@ -87,7 +87,7 @@ Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.
 
 ## Knowledge
 
-- `docs/solutions/` holds solved problems and patterns. Start at `docs/solutions/INDEX.md`; read `docs/solutions/critical-patterns.md` when you plan. Entries carry `confirmed_at`: treat an entry older than 30 days as possibly stale.
+- One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/`. `docs/solutions/` holds solved problems and patterns. Start at `docs/solutions/INDEX.md`; read `docs/solutions/critical-patterns.md` when you plan. Entries carry `confirmed_at`: treat an entry older than 30 days as possibly stale.
 - `docs/adr/` holds durable decisions and depth-L designs (an ADR with `stage: design`).
 - `specs/` is local scratch and is gitignored. Every ticket gets `specs/<slug>/` with five flow files: `intent.md`, `design.md`, `decision.md`, `plan.md`, `summary.md` (contract: `plugins/harness/templates/structure/specs-README.md`). A durable design or decision also goes to `docs/adr/`. Do not commit under `specs/`.
 

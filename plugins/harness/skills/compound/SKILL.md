@@ -1,6 +1,6 @@
 ---
 name: compound
-description: Preserve durable bugs, patterns, decisions, and failed approaches as discoverable `docs/solutions/` records. Use only after a session produced a reusable learning.
+description: Preserve durable bugs, patterns and failed approaches as `docs/solutions/` lessons, and decisions as `docs/adr/` ADRs. Use only after a session produced a reusable learning.
 allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 ---
 
@@ -39,7 +39,9 @@ about how the team estimates.
 
 Read the selected `templates/` file before writing. Use the context category/slug under
 `docs/solutions/<category>/`. On a high-overlap collision, update the existing record. Otherwise,
-allocate the next numeric suffix. Multiple decisions use one `-decisions` consolidated template.
+allocate the next numeric suffix.
+
+The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/`. Map each decision to `templates/decision-consolidated.md` and run `plugins/harness/scripts/write_adrs.py`.
 
 Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
 code. Do not change a literal string that a test or hook matches.
