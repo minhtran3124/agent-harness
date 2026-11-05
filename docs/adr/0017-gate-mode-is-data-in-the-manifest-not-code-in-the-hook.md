@@ -48,7 +48,6 @@ is the durable path. `check_gate_modes_smoke.py` pins 2-warn/7-block in CI.
 Related:
 - docs/solutions/harness/gate-config-must-read-index.md
 - docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md
-- ADR 0021
 
 ## How to reverse
 

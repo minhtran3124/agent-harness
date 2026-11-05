@@ -38,7 +38,6 @@ A manifest staged for deletion or unreadable from the index blocks rather than a
 Related:
 - docs/solutions/harness/gate-config-must-read-index.md
 - docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md
-- ADR 0021
 
 ## How to reverse
 

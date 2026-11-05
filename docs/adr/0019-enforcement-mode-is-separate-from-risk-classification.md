@@ -39,7 +39,6 @@ expected 85% → ~15%.
 Related:
 - docs/solutions/harness/gate-config-must-read-index.md
 - docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md
-- ADR 0021
 
 ## How to reverse
 
