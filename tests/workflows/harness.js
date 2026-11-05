@@ -306,6 +306,18 @@ test('e9: a Boundary decision sent with adr true reaches the ADR input as adr fa
   assert(sec.includes('DECISION-TEXT-B9') && sec.includes('DECISION-TEXT-P9'), sec)
 })
 
+test('e9b: a dangerous or contradicting decision sent with adr true reaches the ADR input as adr false', async () => {
+  const mk = (title, extra) => ({ title, context: 'c', options: ['a', 'b'], decision: 'DEC-' + title, why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, adr: true, ...extra })
+  const D = mk('Flag-danger', { dangerous: true }), C = mk('Flag-contra', { contradicts_confirmed: true })
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 2)] }, c => (c.label === 'final-pr' ? ok({ pr: 900, url: 'https://x/pull/900', decisions: [D, C] }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  for (const t of ['Flag-danger', 'Flag-contra']) {
+    const i = p.indexOf('"title":"' + t + '"')
+    assert(i >= 0, t + ' missing')
+    assert(p.slice(i, p.indexOf('}', i)).includes('"adr":false'), t + ' keeps adr true')
+  }
+})
+
 test('e7: RULES gives one source for project rules, not the owner checkout and the worktree at once', async () => {
   const { calls } = await run()
   const c = calls.find(x => x.prompt.includes('Rules (all of them apply)'))

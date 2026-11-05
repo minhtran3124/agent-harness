@@ -307,7 +307,7 @@ function takeDecisions(ticket, stage, res) {
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
       needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
-      adr: d.adr === true && !title.startsWith(BOUNDARY_PREFIX),
+      adr: d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX),
       owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
       decided_by: `claude (ship workflow: ${stage})`,
