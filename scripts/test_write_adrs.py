@@ -454,13 +454,35 @@ def test_stale_needs_review_line_with_crlf_template_is_dropped(tmp_path):
     assert "{needs_review}" not in (adr / "0001-use-a-queue.md").read_text()
 
 
-def test_unknown_template_placeholder_warns_and_is_kept(tmp_path):
+def test_unknown_template_placeholder_still_fails_loudly(tmp_path):
+    # Only the old {needs_review} line is tolerated. A typo or a new field must not reach a committed ADR.
     adr, inp = setup(tmp_path, [dec()], existing=())
     (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text() + "\nOwner: {owner}\n")
     r = run(adr, inp)
+    assert r.returncode == 2 and "{owner}" in r.stderr
+    assert md_files(adr) == []
+
+
+def test_stale_needs_review_placeholder_in_any_line_shape_is_dropped(tmp_path):
+    shapes = ("needs_review: {needs_review} # reviewer", "**Needs review:** {needs_review}", '"needs_review": {needs_review}')
+    for i, shape in enumerate(shapes):
+        (tmp_path / f"s{i}").mkdir()
+        adr, inp = setup(tmp_path / f"s{i}", [dec()], existing=())
+        (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text().replace("status: {status}", "status: {status}\n" + shape))
+        r = run(adr, inp)
+        assert r.returncode == 0, (shape, r.stderr)
+        assert "{needs_review}" not in (adr / "0001-use-a-queue.md").read_text(), shape
+
+
+def test_template_warning_goes_to_stderr_only_and_dry_run_writes_nothing(tmp_path):
+    # ship.js saves stdout as .ship/written.json: a warning there would corrupt it.
+    adr, inp = setup(tmp_path, [dec()], existing=())
+    (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text().replace("status: {status}", "status: {status}\nneeds_review: {needs_review}"))
+    r = run(adr, inp, "--dry-run")
     assert r.returncode == 0, r.stderr
-    assert "{owner}" in r.stderr
-    assert "Owner: {owner}" in (adr / "0001-use-a-queue.md").read_text()
+    assert "warning" in r.stderr
+    json.loads(r.stdout)
+    assert md_files(adr) == []
 
 
 def test_no_needs_review_status_in_docs_or_script():

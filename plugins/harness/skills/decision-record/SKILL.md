@@ -24,7 +24,7 @@ allowed-tools: Read, Write, Bash, Skill
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
    item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `adr` or `needs_review`, the kept one has it too. The
    kept one is `owner_confirmed` only if every merged item is.
-2. Write a file only if `adr: true` (table row 3) and `options` lists at least two real options.
+2. Write a file only if `adr: true` (row 3; never for a `Boundary:` or `UAT not run` note) and `options` lists two real options.
    `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
 3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
    title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
@@ -44,6 +44,8 @@ allowed-tools: Read, Write, Bash, Skill
 Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `context`, `options`,
 `decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, `adr` (required; input without it exits 2), and optionally `owner_confirmed`. Never write an ADR file.
 
+## Other places
+
 Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design from `brainstorming` is a decision with `stage: design` and `adr: true`.
 
 ## The ADR stage
@@ -56,4 +58,4 @@ Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design 
 
 ## Auto mode
 
-The ADR stage never asks the owner.
+The ADR stage never asks the owner. After two failed runs of step 2, return `blocked`.

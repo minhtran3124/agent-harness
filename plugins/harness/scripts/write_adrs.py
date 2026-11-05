@@ -327,19 +327,19 @@ def render(template: str, d: dict, number: int, date: str) -> str:
 
 
 def prepare_template(template: str) -> str:
-    """Drop a legacy `needs_review: {needs_review}` line and warn about it. Warn about any other
-    placeholder the script does not fill and leave it as written. A project template written for an
-    older plugin must not stop the ADR stage, so this never raises."""
-    cleaned = re.sub(r"(?m)^[ \t]*needs_review:[ \t]*\{needs_review\}[ \t]*\r?\n", "", template)
+    """Drop every template line that holds the old `{needs_review}` placeholder and warn on stderr
+    (needs_review is no longer an ADR field, and a project TEMPLATE.md written for an older plugin must
+    not stop the ADR stage). Any other placeholder the script does not fill still fails with exit 2, so
+    a typo never reaches a committed ADR."""
+    cleaned = re.sub(r"(?m)^[^\n]*\{needs_review\}[^\n]*(?:\n|\Z)", "", template)
     if cleaned != template:
-        print("warning: TEMPLATE.md has the old line `needs_review: {needs_review}`; dropped it "
+        print("warning: TEMPLATE.md has a line with {needs_review}; dropped it "
               "(needs_review is not an ADR field)", file=sys.stderr)
     known = set(REQUIRED) | {"status", "number", "date"}
     known.discard("needs_review")
-    unknown = sorted(set(re.findall(r"\{([a-z_]+)\}", cleaned)) - known)
-    if unknown:
-        print("warning: TEMPLATE.md has a placeholder the script does not fill, left as written: "
-              + ", ".join("{" + b + "}" for b in unknown), file=sys.stderr)
+    bad = sorted(set(re.findall(r"\{([a-z_]+)\}", cleaned)) - known)
+    if bad:
+        raise BadInput("TEMPLATE.md has a placeholder the script does not fill: " + ", ".join("{" + b + "}" for b in bad))
     return cleaned
 
 
