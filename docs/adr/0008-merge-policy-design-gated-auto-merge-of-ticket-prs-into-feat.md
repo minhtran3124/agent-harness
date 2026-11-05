@@ -2,7 +2,7 @@
 ticket: 516
 stage: design
 status: accepted
-needs_review: true
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: design)
 date: 2026-10-30

@@ -49,8 +49,10 @@ trade-off, even when it was not flagged. Only a decision that passes the gate ab
 
 On 2026-11-05 the folder was pruned again and renumbered 0001 to 0012: most old ADRs recorded small,
 reversible choices that now live in the code, tests and PR history. Old numbers in PR bodies, commits
-and open PRs no longer match a file here; use the map below. Get a pruned ADR back with
-`git log --diff-filter=D -- docs/adr/NNNN-*` and `git show <sha>^:docs/adr/<file>`.
+and open PRs no longer match a file here; use the map below. An old number can now name a different
+record (0003, 0004, 0005, 0006, 0007, 0008, 0009 and 0010 do), so find the old file name first:
+`git log --diff-filter=D --name-only --format= -- docs/adr`. Then get it back with
+`git log --diff-filter=D --format=%h -- docs/adr/<old-file>` and `git show <sha>^:docs/adr/<old-file>`.
 
 ### Old-to-new map
 

@@ -2,7 +2,7 @@
 ticket: 545
 stage: intent
 status: accepted
-needs_review: true
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: intent)
 date: 2026-10-31

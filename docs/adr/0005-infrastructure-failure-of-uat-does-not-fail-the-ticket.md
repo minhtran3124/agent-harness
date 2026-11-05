@@ -2,7 +2,7 @@
 ticket: 462
 stage: implement
 status: accepted
-needs_review: true
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: implement)
 date: 2026-10-29
