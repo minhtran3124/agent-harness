@@ -24,9 +24,7 @@ allowed-tools: Read, Write, Bash, Skill
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
    item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `adr` or `needs_review`, the kept one has it too. The
    kept one is `owner_confirmed` only if every merged item is.
-2. Write a file only if `adr: true`: the decision (a) changes harness behavior, a data or config
-   contract, or how users work, and (b) had at least two viable options, listed in options. The script
-   also needs two real options and a title that is not a Boundary or `UAT not run` note.
+2. Write a file only if `adr: true` (table row 3) and `options` lists at least two real options.
    `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
 3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
    title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
@@ -46,8 +44,6 @@ allowed-tools: Read, Write, Bash, Skill
 Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `context`, `options`,
 `decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, `adr` (required; input without it exits 2), and optionally `owner_confirmed`. Never write an ADR file.
 
-## Other places
-
 Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design from `brainstorming` is a decision with `stage: design` and `adr: true`.
 
 ## The ADR stage
@@ -56,3 +52,8 @@ Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design 
 2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file> [--dry-run] [--table-out <file>]`. Exit 2 means bad input: fix it and run again.
 3. Commit the new files in `docs/adr/` to the PR branch.
 4. Build the artifact when the Artifact tool exists (`references/artifact.md`). Run `write_adrs.py --render-section <written.json> [--artifact <url>]`; put the output, then the table file, in the PR body as `## Decisions`.
+5. Run `write_adrs.py --fill-count <body-file> --written <written.json>`. It fills `{{ADR_COUNT}}`; never fill it by hand.
+
+## Auto mode
+
+The ADR stage never asks the owner.
