@@ -115,24 +115,33 @@ def test_ac4_merge_guard_test_comment_uses_new_numbers():
     assert "ADR 0108, 0109" not in text
 
 
+def dangling_adr_refs(lines, names):
+    """Lines holding an ADR reference that does not resolve to a kept ADR."""
+    bad = []
+    for line in lines:
+        for m in re.finditer(r"adr/(0\d{3})(-[\w.-]+\.md)?|ADR ?(0\d{3})", line):
+            num = m.group(1) or m.group(3)
+            if int(num) > 12 or num not in KEPT:
+                bad.append(line)
+            elif m.group(2) and f"{num}{m.group(2)}" not in names:
+                bad.append(line)
+    return bad
+
+
 def test_ac5_every_adr_reference_points_at_an_existing_file():
     out = subprocess.run(
         ["grep", "-rnIE", r"adr/0[0-9]{3}|ADR ?0[0-9]{3}", ".",
          "--exclude-dir=.git", "--exclude-dir=specs", "--exclude-dir=tests", "--exclude=test_write_adrs.py"],
         cwd=ROOT, capture_output=True, text=True).stdout
-    names = adr_files()
-    bad = []
-    for line in out.splitlines():
-        for m in re.finditer(r"adr/(0\d{3})(-[\w.-]+\.md)?|ADR ?(0\d{3})", line):
-            num = m.group(1) or m.group(3)
-            if int(num) > 12:
-                if m.group(2) and f"{num}{m.group(2)}" not in names:
-                    bad.append(line)
-            elif num not in KEPT:
-                bad.append(line)
-            elif m.group(2) and f"{num}{m.group(2)}" not in names:
-                bad.append(line)
+    bad = dangling_adr_refs(out.splitlines(), adr_files())
     assert not bad, bad[:10]
+
+
+def test_ac5_dangling_check_flags_high_numbers_without_filename():
+    names = adr_files()
+    assert dangling_adr_refs(["see ADR 0999"], names)
+    assert dangling_adr_refs(["see docs/adr/0500"], names)
+    assert not dangling_adr_refs(["see ADR 0007"], names)
 
 
 def _git_ok(root, *args):
