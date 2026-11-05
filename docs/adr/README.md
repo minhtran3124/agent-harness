@@ -21,9 +21,9 @@ viable options, listed in `options`. A scope note (Boundary) and a "UAT not run"
 `adr`. A decision the agent marks `dangerous` or `contradicts_confirmed` is never `adr` either: the
 workflow (`takeDecisions` in `ship.js`) sets `adr` to false for it, because the part was not done.
 It still shows in the PR table and under "Needs your decision" with `needs_review: true`, so it
-gets a table-only row and no ADR file. The script also checks what it can check exactly: it needs at least two options that are not
-`n/a`, and it refuses a title that starts with `Boundary: ` or `UAT not run`. `confidence` never
-decides this.
+gets a table-only row and no ADR file. The script also checks what it can check exactly: it
+needs at least two options that are not `n/a`, and it refuses a title that starts with
+`Boundary: ` or `UAT not run`. `confidence` never decides this.
 
 The script also reads this folder. A decision whose ticket already has an ADR here with the same
 title slug or the same non-empty context and the same decision text is skipped, so a re-run writes
