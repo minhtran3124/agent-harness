@@ -88,7 +88,8 @@ ADR replaces one, set by the author of the later ADR.
 
 1. Gate: apply the impact, trade-off and exclusion rules in `write_adrs.py` and the `decision-record` skill.
 2. Prune: delete the 26 ADRs that fail the gate and renumber the 12 that stay to 0001-0012; fix
-   `docs/hooks.md:70`.
+   `docs/hooks.md:70`. The 26 are 38 minus the 12 kept. They are not the same set as the 25 open
+   (`needs-review`) ADRs: some kept ADRs are open, and some deleted ones are `accepted`.
 3. Lifecycle: write new ADRs as `accepted`; drop `needs-review`.
 4. Boundary: stop writing files for `Boundary:` decisions; add the `Needs your decision` line.
 5. Stores (#458): keep both stores and document which record goes where.
