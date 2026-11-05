@@ -1,6 +1,6 @@
 ---
 name: decision-record
-description: Record every decision a model makes on its own during an autonomous run. Stage agents return `decisions[]`; the final ADR stage lists all of them in the PR table and writes `docs/adr/NNNN-*.md` by script only for those that need a human look. Use when a stage decides without asking a human.
+description: Record every decision a model makes on its own during an autonomous run. Stage agents return `decisions[]`; the final ADR stage lists all of them in the PR table and writes `docs/adr/NNNN-*.md` by script only for those with impact and a real trade-off (`adr: true`). Use when a stage decides without asking a human.
 allowed-tools: Read, Write, Bash, Skill
 ---
 
@@ -8,69 +8,51 @@ allowed-tools: Read, Write, Bash, Skill
 
 ## When to record
 
-Record a decision when you choose between options without asking a human.
-
 | Situation | Action |
 |---|---|
-| Reversible and inside the ticket | Decide. Record it. `needs_review: false`. It goes in the PR table and `decision.md`, not in an ADR file. |
-| Only restates an owner-confirmed answer | Record it with `owner_confirmed: true`. No ADR file, unless it also has `needs_review: true`. |
-| Affects another ticket, a public contract, stored data, security or cost, or is a trade-off that is costly to reverse | Choose the safer option. Record it. `needs_review: true`. This is the only case that gets an ADR file. |
-| Contradicts a confirmed answer, or is dangerous | Do not do that part. Record why. `needs_review: true`. |
+| Reversible and inside the ticket | `adr: false`, `needs_review: false`. PR table only. |
+| Restates an owner-confirmed answer | `owner_confirmed: true`. No file unless `adr: true`. |
+| Changes harness behavior, a data or config contract, or how users work, and had at least two viable options | `adr: true`. Only this gets a file. |
+| Affects another ticket, a public contract, stored data, security or cost, or is costly to reverse | Choose the safer option. `needs_review: true`: listed under `## Needs your decision` for the owner. No file by itself. |
+| Contradicts a confirmed answer, or is dangerous | Do not do that part. `needs_review: true`, `adr: false`. |
+| A scope note (title starts with `Boundary: `) or a `UAT not run` event | `needs_review: true`, `adr: false`. Never a file. |
 
 ## Which decisions get a file
 
-The script `write_adrs.py` applies this rule. Agents do not filter.
+`write_adrs.py` applies this rule; agents do not filter.
 
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
-   item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `needs_review`, the kept one has it too. The
+   item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `adr` or `needs_review`, the kept one has it too. The
    kept one is `owner_confirmed` only if every merged item is.
-2. Write an ADR file only if the decision has `needs_review: true`. `confidence` never decides
-   this: a medium or low guess stays a row in the PR table.
-   `needs_review` wins over `owner_confirmed`.
-3. Every merged decision, with or without a file, is one row in the `## Decisions` table of the PR
-   body (ticket, title, decision, why). An owner-confirmed row says `owner-confirmed`.
+2. Write a file only if `adr: true`: the decision (a) changes harness behavior, a data or config
+   contract, or how users work, and (b) had at least two viable options, listed in options. The script
+   also needs two real options and a title that is not a Boundary or `UAT not run` note.
+   `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
+3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
+   title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
+4. Every decision is one row in the `## Decisions` PR table (`ADR file`, `owner-confirmed`,
+   `already recorded (ADR NNNN)` or `table only`).
 
 ## What a good ADR says
 
 - `title`: the decision, not the topic.
-- `options`: each option you weighed, including the one you rejected and why.
-- `why`: the reason this option won, with the evidence.
-- `how_to_reverse`: the exact steps to undo it.
-- `confidence`: `high`, `medium` or `low`. Use `low` when you guessed.
+- `options`: each option you weighed, including the rejected one and why.
+- `why`: the evidence that made this option win.
+- `how_to_reverse`: the exact undo steps.
+- `confidence`: `low` for a guess.
 
 ## How an agent returns it
 
 Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `context`, `options`,
-`decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, and optionally `owner_confirmed`.
-Never write an ADR file. Only the ADR stage writes files.
+`decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, `adr` (required; input without it exits 2), and optionally `owner_confirmed`. Never write an ADR file.
 
-## The local decision log
+## Other places
 
-Every decision is also an entry in `specs/<slug>/decision.md` (shape:
-`${CLAUDE_PLUGIN_ROOT}/templates/specs/decision.md`), added by the step that decides, or by
-the workflow script.
-
-## Design ADRs
-
-A depth L design from `brainstorming` is an ADR with `stage: design`.
+Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design from `brainstorming` is a decision with `stage: design` and `adr: true`.
 
 ## The ADR stage
 
-1. Collect all `decisions[]` of the run. Add `decided_by` to each. Save as
-   `{"run": "<slug>", "decisions": [...]}` in a temporary file.
-2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file>`. Add `--dry-run` to preview. Exit 2 means
-   bad input: fix it and run again. Add `--table-out <file>` to write the
-   decisions table.
-3. Save the printed JSON. Commit the new files in `docs/adr/` to the PR branch.
-4. Build the artifact (below). Then run
-   `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --render-section <written.json> [--artifact <url>]` and put the
-   output, then the table file, in the PR body as `## Decisions`.
-
-## The artifact
-
-Build one private artifact per run when the Artifact tool exists. Read `references/artifact.md` for how.
-
-
-## Auto mode
-
-The ADR stage itself never asks. It writes the files, commits them and renders the section and table.
+1. Save all `decisions[]` of the run, each with `decided_by`, as `{"run": "<slug>", "decisions": [...]}`.
+2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file> [--dry-run] [--table-out <file>]`. Exit 2 means bad input: fix it and run again.
+3. Commit the new files in `docs/adr/` to the PR branch.
+4. Build the artifact when the Artifact tool exists (`references/artifact.md`). Run `write_adrs.py --render-section <written.json> [--artifact <url>]`; put the output, then the table file, in the PR body as `## Decisions`.
