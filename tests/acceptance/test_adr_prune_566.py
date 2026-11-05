@@ -135,10 +135,38 @@ def test_ac5_every_adr_reference_points_at_an_existing_file():
     assert not bad, bad[:10]
 
 
+def run_logs_unchanged(root, base=BASE):
+    """Existing run logs are not modified or deleted. New run dirs are allowed.
+    When base is not in this clone (shallow or squash-merged), compare with HEAD."""
+    have = subprocess.run(["git", "cat-file", "-e", f"{base}^{{commit}}"],
+                          cwd=root, capture_output=True).returncode == 0
+    ref = base if have else "HEAD"
+    r = subprocess.run(["git", "diff", "--quiet", "--diff-filter=MD", ref, "--",
+                        "tests/evals/recall/runs"], cwd=root, capture_output=True)
+    return r.returncode == 0
+
+
 def test_ac5_recall_run_logs_unchanged():
-    r = subprocess.run(["git", "diff", "--quiet", BASE, "--", "tests/evals/recall/runs"],
-                       cwd=ROOT, capture_output=True)
-    assert r.returncode == 0
+    assert run_logs_unchanged(ROOT)
+
+
+def test_ac5_run_logs_check_survives_missing_base_and_new_runs(tmp_path):
+    def git(*a):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                       cwd=tmp_path, check=True, capture_output=True)
+    runs = tmp_path / "tests/evals/recall/runs/d1"
+    runs.mkdir(parents=True)
+    (runs / "a.md").write_text("a")
+    git("init", "-q")
+    git("add", ".")
+    git("commit", "-qm", "x")
+    (tmp_path / "tests/evals/recall/runs/d2").mkdir()
+    (tmp_path / "tests/evals/recall/runs/d2/b.md").write_text("b")
+    git("add", ".")
+    assert run_logs_unchanged(tmp_path, base="deadbeef")
+    assert run_logs_unchanged(tmp_path, base="HEAD")
+    (runs / "a.md").write_text("changed")
+    assert not run_logs_unchanged(tmp_path, base="deadbeef")
 
 
 def test_ac6_readme_maps_all_38_old_numbers():
