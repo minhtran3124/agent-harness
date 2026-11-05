@@ -1,5 +1,5 @@
 ---
-problem_type: decision
+problem_type: knowledge
 module: decision-record/adr
 tags: adr, decision-record, needs-review, boundary, lifecycle, review-note
 severity: standard

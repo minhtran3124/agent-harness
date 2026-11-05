@@ -1,5 +1,5 @@
 ---
-problem_type: decision
+problem_type: knowledge
 module: rules / techstacks
 tags: tech-stack-decoupling, project-owned, agnostic-core, techstacks, one-canonical-home, auto-loaded-rules, portability
 severity: standard

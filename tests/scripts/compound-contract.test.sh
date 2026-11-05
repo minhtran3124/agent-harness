@@ -22,4 +22,7 @@ if grep -n 'plugins/harness/scripts/write_adrs\|`docs/adr/README.md`' "$D/templa
 t "compound decision track sources how_to_reverse/confidence from the extractor and links ADRs, not solutions"
 if grep -q 'How_to_Reverse' "$D/subagents/decision-extractor-prompt.md" && grep -q 'Never invent a value' "$ROOT/$SKILL" && grep -q 'ADR path' "$ROOT/$SKILL"; then pass; else fail "decision track fields or ADR link missing"; fi
 
+t "no template or solutions entry writes problem_type: decision (one decision store: docs/adr)"
+if grep -rlq '^problem_type: decision' "$D/templates" "$ROOT/docs/solutions" || [ -e "$D/templates/decision-track.md" ]; then fail "second decision store still written"; else pass; fi
+
 finish
