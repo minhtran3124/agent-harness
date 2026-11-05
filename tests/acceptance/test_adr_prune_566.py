@@ -158,7 +158,7 @@ def test_ac5_dangling_check_accepts_a_real_later_adr_and_flags_a_missing_one():
     assert not dangling_adr_refs(["see ADR 0013"], names)
     assert not dangling_adr_refs(["see docs/adr/0013-later-decision.md"], names)
     assert dangling_adr_refs(["see docs/adr/0013-other.md"], names)
-    assert dangling_adr_refs(["see ADR 0014"], names)
+    assert dangling_adr_refs(["see ADR 0099"], names)
     assert dangling_adr_refs(["see ADR 0108"], names)   # a deleted old number stays dangling
 
 
