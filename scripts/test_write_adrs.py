@@ -651,8 +651,10 @@ def test_date_absent_uses_today(tmp_path):
     assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()
 
 
-def test_gate_mode_adrs_keep_the_hook_surface_supersession_marker():
+def test_gate_mode_adrs_supersession_note_has_no_dangling_paths():
     adr_dir = Path(__file__).resolve().parent.parent / "docs/adr"
     for n in ("0017", "0018", "0019", "0020"):
         text = next(adr_dir.glob(f"{n}-*.md")).read_text()
-        assert "Superseded in part by specs/simplify-hook-surface" in text, n
+        assert "Superseded in part" in text, n
+        assert "specs/simplify-hook-surface" not in text, n
+        assert "hooks/commit-gate.sh" not in text, n
