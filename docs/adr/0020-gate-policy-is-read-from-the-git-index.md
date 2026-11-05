@@ -29,7 +29,7 @@ Loosening now requires *staging* the manifest edit, auditable in the same commit
 ## Consequences
 
 A manifest staged for deletion or unreadable from the index blocks rather than allows. Full story:
-[gate-config-must-read-index](gate-config-must-read-index.md).
+[gate-config-must-read-index](../solutions/harness/gate-config-must-read-index.md).
 
 Related:
 - docs/solutions/harness/gate-config-must-read-index.md
