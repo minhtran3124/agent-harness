@@ -1,14 +1,14 @@
 ---
 ticket: 516
 stage: design
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: design)
 date: 2026-10-30
 ---
 
-# 0108. Merge policy design: gated auto-merge of ticket PRs into feat/<slug>, fail-closed merge guard, human merge for everything else
+# 0008. Merge policy design: gated auto-merge of ticket PRs into feat/<slug>, fail-closed merge guard, human merge for everything else
 
 ## Context
 

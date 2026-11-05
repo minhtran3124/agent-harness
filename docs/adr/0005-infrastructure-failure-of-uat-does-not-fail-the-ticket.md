@@ -1,14 +1,14 @@
 ---
 ticket: 462
 stage: implement
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0007. Infrastructure failure of UAT does not fail the ticket
+# 0005. Infrastructure failure of UAT does not fail the ticket
 
 ## Context
 

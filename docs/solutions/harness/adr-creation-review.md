@@ -15,6 +15,8 @@ affects:
 ---
 ## Goal
 
+ADR numbers in this dated review are the old numbers; the old-to-new map is in `docs/adr/README.md`.
+
 Answer the five questions of #560 about how the harness creates ADRs. This note reviews the repo at
 commit `1ab05bc`, so its counts stay true after later changes (for example #566). Each change it
 proposes is a separate follow-up issue in the milestone.
@@ -62,9 +64,10 @@ reviewer. Every decision still gets a row in the `## Decisions` PR table.
 - **Duplicates (#459):** pairs that restate one decision: 0105 and 0106 (bare number after `#n`),
   0109 and 0113 (merge-guard fails closed), 0129 and 0130 (ask for the plain merge form).
 - **Number churn:** the 2026-10-29 prune renumbered the folder to 0001-0010
-  (`docs/adr/README.md`, "Pruned records"). `docs/hooks.md:70` still says "see ADR 0007" for hooks in
-  Workflow agents, but 0007 is now "Infrastructure failure of UAT does not fail the ticket". The old
-  number points at the wrong file.
+  (`docs/adr/README.md`, "Pruned records"). At that commit, `docs/hooks.md:70` still said "see ADR 0007"
+  for hooks in Workflow agents, but 0007 was then "Infrastructure failure of UAT does not fail the
+  ticket". The old number pointed at the wrong file. The #566 prune renumbered the folder again and
+  fixed that line.
 - **Two stores (#458):** decisions also live as `problem_type: decision` entries in
   `docs/solutions/` (for example `harness/gap-closure-decisions.md`). `brainstorming` reads that
   track, `xia2` reads both, and nothing links the two.

@@ -1,14 +1,14 @@
 ---
 ticket: 545
 stage: implement
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: medium
 decided_by: claude (ship workflow: implement)
 date: 2026-10-31
 ---
 
-# 0129. Ask only for the one-merge, plain-form case; mode allowlist
+# 0011. Ask only for the one-merge, plain-form case; mode allowlist
 
 ## Context
 

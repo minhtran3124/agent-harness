@@ -1,14 +1,14 @@
 ---
 ticket: 516
 stage: implement
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: medium
 decided_by: claude (ship workflow: implement)
 date: 2026-10-30
 ---
 
-# 0111. Auto-merge does nothing by default: no allow rule is wired and hook firing for workflow agents is unproven
+# 0010. Auto-merge does nothing by default: no allow rule is wired and hook firing for workflow agents is unproven
 
 ## Context
 

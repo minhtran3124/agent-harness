@@ -47,10 +47,58 @@ A design record is an ADR with `stage: design`. `brainstorming` at depth L retur
 The prune kept every record that is critical, a public contract, a safety rule or a real
 trade-off, even when it was not flagged. Only a decision that passes the gate above gets a new file.
 
-On 2026-10-29 the folder was pruned and renumbered 0001 to 0010: most old ADRs recorded small,
-reversible choices that now live in the code, tests and PR history. An old number in a PR body or
-commit no longer matches a file here. Get a pruned ADR back with
-`git log --diff-filter=D -- docs/adr/NNNN-*` and `git show <sha>^:docs/adr/<file>`.
+On 2026-11-05 the folder was pruned again and renumbered 0001 to 0012: most old ADRs recorded small,
+reversible choices that now live in the code, tests and PR history. Old numbers in PR bodies, commits
+and open PRs no longer match a file here; use the map below. An old number can now name a different
+record (0003, 0004, 0005, 0006, 0007, 0008, 0009 and 0010 do), so find the old file name first:
+`git log --diff-filter=D --name-only --format= -- docs/adr`. Then get it back with
+`git log --diff-filter=D --format=%h -- docs/adr/<old-file>` and `git show <sha>^:docs/adr/<old-file>`.
+
+### Old-to-new map
+
+Each row starts with the old number. A kept record shows its new number. A deleted record shows
+where its content lives now.
+
+| Old | New or fate |
+|---|---|
+| 0001 | 0001 (unchanged) |
+| 0002 | 0002 (unchanged) |
+| 0003 | deleted: `hooks/clean-worktrees.sh` requires state MERGED before cleanup |
+| 0004 | deleted: `hooks/clean-worktrees.sh` removes only the merged PR's head branch (`headRefName` filter) |
+| 0005 | 0003 |
+| 0006 | 0004 |
+| 0007 | 0005 |
+| 0008 | deleted: serial UAT per ticket is in `workflows/ship.js` (UAT stage, "Serial over the tickets") |
+| 0009 | 0006 |
+| 0010 | 0007 |
+| 0100 | deleted: a "UAT not run" event for #494; lives in that PR body |
+| 0101 | deleted: a "UAT not run" event for #500; lives in that PR body |
+| 0102 | deleted: a "UAT not run" event for #503; lives in that PR body |
+| 0103 | deleted: a "UAT not run" event for #505; lives in that PR body |
+| 0104 | deleted: the `Refs` keyword is in `skills/release-notes/references/fact-list-schema.md` |
+| 0105 | deleted: duplicate of 0106; the rule is in `scripts/check_release_summary.py` |
+| 0106 | deleted: the bare-number rule is in `scripts/check_release_summary.py` |
+| 0107 | deleted: a "UAT not run" event for #514; lives in that PR body |
+| 0108 | 0008 |
+| 0109 | 0009 |
+| 0110 | deleted: setup step 4 writes no allow rule; the choice is kept in 0010 |
+| 0111 | 0010 |
+| 0112 | deleted: a boundary scope note; lives in that PR body |
+| 0113 | deleted: duplicate of 0109; kept in 0009 |
+| 0114 | deleted: the spike result is kept in 0010 |
+| 0123 | deleted: `skills/tickets/references/process.md` exists and `tests/scripts/tickets-contract.test.sh` pins it |
+| 0124 | deleted: a boundary note; the skill-count assertion lives in the test script |
+| 0125 | deleted: a boundary note; lives in that PR body |
+| 0126 | deleted: a boundary note; lives in that PR body |
+| 0127 | deleted: a boundary note; lives in that PR body |
+| 0128 | deleted: the "ask only, no token hook" choice is in `hooks/merge-guard.sh`, which emits `ask` and wires no token hook |
+| 0129 | 0011 |
+| 0130 | 0012 |
+| 0131 | deleted: the fallback was not added; `hooks/merge-guard.sh` emits `ask` only (see 0012) |
+| 0132 | deleted: a "UAT not run" event for #545; lives in that PR body |
+| 0133 | deleted: a boundary note; `tests/hooks/merge-guard.test.sh` covers the cases |
+| 0134 | deleted: the probe result is in 0008 and 0009 (Update sections) |
+| 0135 | deleted: a boundary note; lives in that PR body |
 
 ## Numbering
 
@@ -66,8 +114,6 @@ commit no longer matches a file here. Get a pruned ADR back with
 |---|---|
 | `accepted` | The decision stands. A new file is always born `accepted`. To change a decision, write a superseding ADR. |
 | `superseded` | A later ADR replaced it. |
-
-Older files may carry a legacy status that is none of these; a later cleanup (#566) handles them.
 
 ## How to supersede
 

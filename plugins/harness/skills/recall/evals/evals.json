@@ -270,7 +270,7 @@
           "type": "stale_premise",
           "text": "Record is under Possibly stale and not under Do first, Avoid or Check before done",
           "path": "docs/solutions/harness/scaffold-template-instance-parity.md",
-          "reason": "the record is marked SUPERSEDED by ADR 0010 and techstacks/ does not exist at f042f46; confirmed_at 2026-08-17 is also older than 30 days"
+          "reason": "the record is marked SUPERSEDED by ADR 0007 and techstacks/ does not exist at f042f46; confirmed_at 2026-08-17 is also older than 30 days"
         }
       ]
     }
