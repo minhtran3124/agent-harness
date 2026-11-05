@@ -41,7 +41,7 @@ Read the selected `templates/` file before writing. Use the context category/slu
 `docs/solutions/<category>/`. On a high-overlap collision, update the existing record. Otherwise,
 allocate the next numeric suffix.
 
-The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/`. Map each decision to `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md` and run `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py`. The extractor returns `How_to_Reverse` and `Confidence` for each decision. Copy them as given. Set `stage` to `compound`. If the extractor left one empty, use `n/a` for `how_to_reverse` and `low` for `confidence`. Never invent a value.
+The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/`. Map each decision to `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md` and run `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py`. The extractor returns `How_to_Reverse` and `Confidence` for each decision. Copy them as given. Set `stage` to `compound`. If `How_to_Reverse` is `[none]` or empty, use `n/a` for `how_to_reverse`. If `Confidence` is not exactly `high`, `medium` or `low`, use `low`, because `write_adrs.py` exits 2 on any other value. Never invent a value.
 
 Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
 code. Do not change a literal string that a test or hook matches.
