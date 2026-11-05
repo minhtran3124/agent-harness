@@ -153,7 +153,7 @@ def run_logs_unchanged(root, base=BASE):
                 ref = mb.stdout.strip()
                 break
     ref = ref or "HEAD"
-    r = subprocess.run(["git", "diff", "--quiet", "--diff-filter=MD", ref, "--",
+    r = subprocess.run(["git", "diff", "--quiet", "--no-renames", "--diff-filter=MD", ref, "--",
                         "tests/evals/recall/runs"], cwd=root, capture_output=True)
     return r.returncode == 0
 
@@ -195,6 +195,22 @@ def test_ac5_run_logs_check_detects_committed_edit_when_base_missing(tmp_path):
     (runs / "a.md").write_text("changed")
     git("add", ".")
     git("commit", "-qm", "edit a run log")
+    assert not run_logs_unchanged(tmp_path, base="deadbeef")
+
+
+def test_ac5_run_logs_check_detects_renamed_log(tmp_path):
+    def git(*a):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                       cwd=tmp_path, check=True, capture_output=True)
+    runs = tmp_path / "tests/evals/recall/runs/d1"
+    runs.mkdir(parents=True)
+    (runs / "a.md").write_text("a log with enough content to be matched as a rename\n" * 5)
+    git("init", "-q", "-b", "main")
+    git("add", ".")
+    git("commit", "-qm", "base")
+    git("checkout", "-q", "-b", "feat")
+    git("mv", "tests/evals/recall/runs/d1/a.md", "tests/evals/recall/runs/d1/moved.md")
+    git("commit", "-qm", "move a run log")
     assert not run_logs_unchanged(tmp_path, base="deadbeef")
 
 
