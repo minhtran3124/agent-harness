@@ -303,7 +303,8 @@ def test_skill_doc_matches_dedupe_and_owner_confirmed_rules():
     flat = " ".join(skill.split())
     assert "highest `confidence`" in flat
     assert "lowest `confidence`" not in flat
-    assert "`needs_review` wins over `owner_confirmed`" in flat
+    assert "`adr` wins over `owner_confirmed`" in flat
+    assert "at least two viable options" in flat and "Boundary" in flat and "UAT not run" in flat
 
 
 # --- the adr gate, born accepted, folder dedupe (#565) ----------------------------------------
