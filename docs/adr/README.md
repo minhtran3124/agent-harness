@@ -60,10 +60,11 @@ commit no longer matches a file here. Get a pruned ADR back with
 
 | Status | Meaning |
 |---|---|
-| `accepted` | The decision stands. Every new file is born `accepted`. |
+| `proposed` | A model made the decision and `needs_review` is true; the owner has not confirmed it. Change it to `accepted` (or write a superseding ADR) after the review. |
+| `accepted` | The decision stands. A new file is born `accepted` unless `needs_review` is true. |
 | `superseded` | A later ADR replaced it. |
 
-Older files may carry a legacy status that is neither of these; a later cleanup (#566) handles them.
+Older files may carry a legacy status that is none of these; a later cleanup (#566) handles them.
 
 ## How to supersede
 
