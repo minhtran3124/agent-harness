@@ -48,6 +48,7 @@ jobs:
           printf '%s\n' "$out"
           new=$(printf '%s\n' "$out" | sed -n 's/^NEW_VERSION=//p' | tail -1)
           [ -n "$new" ] || { echo "release.sh printed no NEW_VERSION" >&2; exit 1; }
+          [[ $new =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "release.sh printed a bad version: $new" >&2; exit 1; }
           echo "version=$new" >> "$GITHUB_OUTPUT"
       - name: Stop if the tag or the release branch already exists
         env:
