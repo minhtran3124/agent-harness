@@ -334,7 +334,28 @@ def md_files(adr):
 def test_merge_ors_adr():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", adr=False), dec(title="Same", confidence="low")])
-    assert out[0]["confidence"] == "high" and out[0]["adr"] is True
+    assert out[0]["adr"] is True
+
+
+def test_merge_takes_whole_decision_from_highest_confidence_adr_item():
+    w = wa()
+    out = w.dedupe([
+        dec(title="Same", confidence="high", adr=False, options=["only one"], decision="plain"),
+        dec(title="Same", confidence="low", adr=True, options=["a", "b"], decision="real choice"),
+    ])
+    assert len(out) == 1
+    assert out[0]["adr"] is True and out[0]["options"] == ["a", "b"]
+    assert out[0]["decision"] == "real choice" and out[0]["confidence"] == "low"
+
+
+def test_merge_two_adr_items_keeps_highest_confidence_one():
+    w = wa()
+    out = w.dedupe([
+        dec(title="Same", confidence="low", adr=True, decision="low one"),
+        dec(title="Same", confidence="medium", adr=True, decision="medium one"),
+        dec(title="Same", confidence="high", adr=False, decision="plain"),
+    ])
+    assert out[0]["decision"] == "medium one" and out[0]["confidence"] == "medium"
 
 
 def test_second_run_against_same_folder_writes_one_file(tmp_path):
