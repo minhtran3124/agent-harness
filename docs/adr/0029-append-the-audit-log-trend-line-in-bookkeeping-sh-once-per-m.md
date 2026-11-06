@@ -11,8 +11,8 @@ date: 2026-07-04
 
 ## Context
 
-The v0.3 spec (`docs/harness-v03-plan-overview.md`, Wave 4) called for emitting a trend JSONL
-line to `docs/harness-experimental/audit-log.jsonl` "every CI run," to turn a single-sample
+The v0.3 spec (`docs/harness-v03-plan-overview.md` (historical), Wave 4) called for emitting a trend JSONL
+line to `docs/harness-experimental/audit-log.jsonl` (historical) "every CI run," to turn a single-sample
 advisory drift finding into a real trend. Two CI workflows exist: `harness-ci.yml` (runs on
 every push and PR — the literal "every CI run") and `post-merge-maintenance.yml` (runs once per
 merged PR, already used by `scripts/bookkeeping.sh` to write VERSION/CHANGELOG/trust-metrics.md).
@@ -25,7 +25,7 @@ A choice was needed about which workflow gets the new append step.
 
 ## Decision
 
-Option B was chosen: the `audit-log.jsonl` append was added as a new step at the end of `scripts/bookkeeping.sh`, and `post-merge-maintenance.yml`'s existing `git add` list was extended with `docs/harness-experimental/audit-log.jsonl`.
+Option B was chosen: the `audit-log.jsonl` append was added as a new step at the end of `scripts/bookkeeping.sh`, and `post-merge-maintenance.yml`'s existing `git add` list was extended with `docs/harness-experimental/audit-log.jsonl` (historical).
 
 ## Why
 

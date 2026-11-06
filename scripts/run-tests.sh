@@ -1,6 +1,6 @@
 #!/bin/bash
 # Harness test entry point — run everything CI runs:
-#   L1  syntax (bash -n) + doc-truth lint
+#   L1  syntax (bash -n) + doc-truth and adr-paths lints
 #   L2  hook contract tests          (tests/hooks/*.test.sh)
 #   L3  script integration tests     (tests/scripts/*.test.sh)
 # Usage: bash scripts/run-tests.sh
@@ -34,6 +34,9 @@ echo "  ✓ bash -n clean"
 
 echo "== L1: doc-truth lint =="
 bash scripts/lint-doc-truth.sh || fail "scripts/lint-doc-truth.sh"
+
+echo "== L1: adr-paths lint =="
+bash scripts/lint-adr-paths.sh || fail "scripts/lint-adr-paths.sh"
 
 echo "== L1: skill-bash lint =="
 bash scripts/lint-skill-bash.sh || fail "scripts/lint-skill-bash.sh"

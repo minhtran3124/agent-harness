@@ -11,7 +11,7 @@ date: 2026-07-10
 
 ## Context
 
-The stated problem was narrow: stop blind re-sync from clobbering the four files `bootstrap-xia2` generates per project (`rules/architecture.md`, `rules/guidelines.md`, `agents/PROJECT.md`, `skills/xia2/PROJECT.md`). A general solution was available.
+The stated problem was narrow: stop blind re-sync from clobbering the four files `bootstrap-xia2` generates per project (`rules/architecture.md`, `rules/guidelines.md`, `agents/PROJECT.md`, `skills/xia2/PROJECT.md` (historical)). A general solution was available.
 
 ## Options
 
@@ -29,7 +29,7 @@ Minimum machinery that solves the verbatim request; non-bootstrap files still ov
 
 ## Consequences
 
-The list can drift from `skills/bootstrap-xia2/SKILL.md` with no machine check. Conflict resolution is also **batch, not per-file** (one policy for all conflicting files) — flagged by `/intent-review` as `drift` against "let they make decision", human-approved; the escape hatch is `[b] backup+overwrite`, then merge from `.harness-backup-<ts>/`.
+The list can drift from `skills/bootstrap-xia2/SKILL.md` (historical) with no machine check. Conflict resolution is also **batch, not per-file** (one policy for all conflicting files) — flagged by `/intent-review` as `drift` against "let they make decision", human-approved; the escape hatch is `[b] backup+overwrite`, then merge from `.harness-backup-<ts>/`.
 
 Applies when: Make this decision when a data-loss guard is requested for a known, small, enumerable set — hardcode the set rather than build a general manifest or diff engine.
 

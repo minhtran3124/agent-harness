@@ -28,7 +28,7 @@ Never hand-edit them in this repo. The post-merge automation is authoritative. B
 
 ## Consequences
 
-Open escalation (deny-on-no-response) in `specs/resync-protected-files/ESCALATIONS.md`: `scripts/bookkeeping.sh:76` selects `bump="minor"` only when the changed-file list matches `^(hooks/|settings\.json|skills/)`. A change to `scripts/deploy-harness.sh` — the deploy engine that runs `rm -rf` inside every consuming project — is therefore auto-tagged **patch** (`0.8.1` → `0.8.2`), while `CHANGELOG.md` lines 4–6 promise **minor** for "a changed skill/hook contract". Options: (A) accept the patch bump and file a follow-up; (B) widen the regex, which touches the versioning contract and needs its own lane plus a `tests/scripts/bookkeeping.test.sh` update.
+Open escalation (deny-on-no-response) in `specs/resync-protected-files/ESCALATIONS.md`: `scripts/bookkeeping.sh:76` selects `bump="minor"` only when the changed-file list matches `^(hooks/|settings\.json|skills/)`. A change to `scripts/deploy-harness.sh` (historical) — the deploy engine that runs `rm -rf` inside every consuming project — is therefore auto-tagged **patch** (`0.8.1` → `0.8.2`), while `CHANGELOG.md` lines 4–6 promise **minor** for "a changed skill/hook contract". Options: (A) accept the patch bump and file a follow-up; (B) widen the regex, which touches the versioning contract and needs its own lane plus a `tests/scripts/bookkeeping.test.sh` update.
 
 Second consequence: `finishing-a-development-branch/SKILL.md` Step 1b is stale and will keep telling agents to double-bump until it is corrected.
 
