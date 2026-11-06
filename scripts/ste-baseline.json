@@ -15,7 +15,7 @@
   "plugins/harness/skills/autopilot/tests/dry-run.md": 3,
   "plugins/harness/skills/brainstorming/SKILL.md": 3,
   "plugins/harness/skills/brainstorming/references/design-template.md": 2,
-  "plugins/harness/skills/compound/README.md": 1,
+  "plugins/harness/skills/compound/README.md": 0,
   "plugins/harness/skills/compound/SKILL.md": 0,
   "plugins/harness/skills/compound/subagents/context-analyzer-prompt.md": 0,
   "plugins/harness/skills/compound/subagents/decision-extractor-prompt.md": 0,
