@@ -41,4 +41,7 @@ if grep -q 'not recorded' "$ROOT/$SKILL" && grep -q -- '--table-out' "$ROOT/$SKI
 t "compound keeps the near-duplicate prohibition in Mistake twice"
 grep -qF 'Never add a near-duplicate.' "$ROOT/$SKILL" && pass || fail "near-duplicate prohibition missing"
 
+t "compound keeps the reason a human decides on a path-scoped rule"
+grep -qF 'changes what loads, so a human decides' "$ROOT/$SKILL" && pass || fail "paths: reason missing"
+
 finish

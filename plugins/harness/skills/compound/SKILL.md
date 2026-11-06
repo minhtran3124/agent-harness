@@ -43,7 +43,7 @@ The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/
 Pass `--table-out <file>` to `write_adrs.py`. Report `not recorded: <reason>` for each decision that wrote no file. Rules: `${CLAUDE_PLUGIN_ROOT}/skills/compound/references/not-recorded.md`.
 
 Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
-code. Do not change a literal string that a test or hook matches.
+code or a literal string that a test or hook matches.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its
 templates. A decision track has no `docs/solutions/` file: its **Full doc** link is the ADR path that `write_adrs.py` printed (`docs/adr/NNNN-*.md`). Name a failure's `proposed:` guardrail in the report as a proposed ratchet. Do not build it.
@@ -55,7 +55,7 @@ record as above, then promote it. The promotion is this run's output. Update the
 `critical-patterns.md` entry, or add one if it has none. Do this instead of the append above.
 Never add a near-duplicate. Add a `**Recurred:** <date>` line under its **Full doc** line. When the
 learning applies only to certain paths, also propose a path-scoped rule in the report. Do not
-write that rule. A human decides. `moderate`
+write that rule. Adding `paths:` to `rules/` changes what loads, so a human decides. `moderate`
 overlap is not a recurrence.
 
 Run the authority at the end of every run, even when the run wrote nothing:
