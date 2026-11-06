@@ -1,8 +1,9 @@
 #!/bin/bash
 # Run shellcheck over the harness shell scripts. CI and a contributor run the same file list.
 #
-# Verifies:        shellcheck exits 0 for plugins/harness/hooks/*.sh, plugins/harness/scripts/*.sh
-#                  and the three scripts/check-plugin-*.sh.
+# Verifies:        shellcheck exits 0 for plugins/harness/hooks/*.sh, plugins/harness/scripts/*.sh,
+#                  the three scripts/check-plugin-*.sh, and scripts/release.sh, scripts/release-tag.sh
+#                  and scripts/release-guard.sh.
 # Does not verify: any other shell file, or the shell inside skill markdown (see
 #                  lint-skill-bash.sh).
 #
@@ -23,4 +24,5 @@ fi
 
 shellcheck --version
 shellcheck plugins/harness/hooks/*.sh plugins/harness/scripts/*.sh \
-  scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh
+  scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh \
+  scripts/release.sh scripts/release-tag.sh scripts/release-guard.sh
