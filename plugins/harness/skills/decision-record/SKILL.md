@@ -27,12 +27,14 @@ One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/
    item with the highest `confidence` (high, then medium, then low; a tie keeps the first); if any
    merged item has `adr` true, keep the highest-confidence `adr` true item whole. `needs_review`
    is OR-ed; `owner_confirmed` is AND-ed.
-2. Write a file only if `adr: true` (row 3; never for a `Boundary:` or `UAT not run` note) and `options` lists two real options.
+2. Write a file only if `adr: true` and `options` lists two real options.
    `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
 3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
    title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
 4. Every decision is one row in the `## Decisions` PR table (`ADR file`, `owner-confirmed`,
    `already recorded (ADR NNNN)` or `table only`).
+
+A `dangerous` or `contradicts_confirmed` decision stops the ticket and gets no file. `## Needs your decision` in the PR body lists each `needs_review` decision with its text.
 
 ## What a good ADR says
 
@@ -49,7 +51,7 @@ Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `
 
 ## Other places
 
-Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design from `brainstorming` is a decision with `stage: design` and `adr: true`.
+Every decision is an entry in `specs/<slug>/decision.md`. A depth L design from `brainstorming` is a decision with `stage: design` and `adr: true`.
 
 ## The ADR stage
 
