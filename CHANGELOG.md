@@ -7,6 +7,11 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.10.1] — 2026-11-06
+
+- chore(release): replace bookkeeping with an on-demand release PR and automatic tags (#594) (PR #595)
+- fix(release): skip only chore(release): vX.Y.Z titles (#594) (PR #596)
+
 ## [5.10.0] — 2026-11-06
 
 - chore: finish milestone 9 (drop ADR count, delete stale acceptance tests, document two gate behaviors) (PR #592)
