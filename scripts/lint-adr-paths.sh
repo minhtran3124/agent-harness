@@ -59,7 +59,7 @@ for f in docs/adr/*.md; do
       resolves "${p%/}" && continue
       printf '  ✗ %s:%s missing path: %s\n' "$f" "$n" "$p"
       FAILED=1
-    done < <(printf '%s\n' "$line" | grep -oE '`[^`]+`' | tr -s ' \t`"'"'"'(),' '\n')
+    done < <(printf '%s\n' "$line" | grep -oE "\`[^\`]+\`" | tr -s ' \t`"'"'"'(),' '\n')
   done < "$f"
 done
 
