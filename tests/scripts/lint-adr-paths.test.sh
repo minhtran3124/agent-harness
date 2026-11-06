@@ -49,6 +49,11 @@ d=$(adr_repo 0099-x.md $'`scripts/gone.sh` (historical)\n`scripts/other-gone.sh`
 run_lint "$d"
 if [ "$RC" != 0 ] && printf '%s' "$OUT" | grep -q '0099-x.md:2'; then pass; else fail "rc=$RC: $OUT"; fi
 
+t "F3: a (historical) mark does not excuse a dangling path cited after it on the same line"
+d=$(adr_repo 0099-x.md $'`scripts/gone.sh` (historical), and `scripts/other-gone.sh`')
+run_lint "$d"
+if [ "$RC" != 0 ] && printf '%s' "$OUT" | grep -q 'other-gone.sh' && ! printf '%s' "$OUT" | grep -q 'missing path: scripts/gone.sh'; then pass; else fail "rc=$RC: $OUT"; fi
+
 t "AC3: no dependence on ADR numbers (file with no number prefix is scanned)"
 d=$(adr_repo notes.md 'See `scripts/gone.sh`.')
 run_lint "$d"; { [ "$RC" != 0 ] && [ "$RC" != 127 ]; } && pass || fail "rc=$RC: $OUT"

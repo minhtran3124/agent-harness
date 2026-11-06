@@ -1,6 +1,6 @@
 #!/bin/bash
-# ADR path lint: every repo path an ADR cites must resolve in a fresh clone, or sit on a line
-# marked '(historical)'. ADRs are records, so a path that was later removed stays in the text;
+# ADR path lint: every repo path an ADR cites must resolve in a fresh clone, or be followed by
+# a '(historical)' mark on the same line. ADRs are records, so a path that was later removed stays in the text;
 # the mark tells a reader (and this lint) that the dangling path is deliberate.
 #
 # What is checked
@@ -37,7 +37,9 @@ for f in docs/adr/*.md; do
   n=0
   while IFS= read -r line || [ -n "$line" ]; do
     n=$((n + 1))
-    case "$line" in *'(historical)'*) continue ;; esac
+    # A '(historical)' marker excuses the paths cited before it on its line; a path cited after
+    # the last marker is still checked.
+    case "$line" in *'(historical)'*) line="${line##*'(historical)'}" ;; esac
     while IFS= read -r p; do
       [ -n "$p" ] || continue
       # strip trailing punctuation, an anchor, and a :line suffix
