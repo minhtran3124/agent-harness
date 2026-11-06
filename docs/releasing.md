@@ -4,7 +4,7 @@
 
 ## Cut a release
 
-1. Open Actions, choose **release**, and run it from `main` with a bump: `patch` (fixes, docs), `minor` (new skill or hook, changed contract) or `major` (breaking change).
+1. Open Actions, choose **release**, and run it from `main` with a bump: `patch` (fixes, docs), `minor` (new skill or hook, changed contract) or `major` (breaking change). The workflow refuses to start while a release PR is open or a `release/vX.Y.Z` branch exists whose tag `vX.Y.Z` does not: merge or close that PR, delete its branch, then run **release** again. A release is finished when its tag exists, however its PR was closed (merge commit, squash or rebase), so the branch of a finished release does not block and you do not have to delete it before the next release. Release runs also queue one at a time.
 2. The workflow opens one PR named `chore(release): vX.Y.Z`. Its body is the new CHANGELOG section. Read the section and fix the wording in the PR if needed.
 3. Merge the PR. The **release-tag** workflow then creates the tag `vX.Y.Z` and the GitHub release from that CHANGELOG section.
 
@@ -14,7 +14,7 @@ PR titles flow into the release notes. Read the CHANGELOG section in the release
 
 A PR opened with the workflow token does not start other workflows. If the release PR shows no CI checks, push an empty commit to its branch, or close and reopen it.
 
-If **release** stops with `Branch release/vX.Y.Z already exists` or `Tag vX.Y.Z already exists`, an earlier release PR for that version was closed without merging, or the version was tagged by hand. Delete the leftover branch (`git push origin --delete release/vX.Y.Z`) and run **release** again. The repository setting that lets Actions open pull requests is already on.
+If **release** stops with `another release is in progress` (an open release PR, or a `release/vX.Y.Z` branch with no tag `vX.Y.Z` yet; the message names each one), merge or close the PR and delete the branch. If it stops with `Branch release/vX.Y.Z already exists` or `Tag vX.Y.Z already exists`, an earlier release PR for that version was closed without merging, or the version was tagged by hand. Delete the leftover branch (`git push origin --delete release/vX.Y.Z`) and run **release** again. The repository setting that lets Actions open pull requests is already on.
 
 ## What each script does
 
