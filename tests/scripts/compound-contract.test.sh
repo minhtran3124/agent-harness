@@ -38,4 +38,7 @@ t "compound reports a decision with no ADR as not recorded, passes --table-out a
 R="$D/references/not-recorded.md"
 if grep -q 'not recorded' "$ROOT/$SKILL" && grep -q -- '--table-out' "$ROOT/$SKILL" && grep -q 'references/not-recorded.md' "$ROOT/$SKILL" && grep -q 'not recorded: <reason>' "$R" && grep -q -- '--table-out' "$R" && grep -q 'Add no link to `critical-patterns.md`' "$R"; then pass; else fail "not-recorded rule missing from SKILL.md or reference"; fi
 
+t "compound keeps the near-duplicate prohibition in Mistake twice"
+grep -qF 'Never add a near-duplicate.' "$ROOT/$SKILL" && pass || fail "near-duplicate prohibition missing"
+
 finish

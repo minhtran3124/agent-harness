@@ -46,14 +46,14 @@ Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavore
 code. Do not change a literal string that a test or hook matches.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its
-templates. A decision track has no `docs/solutions/` file: its **Full doc** link is the ADR path that `write_adrs.py` printed (`docs/adr/NNNN-*.md`). A decision with no ADR gets no link. Name a failure's `proposed:` guardrail in the report as a proposed ratchet. Do not build it.
+templates. A decision track has no `docs/solutions/` file: its **Full doc** link is the ADR path that `write_adrs.py` printed (`docs/adr/NNNN-*.md`). Name a failure's `proposed:` guardrail in the report as a proposed ratchet. Do not build it.
 
 ## Mistake twice
 
 A learning that matches an existing record at `high` overlap is a second occurrence. Update that
 record as above, then promote it. The promotion is this run's output. Update the matching
 `critical-patterns.md` entry, or add one if it has none. Do this instead of the append above.
-Add a `**Recurred:** <date>` line under its **Full doc** line. When the
+Never add a near-duplicate. Add a `**Recurred:** <date>` line under its **Full doc** line. When the
 learning applies only to certain paths, also propose a path-scoped rule in the report. Do not
 write that rule. A human decides. `moderate`
 overlap is not a recurrence.
