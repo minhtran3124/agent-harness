@@ -11,7 +11,7 @@ date: 2026-07-23
 
 > Superseded in part (2026-09-29, hook-surface simplification): the former `risk-corroboration.sh` hook and
 > `commit-gate.sh` no longer exist in this tree; read mentions of them below as historical. Affects: `harness-manifest.json`,
-> `scripts/check_manifest.py`, `scripts/check_gate_modes_smoke.py`. Tags: gate-modes, manifest-as-authority.
+> `scripts/check_manifest.py`, `scripts/check_gate_modes_smoke.py` (historical). Tags: gate-modes, manifest-as-authority.
 
 ## Context
 

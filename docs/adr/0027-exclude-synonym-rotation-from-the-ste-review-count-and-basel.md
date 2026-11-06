@@ -35,13 +35,13 @@ A manual `ste-lint.py` run (as the vendored `SKILL.md` documents it) still count
 `synonym-rotation`, so an agent that self-checks by hand sees higher counts than the gates do.
 Keep the two `DISABLED_RULES` constants equal.
 
-Applies when: You change `DISABLED_RULES` in `scripts/check_ste_baseline.py` or in `skills/subagent-driven-development/scripts/review_package.py`, or you add a lint rule to a check that can block.
+Applies when: You change `DISABLED_RULES` in `scripts/check_ste_baseline.py` or in `skills/subagent-driven-development/scripts/review_package.py` (historical), or you add a lint rule to a check that can block.
 
 Related:
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
 - docs/research/ste-terminology-evidence/DECISION.md
-- specs/ste100-harness-prose/DECISION.md
-- specs/ste100-harness-prose/design.md
+- specs/ste100-harness-prose/DECISION.md (historical)
+- specs/ste100-harness-prose/design.md (historical)
 
 ## How to reverse
 
