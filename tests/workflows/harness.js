@@ -618,8 +618,9 @@ test('g10: the final PR body always says Merge: human and lists the five readine
     const adr = named(r.calls, /^adr$/)[0].prompt
     assert(adr.includes('Merge: human') && !adr.includes('Merge: auto'), adr.slice(-1500))
     for (const row of ['CI:', 'Review:', 'Intent:', 'Open decisions:', 'ADR files:', 'UAT:']) assert(adr.includes(`] ${row}`), `${row} missing in\n${adr}`)
-    assert(adr.includes('] ADR files: {{ADR_COUNT}}') && !pre.includes('{{ADR_COUNT}}') && pre.includes('] ADR files: pending'), 'ADR count placeholder only in the ADR-stage body')
-    assert(adr.includes('write_adrs.py --fill-count .ship/pr-body.md --written .ship/written.json'), adr)
+    assert(adr.includes('] ADR files: see Decisions') && pre.includes('] ADR files: pending'), 'ADR files row says see Decisions in the ADR-stage body, pending before')
+    assert(!adr.includes('{{ADR_COUNT}}') && !pre.includes('{{ADR_COUNT}}'), 'no ADR count placeholder anywhere')
+    assert(!adr.includes('--fill-count') && !adr.includes('count-filled'), 'ADR stage prompt has no fill-count step')
     if (local) assert(adr.includes('CI: n/a (local mode)'), adr)
     else assert(adr.includes('CI: 1 pass'), adr)
   }
