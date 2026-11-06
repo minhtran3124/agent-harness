@@ -1,0 +1,83 @@
+name: release
+
+# Cut a release on demand. This opens ONE release PR that bumps VERSION and plugin.json together
+# and adds the CHANGELOG section (scripts/release.sh). Merging that PR triggers release-tag.yml,
+# which creates the tag and the GitHub release.
+#
+# Security: runs only on main, from a manual dispatch. It runs only code already on main. The one
+# input (`bump`) is a fixed choice and still goes through env, never into a run: line. No
+# pull_request_target and no PR-controlled text reaches a shell line.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which part of the version to raise"
+        type: choice
+        required: true
+        options: [patch, minor, major]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    name: open the release PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "Run this workflow from main, not from $REF." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Bump the version and build the CHANGELOG section
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          out=$(bash scripts/release.sh "$BUMP")
+          printf '%s\n' "$out"
+          new=$(printf '%s\n' "$out" | sed -n 's/^NEW_VERSION=//p' | tail -1)
+          [ -n "$new" ] || { echo "release.sh printed no NEW_VERSION" >&2; exit 1; }
+          echo "version=$new" >> "$GITHUB_OUTPUT"
+      - name: Stop if the tag or the release branch already exists
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/v${NEW_VERSION}" >/dev/null; then
+            echo "Tag v${NEW_VERSION} already exists." >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --heads origin "release/v${NEW_VERSION}" >/dev/null 2>&1; then
+            echo "Branch release/v${NEW_VERSION} already exists on origin." >&2
+            exit 1
+          fi
+      - name: Commit, push and open the release PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          branch="release/v${NEW_VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add VERSION CHANGELOG.md plugins/harness/.claude-plugin/plugin.json
+          git commit -m "chore(release): v${NEW_VERSION}"
+          git push origin "$branch"
+          {
+            awk -v h="## [${NEW_VERSION}]" 'index($0, h) == 1 { on = 1; next } /^## \[/ { on = 0 } on' CHANGELOG.md
+            echo
+            echo "Merging this PR creates the tag and the GitHub release."
+          } > "$RUNNER_TEMP/release-body.md"
+          gh pr create --base main --head "$branch" \
+            --title "chore(release): v${NEW_VERSION}" \
+            --body-file "$RUNNER_TEMP/release-body.md"

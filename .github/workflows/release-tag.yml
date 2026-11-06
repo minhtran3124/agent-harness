@@ -1,0 +1,40 @@
+name: release-tag
+
+# Tag and publish a release when VERSION changes on main (the merged release PR). The job runs
+# scripts/release-tag.sh, which creates tag v<VERSION>, pushes only that tag and creates the
+# GitHub release from the CHANGELOG section. It refuses to move an existing tag. A manual run is
+# safe: with the tag and release in place it changes nothing.
+#
+# Security: triggers only on a push to main or a manual run, so it runs only code already on main.
+# No PR-controlled or free-text input reaches a run: line.
+
+on:
+  push:
+    branches: [main]
+    paths: [VERSION]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: tag and release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/release-tag.sh
