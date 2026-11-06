@@ -11,7 +11,7 @@ date: 2026-07-17
 
 ## Context
 
-A new hook, `hooks/protected-path-guard.sh`, was added to guard protected paths. The hook only takes effect once registered in `settings.json` under a trigger key. The question was whether to wire it into `settings.json` in the same change or ship it unregistered (dormant).
+A new hook, `hooks/protected-path-guard.sh` (historical), was added to guard protected paths. The hook only takes effect once registered in `settings.json` under a trigger key. The question was whether to wire it into `settings.json` in the same change or ship it unregistered (dormant).
 
 ## Options
 
@@ -24,7 +24,7 @@ Chose **Option B** — ship dormant.
 
 ## Why
 
-Editing `settings.json` hook registration is itself a Rule-4 / high-blast change (per `rules/auto-correct-scope.md`: "Changes to high-blast-radius files: settings.json (hook registration)") that needs explicit human confirmation. Shipping dormant changes no runtime behavior, keeps the hook landing inside the autonomous lane, and matches the established `auto-test-on-change` precedent (present on disk, unregistered).
+Editing `settings.json` hook registration is itself a Rule-4 / high-blast change (per `rules/auto-correct-scope.md` (historical): "Changes to high-blast-radius files: settings.json (hook registration)") that needs explicit human confirmation. Shipping dormant changes no runtime behavior, keeps the hook landing inside the autonomous lane, and matches the established `auto-test-on-change` precedent (present on disk, unregistered).
 
 ## Consequences
 

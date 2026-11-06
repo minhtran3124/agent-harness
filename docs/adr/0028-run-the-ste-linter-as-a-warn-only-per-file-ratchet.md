@@ -32,7 +32,7 @@ The default `check_ste_baseline.py` run always exits 0. `--strict` exits 1 on a 
 `--strict` exits 0 when the run is skipped (the linter or baseline is unusable). The plan required
 this, and correctness review recorded it as advisory (score 50).
 
-Update 2026-10-15 (`specs/ste100-prose-rollout/` design D7): `--strict` now exits 1 on a skipped
+Update 2026-10-15 (`specs/ste100-prose-rollout/` (historical) design D7): `--strict` now exits 1 on a skipped
 run, so a skip is never read as a pass. The default run still exits 0. `--against <git-ref>`
 compares each file with its baseline entry at that ref.
 
@@ -41,8 +41,8 @@ Applies when: You change how `run-tests.sh` or CI uses the STE linter.
 Related:
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
 - docs/research/ste-terminology-evidence/DECISION.md
-- specs/ste100-harness-prose/DECISION.md
-- specs/ste100-harness-prose/design.md
+- specs/ste100-harness-prose/DECISION.md (historical)
+- specs/ste100-harness-prose/design.md (historical)
 
 ## How to reverse
 

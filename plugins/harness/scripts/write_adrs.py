@@ -269,8 +269,10 @@ def dedupe(decisions: list) -> list:
     """Merge duplicates: same ticket and (same title slug or identical non-empty context).
 
     Keeps the item with the highest confidence (high, then medium, then low; a tie keeps the
-    first). If any merged item needs review, the kept one does too. The kept one is
-    owner_confirmed only when every merged item is. Order follows the first appearance of each group.
+    first). If any merged item has adr true, the kept decision is the highest-confidence one among
+    the adr-true items (its options, decision and confidence stay together). If any merged item
+    needs review, the kept one does too. The kept one is owner_confirmed only when every merged
+    item is. Order follows the first appearance of each group.
     """
     groups = []   # each: {"ticket", "slugs", "contexts", "items"}
     for d in decisions:
@@ -287,7 +289,8 @@ def dedupe(decisions: list) -> list:
         g["items"].append(d)
     merged = []
     for g in groups:
-        best = dict(min(g["items"], key=lambda d: CONFIDENCE.index(d["confidence"])))   # min keeps the first on a tie
+        pool = [d for d in g["items"] if d["adr"]] or g["items"]
+        best = dict(min(pool, key=lambda d: CONFIDENCE.index(d["confidence"])))   # min keeps the first on a tie
         if any(d["needs_review"] for d in g["items"]):
             best["needs_review"] = True
         if any(d["adr"] for d in g["items"]):

@@ -12,7 +12,7 @@ date: 2026-10-02
 ## Context
 
 Until 2026-10-02 the Claude review roles pinned `claude-opus-5` (`reviewer` at `high`) while
-`coding` pinned `claude-opus-5-5`, and `scripts/render_runtime_entry.py` raised when the correctness
+`coding` pinned `claude-opus-5-5`, and `scripts/render_runtime_entry.py` (historical) raised when the correctness
 scorer shared the finders' model or the intent reviewer shared the implementer's ("ensemble
 diversity"). Anthropic's Opus 5.5 guidance reports Opus 5.5 at `medium` effort outperforming Opus 5
 at `high` on code review with fewer tokens, and makes effort — not prompt wording — the thinking
@@ -41,8 +41,8 @@ Review independence now rests on fresh context per pass, structurally read-only 
   it, and the Codex reviewer `model_class` still says "distinct".
 - `correctness_scorer → coding` in `adapters/runtime-entry-bindings.json` now has no stated
   rationale; the scorer's model follows the implementer's.
-- Whether quality held is measured by re-running `evals dir: skills/review-chain` and
-  `evals dir: skills/task-review` after redeploy (prior baselines used other models, so a difference
+- Whether quality held is measured by re-running `evals dir: skills/review-chain` (historical) and
+  `evals dir: skills/task-review` (historical) after redeploy (prior baselines used other models, so a difference
   is not attributable to this change alone).
 
 Applies when: Choosing or changing the model/effort pinned to a review role, or reintroducing a rule that review stages must run on a model different from the implementer's.
@@ -50,7 +50,7 @@ Applies when: Choosing or changing the model/effort pinned to a review role, or 
 Related:
 - docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md
 - docs/solutions/harness/prose-encoded-state-logic-accrues-contradiction-chains.md
-- specs/opus-5-5-review-bindings/design.md
+- specs/opus-5-5-review-bindings/design.md (historical)
 
 ## How to reverse
 

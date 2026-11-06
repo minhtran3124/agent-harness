@@ -43,8 +43,8 @@ Applies when: You plan a bulk rewrite of agent-executed prose.
 Related:
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
 - docs/research/ste-terminology-evidence/DECISION.md
-- specs/ste100-harness-prose/DECISION.md
-- specs/ste100-harness-prose/design.md
+- specs/ste100-harness-prose/DECISION.md (historical)
+- specs/ste100-harness-prose/design.md (historical)
 
 ## How to reverse
 

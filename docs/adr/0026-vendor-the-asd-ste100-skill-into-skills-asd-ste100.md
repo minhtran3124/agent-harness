@@ -41,8 +41,8 @@ Applies when: You add a third-party skill to the harness.
 Related:
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
 - docs/research/ste-terminology-evidence/DECISION.md
-- specs/ste100-harness-prose/DECISION.md
-- specs/ste100-harness-prose/design.md
+- specs/ste100-harness-prose/DECISION.md (historical)
+- specs/ste100-harness-prose/design.md (historical)
 
 ## How to reverse
 

@@ -11,11 +11,11 @@ date: 2026-07-23
 
 > Superseded in part (2026-09-29, hook-surface simplification): the former `risk-corroboration.sh` hook and
 > `commit-gate.sh` no longer exist in this tree; read mentions of them below as historical. Affects: `harness-manifest.json`,
-> `scripts/check_manifest.py`, `scripts/check_gate_modes_smoke.py`. Tags: gate-modes, manifest-as-authority.
+> `scripts/check_manifest.py`, `scripts/check_gate_modes_smoke.py` (historical). Tags: gate-modes, manifest-as-authority.
 
 ## Context
 
-Gate modes lived in a `case` statement that `scripts/check_manifest.py` regex-parsed back out of
+Gate modes lived in a `case` statement that `scripts/check_manifest.py` (historical) regex-parsed back out of
 the hook source — the manifest was *declared* the authority while being validated against the
 hook. Loosening one gate = 4-file coordinated edit + CI.
 
@@ -34,7 +34,7 @@ Data. Removes the *reason* the deletion objection existed instead of fighting th
 > **Revised by B3 (2026-08-06, `hook-surface-slim`, see ADR 0030):** the
 > *absent-index-manifest* fallback is no longer block-all. `risk-corroboration.sh` now resolves modes
 > from the git index (`git show :harness-manifest.json`) else **embedded defaults**
-> (`hooks/lib/gate-modes.default.sh`, 2-warn/7-block parity, CI-drift-guarded). A consumer without a
+> (`hooks/lib/gate-modes.default.sh` (historical), 2-warn/7-block parity, CI-drift-guarded). A consumer without a
 > tracked manifest gets that parity, not deny-everything — and the hook never reads `.claude/`/worktree
 > policy. The per-field fail-safe above still holds for a present-but-incomplete manifest.
 - Always: when a checker regex-parses source to validate config, invert it — config becomes the runtime input, regex dies.

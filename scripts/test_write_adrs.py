@@ -250,7 +250,7 @@ def test_merge_keeps_highest_confidence_and_ties_to_first():
 def test_merge_carries_needs_review():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", needs_review=False, adr=False),
-                    dec(title="Same", confidence="low", needs_review=True)])
+                    dec(title="Same", confidence="low", needs_review=True, adr=False)])
     assert out[0]["confidence"] == "high" and out[0]["needs_review"] is True
 
 
@@ -334,7 +334,28 @@ def md_files(adr):
 def test_merge_ors_adr():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", adr=False), dec(title="Same", confidence="low")])
-    assert out[0]["confidence"] == "high" and out[0]["adr"] is True
+    assert out[0]["adr"] is True
+
+
+def test_merge_takes_whole_decision_from_highest_confidence_adr_item():
+    w = wa()
+    out = w.dedupe([
+        dec(title="Same", confidence="high", adr=False, options=["only one"], decision="plain"),
+        dec(title="Same", confidence="low", adr=True, options=["a", "b"], decision="real choice"),
+    ])
+    assert len(out) == 1
+    assert out[0]["adr"] is True and out[0]["options"] == ["a", "b"]
+    assert out[0]["decision"] == "real choice" and out[0]["confidence"] == "low"
+
+
+def test_merge_two_adr_items_keeps_highest_confidence_one():
+    w = wa()
+    out = w.dedupe([
+        dec(title="Same", confidence="low", adr=True, decision="low one"),
+        dec(title="Same", confidence="medium", adr=True, decision="medium one"),
+        dec(title="Same", confidence="high", adr=False, decision="plain"),
+    ])
+    assert out[0]["decision"] == "medium one" and out[0]["confidence"] == "medium"
 
 
 def test_second_run_against_same_folder_writes_one_file(tmp_path):
@@ -649,12 +670,3 @@ def test_date_absent_uses_today(tmp_path):
     adr, inp = setup(tmp_path, [dec(title="Undated")])
     assert run(adr, inp).returncode == 0
     assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()
-
-
-def test_gate_mode_adrs_supersession_note_has_no_dangling_paths():
-    adr_dir = Path(__file__).resolve().parent.parent / "docs/adr"
-    for n in ("0017", "0018", "0019", "0020"):
-        text = next(adr_dir.glob(f"{n}-*.md")).read_text()
-        assert "Superseded in part" in text, n
-        assert "specs/simplify-hook-surface" not in text, n
-        assert "hooks/commit-gate.sh" not in text, n

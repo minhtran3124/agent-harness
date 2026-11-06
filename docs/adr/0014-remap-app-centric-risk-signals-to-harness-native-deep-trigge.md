@@ -32,7 +32,7 @@ Enables: the Deep-review override stays meaningful on the harness — fail-open/
 
 Applies when: Make this decision when porting a risk-classification template into a repo whose stack lacks the template's literal categories (no DB/auth/framework) but has changes with equivalent blast-radius character.
 
-Status note: **Status (2026-07-17):** the `/bootstrap-xia2` update-mode and `skills/xia2/PROJECT.md` these decisions were made during no longer exist (bootstrap-xia2 retired; xia2 zero-config). Decision 1's concrete premise is also resolved — `rules/architecture.md` + `rules/guidelines.md` are now thin pointers to project-owned `techstacks/`, not FastAPI-describing docs — but the durable rule holds: **don't point harness-working agents at target-project docs**, and record harness-native Deep triggers rather than empty risk categories. Both decisions are preserved as the reasoning behind today's `agents/PROJECT.md` convention pointers.
+Status note: **Status (2026-07-17):** the `/bootstrap-xia2` update-mode and `skills/xia2/PROJECT.md` these decisions were made during no longer exist (bootstrap-xia2 retired; xia2 zero-config). Decision 1's concrete premise is also resolved — `rules/architecture.md` + `rules/guidelines.md` are now thin pointers to project-owned `techstacks/`, not FastAPI-describing docs — but the durable rule holds: **don't point harness-working agents at target-project docs**, and record harness-native Deep triggers rather than empty risk categories. Both decisions are preserved as the reasoning behind today's `agents/PROJECT.md` (historical) convention pointers.
 
 Related:
 - docs/solutions/harness-bootstrap/meta-repo-signal-remapping.md

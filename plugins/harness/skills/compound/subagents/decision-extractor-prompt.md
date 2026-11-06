@@ -20,6 +20,8 @@ A "decision" requires:
 1. A deliberate choice between at least two alternatives (explicit or implicit)
 2. A clear reason why one option was chosen over others
 
+A decision with fewer than two real options is not recorded. See `${CLAUDE_PLUGIN_ROOT}/skills/compound/references/not-recorded.md`.
+
 Examples that qualify:
 - Technology/library choices ("use Voyage over OpenAI for embeddings because X")
 - Structural choices ("put this logic in service vs. repository because Y")

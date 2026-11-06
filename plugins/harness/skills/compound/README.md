@@ -69,7 +69,7 @@ Captures an approach that was tried and failed so a future session does not repe
 
 ## Decisions go to docs/adr/
 
-The decision track is the one track that does not write `docs/solutions/`. Each decision becomes one ADR in `docs/adr/`, written by `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py` (input shape: `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md`). Decisions live in `docs/adr/`; lessons live in `docs/solutions/`.
+The decision track is the one track that does not write `docs/solutions/`. Each decision becomes one ADR in `docs/adr/`, written by `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py` (input shape: `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md`). Decisions live in `docs/adr/`. Lessons live in `docs/solutions/`.
 
 ---
 
