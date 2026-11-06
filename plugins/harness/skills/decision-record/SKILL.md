@@ -24,7 +24,7 @@ One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/
 `write_adrs.py` applies this rule; agents do not filter.
 
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
-   item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `adr` or `needs_review`, the kept one has it too. The
+   item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `adr` true, keep the highest-confidence `adr` true item (the whole decision, options included). If any merged item has `needs_review`, the kept one has it too. The
    kept one is `owner_confirmed` only if every merged item is.
 2. Write a file only if `adr: true` (row 3; never for a `Boundary:` or `UAT not run` note) and `options` lists two real options.
    `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
