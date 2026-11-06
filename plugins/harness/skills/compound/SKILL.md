@@ -6,15 +6,13 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 
 # Compound — durable session knowledge
 
-Use this skill when a non-obvious bug, reusable pattern, considered decision, or useful failure
-is worth preserving.
-
 ## Extract and select
 
 You hold the session. Run the context-analyzer, solution-extractor, and decision-extractor passes
 yourself. Use the prompt files in `subagents/` as their output schemas. Then run the related-docs
 pass with the context analyzer's module/tags. Dispatch a subagent only for a `docs/solutions/` tree
-too large to screen from `INDEX.md`. When you dispatch one, paste in its inputs.
+too large to screen from `INDEX.md`. When you dispatch one, paste in its inputs, because a fresh
+context cannot see this session.
 
 Emit only complete tracks:
 

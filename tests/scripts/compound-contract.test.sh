@@ -44,4 +44,7 @@ grep -qF 'Never add a near-duplicate.' "$ROOT/$SKILL" && pass || fail "near-dupl
 t "compound keeps the reason a human decides on a path-scoped rule"
 grep -qF 'changes what loads, so a human decides' "$ROOT/$SKILL" && pass || fail "paths: reason missing"
 
+t "compound keeps the reason to paste inputs into a dispatched subagent"
+tr '\n' ' ' < "$ROOT/$SKILL" | grep -qF 'because a fresh context cannot see this session' && pass || fail "fresh-context reason missing"
+
 finish
