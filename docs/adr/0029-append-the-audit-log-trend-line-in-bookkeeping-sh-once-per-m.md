@@ -1,7 +1,8 @@
 ---
 ticket: legacy
 stage: solutions-migration
-status: accepted
+status: superseded
+superseded_by: 0031
 confidence: high
 decided_by: owner
 date: 2026-07-04
@@ -15,13 +16,13 @@ The v0.3 spec (`docs/harness-v03-plan-overview.md` (historical), Wave 4) called 
 line to `docs/harness-experimental/audit-log.jsonl` (historical) "every CI run," to turn a single-sample
 advisory drift finding into a real trend. Two CI workflows exist: `harness-ci.yml` (runs on
 every push and PR — the literal "every CI run") and `post-merge-maintenance.yml` (runs once per
-merged PR, already used by `scripts/bookkeeping.sh` to write VERSION/CHANGELOG/trust-metrics.md).
+merged PR, already used by `scripts/bookkeeping.sh` to write VERSION/CHANGELOG/trust-metrics.md) (historical).
 A choice was needed about which workflow gets the new append step.
 
 ## Options
 
 - Option A: New per-push step in `harness-ci.yml` — literally satisfies "every CI run" but requires granting `harness-ci.yml` a new `contents: write` permission it doesn't have today, adds a commit-back-to-branch pattern on arbitrary PR branches (not just the default branch), and produces much higher write volume/noise (one row per push).
-- Option B: Append the trend line inside `scripts/bookkeeping.sh`, which already runs once per merged PR via `post-merge-maintenance.yml` — a workflow that already holds `contents: write` + `pull-requests: write` and was built in an earlier v0.3 wave specifically as the repo's one write-back mechanism. No new workflow, no new permissions, one row per merge instead of per push.
+- Option B: Append the trend line inside `scripts/bookkeeping.sh`, which already runs once per merged PR via `post-merge-maintenance.yml` — a workflow that already holds `contents: write` + `pull-requests: write` and was built in an earlier v0.3 wave specifically as the repo's one write-back mechanism. No new workflow, no new permissions, one row per merge instead of per push. (historical)
 
 ## Decision
 

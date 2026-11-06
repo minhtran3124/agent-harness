@@ -3,7 +3,7 @@
 #
 # Verifies:        plugins/harness/.claude-plugin/plugin.json "version" == VERSION (trimmed).
 # Does not verify: that either value is the right release number.
-# scripts/bookkeeping.sh bumps both together; this catches a hand edit that moves only one.
+# scripts/release.sh bumps both together; this catches a hand edit that moves only one.
 # Usage: bash scripts/check-plugin-version.sh [--root DIR]
 set -u
 ROOT="."

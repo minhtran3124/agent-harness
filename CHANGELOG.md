@@ -2,17 +2,10 @@
 
 All notable changes to this harness are recorded here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versions are tracked in the root `VERSION`
-file. Bump on merge: **patch** for fixes/docs, **minor** for a new skill/hook or a changed
-skill/hook contract, **major** for a breaking change to the workflow or a machine-read schema.
+file. Versions change only in the release PR (see `docs/releasing.md`); the bump (**patch** for fixes and docs,
+**minor** for a new skill or hook or a changed contract, **major** for a breaking change) is chosen when releasing.
 
 ## [Unreleased]
-
-- feat(skills): add /harness:own, which runs grilling or brainstorming with the owner answering
-  each big decision first
-- feat(hooks): add stop-evidence.sh, a Stop hook that requires real command output after a code change
-- feat(workflow): add qa-writer (blind acceptance tests) and security-reviewer (risky-ticket gate) stages to ship.js
-- feat(autopilot): add an autopilot profile (`profile.json`) for orchestrator and stage models
-- feat(skills): print evidence first and keep confirm questions short (option `preview`)
 
 ## [5.10.0] — 2026-11-06
 
@@ -29,6 +22,12 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 ## [5.7.0] — 2026-11-05
 
 - feat: sync own, stop-evidence, qa/security stages and autopilot profile from clone (PR #562)
+  - feat(skills): add /harness:own, which runs grilling or brainstorming with the owner answering
+    each big decision first
+  - feat(hooks): add stop-evidence.sh, a Stop hook that requires real command output after a code change
+  - feat(workflow): add qa-writer (blind acceptance tests) and security-reviewer (risky-ticket gate) stages to ship.js
+  - feat(autopilot): add an autopilot profile (`profile.json`) for orchestrator and stage models
+  - feat(skills): print evidence first and keep confirm questions short (option `preview`)
 
 ## [5.6.0] — 2026-11-04
 
