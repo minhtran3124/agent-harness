@@ -21,6 +21,13 @@ permissions:
   contents: write
   pull-requests: write
 
+# One release run at a time. Without this, two dispatches at the same moment can both pass the
+# release guard before either has pushed its branch. The second run waits, and its guard then
+# sees the first run's branch and PR.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release-pr:
     name: open the release PR
@@ -42,6 +49,7 @@ jobs:
       - name: Refuse a second release PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: bash scripts/release-guard.sh
       - name: Bump the version and build the CHANGELOG section
         id: bump
