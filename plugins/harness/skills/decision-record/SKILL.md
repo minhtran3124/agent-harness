@@ -57,7 +57,6 @@ Every decision is also an entry in `specs/<slug>/decision.md`. A depth L design 
 2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file> [--dry-run] [--table-out <file>]`. Exit 2 means bad input.
 3. Commit the new files in `docs/adr/` to the PR branch.
 4. Build the artifact when the Artifact tool exists (`references/artifact.md`). Run `write_adrs.py --render-section <written.json> [--artifact <url>]`; put the output, then the table file, in the PR body as `## Decisions`.
-5. Run `write_adrs.py --fill-count <body-file> --written <written.json>`. It fills `{{ADR_COUNT}}`.
 
 ## Auto mode
 
