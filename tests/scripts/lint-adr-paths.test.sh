@@ -13,6 +13,7 @@ adr_repo() {
   [ -f "$LINT_SRC" ] && cp "$LINT_SRC" "$d/scripts/"
   printf 'x\n' > "$d/scripts/real.sh"
   printf 'x\n' > "$d/plugins/harness/hooks/real-hook.sh"
+  mkdir -p "$d/.claude/rules"; printf 'x\n' > "$d/.claude/rules/real-rule.md"
   printf '%s\n' "$2" > "$d/docs/adr/$1"
   git -C "$d" add -A
   echo "$d"
@@ -37,6 +38,10 @@ run_lint "$d"; [ "$RC" = 0 ] && pass || fail "rc=$RC: $OUT"
 
 t "AC3: a path that exists under plugins/harness/ passes unmarked"
 d=$(adr_repo 0099-x.md 'See `hooks/real-hook.sh`.')
+run_lint "$d"; [ "$RC" = 0 ] && pass || fail "rc=$RC: $OUT"
+
+t "F2: a real .claude/ file resolves as written"
+d=$(adr_repo 0099-x.md 'See `.claude/rules/real-rule.md`.')
 run_lint "$d"; [ "$RC" = 0 ] && pass || fail "rc=$RC: $OUT"
 
 t "AC3: only the marked line is excused; an unmarked one on another line still fails"

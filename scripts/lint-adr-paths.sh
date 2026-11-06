@@ -8,7 +8,7 @@
 #   Tokens inside backtick spans that contain `/`, split on whitespace, quotes, parentheses and
 #   commas, and whose first segment is a known repo root. Bare prose mentions are out of scope
 #   (the same rule as lint-doc-truth.sh). Placeholders (<>, *, {}, [], $, ellipsis), URLs
-#   and `~` paths are skipped. A leading `./` and `.claude/` are stripped.
+#   and `~` paths are skipped. A leading `./` is stripped; a `.claude/` path is tried as written first, then without `.claude/`.
 #   Unlike lint-doc-truth.sh, specs/ (gitignored, absent in a fresh clone) and the removed
 #   agents/PROJECT.md are NOT exempt: where cited they need '(historical)'.
 #   A path is found at the repo root, under plugins/harness/, as skills/<path>, or as
@@ -50,7 +50,7 @@ for f in docs/adr/*.md; do
       case "$p" in
         ''|http://*|https://*|mailto:*|'~'*) continue ;;
         *'<'*|*'>'*|*'*'*|*'{'*|*'['*|*'$'*|*'…'*|*'...'*) continue ;;
-        .claude/*) p="${p#.claude/}" ;;
+        .claude/*) resolves "${p%/}" && continue; p="${p#.claude/}" ;;
       esac
       case "$p" in */*) ;; *) continue ;; esac
       case " $KNOWN_ROOTS " in *" ${p%%/*} "*) ;; *) continue ;; esac
