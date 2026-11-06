@@ -34,4 +34,8 @@ if grep -q 'problem_type: \[bug | knowledge | decision' "$D/README.md" || grep -
 t "docs/solutions/INDEX.md matches the solution docs (regenerated after a problem_type change)"
 if python3 "$ROOT/plugins/harness/scripts/rebuild_solution_index.py" --root "$ROOT" --check >/dev/null 2>&1; then pass; else fail "INDEX.md is stale; run rebuild_solution_index.py"; fi
 
+t "compound reports a decision with no ADR as not recorded, passes --table-out and adds no link"
+R="$D/references/not-recorded.md"
+if grep -q 'not recorded' "$ROOT/$SKILL" && grep -q -- '--table-out' "$ROOT/$SKILL" && grep -q 'references/not-recorded.md' "$ROOT/$SKILL" && grep -q 'not recorded: <reason>' "$R" && grep -q -- '--table-out' "$R" && grep -q 'Add no link to `critical-patterns.md`' "$R"; then pass; else fail "not-recorded rule missing from SKILL.md or reference"; fi
+
 finish
