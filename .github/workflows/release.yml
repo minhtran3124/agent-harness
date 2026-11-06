@@ -39,6 +39,10 @@ jobs:
           ref: main
           fetch-depth: 0
           fetch-tags: true
+      - name: Refuse a second release PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/release-guard.sh
       - name: Bump the version and build the CHANGELOG section
         id: bump
         env:
