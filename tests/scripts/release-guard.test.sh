@@ -66,12 +66,55 @@ t "the message says how to recover"
 if printf '%s' "$OUT" | grep -q 'git push origin --delete' && printf '%s' "$OUT" | grep -qi 'run the workflow again'; then pass
 else fail "out=$OUT"; fi
 
-t "a leftover release/ branch on origin with no PR: exit 1 and the output names the branch"
+# push_release_branch <repo> <name> [own] → a branch on origin. With "own" it carries a commit that
+# main does not have (an unfinished or abandoned release); without, it points at main (a release
+# that was already finished: GitHub does not delete the head branch after the PR is merged here).
+push_release_branch() {
+  if [ "${3:-}" = own ]; then
+    git -C "$1" checkout -q -b tmp-rel
+    echo "$2" > "$1/rel-$$.txt"; git -C "$1" add -A; git -C "$1" commit -q -m "release work $2"
+    git -C "$1" push -q origin "tmp-rel:refs/heads/$2" 2>/dev/null
+    git -C "$1" checkout -q main
+  else
+    git -C "$1" push -q origin "main:refs/heads/$2" 2>/dev/null
+  fi
+}
+
+t "a leftover release/ branch that main does not have and no PR: exit 1 and names the branch"
 d=$(make_fixture)
-git -C "$d" push -q origin main:refs/heads/release/v1.2.4 2>/dev/null
+push_release_branch "$d" release/v1.2.4 own
 run "$d"
 if [ "$RC" -eq 1 ] && printf '%s' "$OUT" | grep -q 'release/v1.2.4'; then pass
 else fail "rc=$RC out=$OUT"; fi
+
+t "a release/ branch that is already in origin/main (the release was finished) does not block"
+d=$(make_fixture)
+push_release_branch "$d" release/v1.2.3
+run "$d"
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a finished release branch and an unfinished one: only the unfinished one is named"
+d=$(make_fixture)
+push_release_branch "$d" release/v1.2.3
+push_release_branch "$d" release/v1.2.4 own
+run "$d"
+if [ "$RC" -eq 1 ] && printf '%s' "$OUT" | grep -q 'release/v1.2.4' && ! printf '%s' "$OUT" | grep -q 'release/v1.2.3'; then pass
+else fail "rc=$RC out=$OUT"; fi
+
+t "a release branch whose commit this checkout does not have cannot be judged: fail closed, exit 2"
+d=$(make_fixture)
+other=$(mktemp -d); _CLEANUP_DIRS+=("$other")
+git clone -q "$d.git" "$other/c" 2>/dev/null
+git -C "$other/c" config user.email test@test; git -C "$other/c" config user.name test
+git -C "$other/c" checkout -q -b rel; echo z > "$other/c/z.txt"; git -C "$other/c" add -A; git -C "$other/c" commit -q -m remote-only
+git -C "$other/c" push -q origin rel:refs/heads/release/v1.2.5 2>/dev/null
+run "$d"
+if [ "$RC" -eq 2 ] && printf '%s' "$OUT" | grep -q 'release/v1.2.5'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "asks gh for more than its default 30 PRs"
+d=$(make_fixture)
+run "$d"
+if grep -q -- '--limit 200' "$d.gh.log"; then pass; else fail "calls: $(cat "$d.gh.log" 2>/dev/null)"; fi
 
 t "an open PR with a non-release head and no release branch: exit 0"
 d=$(make_fixture)
