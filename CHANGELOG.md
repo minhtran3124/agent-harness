@@ -7,13 +7,6 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
-- feat(skills): add /harness:own, which runs grilling or brainstorming with the owner answering
-  each big decision first
-- feat(hooks): add stop-evidence.sh, a Stop hook that requires real command output after a code change
-- feat(workflow): add qa-writer (blind acceptance tests) and security-reviewer (risky-ticket gate) stages to ship.js
-- feat(autopilot): add an autopilot profile (`profile.json`) for orchestrator and stage models
-- feat(skills): print evidence first and keep confirm questions short (option `preview`)
-
 ## [5.10.0] — 2026-11-06
 
 - chore: finish milestone 9 (drop ADR count, delete stale acceptance tests, document two gate behaviors) (PR #592)
@@ -29,6 +22,12 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 ## [5.7.0] — 2026-11-05
 
 - feat: sync own, stop-evidence, qa/security stages and autopilot profile from clone (PR #562)
+  - feat(skills): add /harness:own, which runs grilling or brainstorming with the owner answering
+    each big decision first
+  - feat(hooks): add stop-evidence.sh, a Stop hook that requires real command output after a code change
+  - feat(workflow): add qa-writer (blind acceptance tests) and security-reviewer (risky-ticket gate) stages to ship.js
+  - feat(autopilot): add an autopilot profile (`profile.json`) for orchestrator and stage models
+  - feat(skills): print evidence first and keep confirm questions short (option `preview`)
 
 ## [5.6.0] — 2026-11-04
 

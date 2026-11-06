@@ -14,6 +14,8 @@ PR titles flow into the release notes. Read the CHANGELOG section in the release
 
 A PR opened with the workflow token does not start other workflows. If the release PR shows no CI checks, push an empty commit to its branch, or close and reopen it.
 
+If **release** stops with `Branch release/vX.Y.Z already exists` or `Tag vX.Y.Z already exists`, an earlier release PR for that version was closed without merging, or the version was tagged by hand. Delete the leftover branch (`git push origin --delete release/vX.Y.Z`) and run **release** again. The repository setting that lets Actions open pull requests is already on.
+
 ## What each script does
 
 - `scripts/release.sh <patch|minor|major> [--dry-run]` raises the version in `VERSION` and `plugin.json`, then adds a dated `## [X.Y.Z]` section to `CHANGELOG.md`. The section holds the bullets that were under `[Unreleased]`, then one `- <PR title> (PR #N)` bullet for each PR merged since the last `v*` tag. It reads only the first-parent line of `main`: merge commits, and squash or rebase commits whose subject ends in `(#N)`. It refuses a dirty tree, an unknown bump word, and a version heading that already exists. `--dry-run` prints the next version and writes nothing.
