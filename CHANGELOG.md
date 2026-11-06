@@ -14,6 +14,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 - feat(autopilot): add an autopilot profile (`profile.json`) for orchestrator and stage models
 - feat(skills): print evidence first and keep confirm questions short (option `preview`)
 
+## [5.9.0] — 2026-11-06
+
+- adr-followups (PR #589)
+
 ## [5.8.0] — 2026-11-06
 
 - feat(adr): ADR gate on impact and trade-off, one decision store, prune to 12 (#560) (PR #581)
