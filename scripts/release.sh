@@ -75,6 +75,10 @@ range="HEAD"
 if last=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null); then range="${last}..HEAD"; fi
 bullets=""
 US=$'\x1f'
+# The release PR that scripts/release.sh and the release workflow open is titled exactly
+# "chore(release): vX.Y.Z". Only that title is skipped: a real change whose title merely starts with
+# chore(release) belongs in the notes (PR #595 was one, and the first release run found nothing).
+release_title_re='^chore\(release\): v[0-9]+\.[0-9]+\.[0-9]+[[:space:]]*$'
 while IFS= read -r -d $'\x1e' rec || [ -n "$rec" ]; do
   rec=${rec#"${rec%%[![:space:]]*}"}   # git puts a newline between records
   [ -n "$rec" ] || continue
@@ -106,8 +110,9 @@ while IFS= read -r -d $'\x1e' rec || [ -n "$rec" ]; do
   case "$num" in ''|*[!0-9]*) continue ;; esac
   title=$(printf '%s' "$title" | tr '\r\n\t' '   ')
   case "$title" in
-    "chore(bookkeeping)"*|"chore(release)"*) continue ;;
+    "chore(bookkeeping)"*) continue ;;
   esac
+  if [[ $title =~ $release_title_re ]]; then continue; fi
   [ -n "${title//[[:space:]]/}" ] || title="(no title)"
   bullets="${bullets}- ${title} (PR #${num})"$'\n'
 done < <(git log "$range" --first-parent --reverse --format='%H%x1f%P%x1f%s%x1f%b%x1e')
