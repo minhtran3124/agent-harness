@@ -224,4 +224,29 @@ squash_pr "$d" "feat: kept (#16)"
 run patch --root "$d"
 if [ "$RC" -eq 0 ] && grep -q 'kept (PR #16)' "$d/CHANGELOG.md" && ! grep -q 'PR #14)\|PR #15)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC $(cat "$d/CHANGELOG.md")"; fi
 
+# Only the release PR that the workflow opens ("chore(release): vX.Y.Z") is skipped. A real change
+# whose title merely starts with chore(release) must reach the notes: PR #595 was titled
+# "chore(release): replace ..." and the first real release run found "nothing to release".
+t "a merge commit titled chore(release): <words> is a real change and is listed"
+d=$(make_fixture 1.2.3)
+merge_pr "$d" 30 "chore(release): replace the flow with a release PR"
+merge_pr "$d" 31 "chore(release): v1.2.4"
+run patch --root "$d"
+if [ "$RC" -eq 0 ] && grep -q 'chore(release): replace the flow with a release PR (PR #30)' "$d/CHANGELOG.md" \
+   && ! grep -q 'PR #31)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC $(cat "$d/CHANGELOG.md")"; fi
+
+t "a squash subject chore(release): <words> is listed, and chore(release): vX.Y.Z is still skipped"
+d=$(make_fixture 1.2.3)
+squash_pr "$d" "chore(release): tighten the tag step (#32)"
+squash_pr "$d" "chore(release): v1.2.4 (#33)"
+run patch --root "$d"
+if [ "$RC" -eq 0 ] && grep -q 'chore(release): tighten the tag step (PR #32)' "$d/CHANGELOG.md" \
+   && ! grep -q 'PR #33)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC $(cat "$d/CHANGELOG.md")"; fi
+
+t "the only PR since the tag is titled chore(release): <words>: that is not an empty release"
+d=$(make_fixture 1.2.3)
+merge_pr "$d" 34 "chore(release): replace the flow with a release PR"
+run patch --root "$d"
+if [ "$RC" -eq 0 ] && ! printf '%s' "$OUT" | grep -q 'nothing to release'; then pass; else fail "rc=$RC out=$OUT"; fi
+
 finish
