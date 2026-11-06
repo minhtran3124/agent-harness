@@ -31,7 +31,7 @@ const FIXED_LABELS = {
   'write specs/ flow files': 'specs', 'write specs/ early': 'specs-early', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
   'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
-  'CI snapshot': 'ci-snapshot', 'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
+  'CI snapshot': 'ci-snapshot', 'write ADRs': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
 }
 const TICKET_VERBS = {
   'acceptance-test check': 'acceptance-test check', 'security gate': 'security gate',
@@ -276,12 +276,61 @@ test('e4: RULES and the decision schema carry the needs_review criteria', async 
   assert(/ONLY when/.test(dec.description) && /false/.test(dec.description))
 })
 
-test('e5: owner_confirmed wording in RULES and schema says needs_review still gets an ADR file', async () => {
+test('e5: owner_confirmed wording in RULES and schema says adr still gets an ADR file', async () => {
   const { calls } = await run({}, null)
   const c = named(calls, /^intent:1$/)[0]
-  assert(c.prompt.includes('no ADR file unless it also has needs_review: true'), 'RULES omit the needs_review exception')
+  assert(c.prompt.includes('no ADR file unless it also has adr: true'), 'RULES omit the adr exception')
   const oc = c.schema.properties.decisions.items.properties.owner_confirmed.description
-  assert(/unless needs_review is also true/.test(oc), 'schema omits the needs_review exception')
+  assert(/unless adr is also true/.test(oc), 'schema omits the adr exception')
+})
+
+test('e8: the adr flag is separate: ADR_WHEN in RULES and schema, needs_review makes no file', async () => {
+  const { calls } = await run({}, null)
+  const c = named(calls, /^intent:1$/)[0]
+  const when = 'changes harness behavior, a data or config contract, or how users work, and (b) had at least two viable options, listed in options'
+  assert(c.prompt.includes('adr: true ONLY when') && c.prompt.includes(when), 'RULES omit the adr gate')
+  const props = c.schema.properties.decisions.items.properties
+  assert(props.adr.description.includes(when) && c.schema.properties.decisions.items.required.includes('adr'))
+  assert(/makes no ADR file/.test(props.needs_review.description))
+})
+
+test('e9: a Boundary decision sent with adr true reaches the ADR input as adr false and is listed under Needs your decision', async () => {
+  const B = { title: 'Boundary: touches docs/x.md', context: 'c', options: ['a', 'b'], decision: 'DECISION-TEXT-B9', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, adr: true }
+  const P = { title: 'Plain owner question', context: 'c2', options: ['a', 'b'], decision: 'DECISION-TEXT-P9', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, adr: true }
+  const { calls } = await run({}, c => (c.label === 'implement:1' ? ok({ decisions: [B, P] }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(/"title":"Boundary: touches docs\/x.md"[^}]*"adr":false/.test(p) || p.includes('"adr":false'), 'boundary decision keeps adr true')
+  const bi = p.indexOf('"title":"Boundary: touches'), seg = p.slice(bi, p.indexOf('}', bi))
+  assert(seg.includes('"adr":false'), seg)
+  const sec = p.slice(p.indexOf('## Needs your decision'), p.indexOf('## Summary'))
+  assert(sec.includes('DECISION-TEXT-B9') && sec.includes('DECISION-TEXT-P9'), sec)
+})
+
+test('e9b: a dangerous or contradicting decision sent with adr true reaches the ADR input as adr false', async () => {
+  const mk = (title, extra) => ({ title, context: 'c', options: ['a', 'b'], decision: 'DEC-' + title, why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, adr: true, ...extra })
+  const D = mk('Flag-danger', { dangerous: true }), C = mk('Flag-contra', { contradicts_confirmed: true })
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 2)] }, c => (c.label === 'final-pr' ? ok({ pr: 900, url: 'https://x/pull/900', decisions: [D, C] }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  for (const t of ['Flag-danger', 'Flag-contra']) {
+    const i = p.indexOf('"title":"' + t + '"')
+    assert(i >= 0, t + ' missing')
+    const seg = p.slice(i, p.indexOf('}', i))
+    assert(seg.includes('"adr":false'), t + ' keeps adr true')
+    assert(seg.includes('"needs_review":true'), t + ' is not flagged for the owner')
+    assert(seg.includes('"owner_confirmed":false'), t + ' stays owner_confirmed')
+  }
+  // control: the same decision without a flag keeps adr true, so the flag is what turns it off
+  const { calls: c2 } = await run({ tickets: [T(1, 1), T(2, 2)] }, c => (c.label === 'final-pr' ? ok({ pr: 900, url: 'https://x/pull/900', decisions: [mk('Plain-adr', {})] }) : undefined))
+  const p2 = named(c2, /^adr$/)[0].prompt, j = p2.indexOf('"title":"Plain-adr"')
+  assert(j >= 0 && p2.slice(j, p2.indexOf('}', j)).includes('"adr":true'), 'an unflagged adr decision lost adr')
+})
+
+test('e9c: ADR_WHEN and the ADR README state the dangerous/contradicting carve-out', async () => {
+  const { calls } = await run({}, null)
+  const c = named(calls, /^intent:1$/)[0]
+  assert(c.prompt.includes('dangerous or contradicts_confirmed are never adr'), 'RULES omit the carve-out')
+  const readme = fs.readFileSync(path.join(__dirname, '../../docs/adr/README.md'), 'utf8')
+  assert(/dangerous.*contradicts_confirmed[\s\S]*never `adr`|never `adr` either/.test(readme), 'README omits the carve-out')
 })
 
 test('e7: RULES gives one source for project rules, not the owner checkout and the worktree at once', async () => {
@@ -437,7 +486,7 @@ test('g1: a passing gate runs review, intent review and CI in order, edits the P
   assert.strictEqual(t1(r).status, 'done')
   const body = named(r.calls, /^gbody:1$/)[0].prompt
   assert(body.includes('Merge: auto') && !body.includes('Merge: auto (pending'), body)
-  assert(body.includes('- [x] CI:') && body.includes('- [x] Review:') && body.includes('- [x] Intent:') && body.includes('- [x] needs_review ADRs: none'), body)
+  assert(body.includes('- [x] CI:') && body.includes('- [x] Review:') && body.includes('- [x] Intent:') && body.includes('- [x] Open decisions: none') && body.includes('- [x] ADR files: none (written on the final PR)'), body)
   const mp = mergePrompt(r.calls)
   assert(mp.includes('- #1 branch b1 PR 101 head sha1abcdef') && mp.includes('- #2 branch b2 PR 102 head sha2abcdef'), mp)
   const ci = named(r.calls, /^gci:1$/)[0].prompt
@@ -568,7 +617,9 @@ test('g10: the final PR body always says Merge: human and lists the five readine
     assert(pre.includes('Merge: human') && pre.includes(local ? 'CI: n/a (local mode)' : '- [ ] CI: pending'), pre.slice(-1500))
     const adr = named(r.calls, /^adr$/)[0].prompt
     assert(adr.includes('Merge: human') && !adr.includes('Merge: auto'), adr.slice(-1500))
-    for (const row of ['CI:', 'Review:', 'Intent:', 'needs_review ADRs:', 'UAT:']) assert(adr.includes(`] ${row}`), `${row} missing in\n${adr}`)
+    for (const row of ['CI:', 'Review:', 'Intent:', 'Open decisions:', 'ADR files:', 'UAT:']) assert(adr.includes(`] ${row}`), `${row} missing in\n${adr}`)
+    assert(adr.includes('] ADR files: {{ADR_COUNT}}') && !pre.includes('{{ADR_COUNT}}') && pre.includes('] ADR files: pending'), 'ADR count placeholder only in the ADR-stage body')
+    assert(adr.includes('write_adrs.py --fill-count .ship/pr-body.md --written .ship/written.json'), adr)
     if (local) assert(adr.includes('CI: n/a (local mode)'), adr)
     else assert(adr.includes('CI: 1 pass'), adr)
   }
@@ -1409,7 +1460,7 @@ test('u7: a blocked or empty UAT run is not an AC failure: no fix, ticket stays 
     const { calls, result } = await run({}, c => (c.label === 'uat:1' ? reply : undefined))
     assert.strictEqual(named(calls, /^uat-(fix|rerun)/).length, 0)
     assert.strictEqual(result.tickets[0].status, 'done')
-    assert(result.decisions.some(d => d.title === 'UAT not run for #1' && d.needs_review === true))
+    assert(result.decisions.some(d => d.title === 'UAT not run for #1' && d.needs_review === true && d.adr === false))
     assert(named(calls, /^adr$/)[0].prompt.includes('UAT: not run'))
   }
 })

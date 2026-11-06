@@ -202,7 +202,7 @@ rm -f "$D/slow"
 
 # Probe (opt-in: it starts real `claude -p` sessions, needs a login and costs tokens): what Claude Code does
 # with permissionDecision "ask" under default, auto and bypassPermissions. Run with RUN_ASK_PROBE=1.
-# Result (ADR 0108, 0109): in each mode the Bash call is NOT run; headless, nobody can answer the prompt.
+# Result (ADR 0008, 0009): in each mode the Bash call is NOT run; headless, nobody can answer the prompt.
 ask_probe() {
   local mode="$1" pd
   pd=$(mktemp -d); _CLEANUP_DIRS+=("$pd"); mkdir -p "$pd/.claude"

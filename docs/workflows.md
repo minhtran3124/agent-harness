@@ -17,7 +17,7 @@ sibling PRs into it, a merge agent after each group, one final PR into `base`.
 The workflow merges only ticket PRs into the run's integration branch `feat/<slug>`, and only after a per-ticket gate.
 Every PR into `base`, `main` or the default branch is a human merge, and so is the final PR. A single-ticket run never
 merges: its PR is the final PR (`Merge: human`). Every PR the workflow opens carries a `Merge: auto|human` line and a
-readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- merge-policy -->` markers.
+readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between `<!-- merge-policy -->` markers.
 
 - **Gate stage** (`stageGate`, multi-ticket remote runs, after finish): a code-review of the ticket PR against `feat/<slug>`
   with fix rounds on the ticket branch, a one-ticket intent review (a code fix it lands is reviewed too), and `gh pr checks`

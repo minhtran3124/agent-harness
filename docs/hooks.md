@@ -67,7 +67,7 @@ from a Bash call. The model of the main session comes from the transcript, becau
 - `STOP_EVIDENCE_GUARD` is set for the judge run, so the judge does not trigger the hook again.
 
 `Verifies:` that no command output exists after a code change. `Does not verify:` that a command passed, that its
-output fits the final diff (the judge decides that), or hooks in Workflow agents (not proven, see ADR 0007).
+output fits the final diff (the judge decides that), or hooks in Workflow agents (not proven, see ADR 0010).
 It reads a transcript format that Claude Code does not document; an unreadable transcript fails open.
 Test: `bash tests/hooks/stop-evidence.test.sh`.
 

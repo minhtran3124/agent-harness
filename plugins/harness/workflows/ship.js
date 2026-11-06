@@ -41,7 +41,9 @@ const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/wo
 const RISK_TEXT = /\b(log ?in|log ?out|sign[- ]?in|sign[- ]?up|password|passwd|auth\w*|session|cookie|jwt|oauth|permission|privilege|role|admin|payment|billing|invoice|checkout|stripe|secret|api[- ]?key|token|credential|personal data|pii|gdpr|bulk delete|delete all|purge)\b/i
 const QA_SUBJECT = n => `Add acceptance tests for #${n}`   // the only commit subject allowed to touch the acceptance tests
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
-// The one wording of the ADR gate, used by the stage rules and the decision schema.
+// The one wording of the ADR gate (adr flag), used by the stage rules, the decision schema and the decision-record skill.
+const ADR_WHEN = "the decision (a) changes harness behavior, a data or config contract, or how users work, and (b) had at least two viable options, listed in options. A scope note (Boundary), a 'UAT not run' event, and a decision flagged dangerous or contradicts_confirmed are never adr: they get a table row and needs_review, no ADR file."
+// The wording of the owner-ask flag (needs_review): the owner must look at it before the merge. It makes no file.
 const NEEDS_REVIEW_WHEN = 'affects another ticket, a public contract or interface, stored data, security or cost, or is a trade-off that is costly to reverse, or contradicts the ticket text or an owner-confirmed answer'
 const CO_AUTHOR = 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'
 const PR_FOOTER = '🤖 Generated with [Claude Code](https://claude.com/claude-code)'
@@ -52,7 +54,8 @@ const rulesCommon = repoDir => `Rules (all of them apply):
 - Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
 - Work only in your own worktree and on your own branch. Never edit files in the owner's checkout.
 - Your session working directory is NOT the target repo. Use absolute paths; run every git command as git -C <path> or after cd <your worktree>.
-- needs_review: true ONLY when the decision ${NEEDS_REVIEW_WHEN}. needs_review is the only thing that makes an ADR file, so be strict. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false, even when you are unsure (set confidence low then). It is still recorded as a decision.
+- adr: true ONLY when ${ADR_WHEN} Only adr makes an ADR file, so be strict.
+- needs_review: true ONLY when the decision ${NEEDS_REVIEW_WHEN}. needs_review asks the owner to look at the decision before the merge; it makes no ADR file, so be strict. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false, even when you are unsure (set confidence low then). It is still recorded as a decision.
 - summary is one plain sentence about what changed in the code. Never write about pushes, pull requests, the mode, or test counts in it.
 - "Done" needs real command output. Report what you ran and its exit code; never claim a result you did not see.
 - Run only the tests related to your change. The full suite is the last stage's job.
@@ -60,7 +63,7 @@ const rulesCommon = repoDir => `Rules (all of them apply):
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
-- owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has needs_review: true (needs_review wins); the PR table says owner-confirmed. Otherwise leave it out.
+- owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has adr: true (adr wins); the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
 - Never write ADR files. Return decisions[] instead; one stage at the end writes them.
 - You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
@@ -76,11 +79,12 @@ const DECISION = {
   properties: {
     title: STR, context: STR, options: strList, decision: STR, why: STR, consequences: STR,
     how_to_reverse: STR, confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-    needs_review: { type: 'boolean', description: `true ONLY when the decision ${NEEDS_REVIEW_WHEN}. This alone makes an ADR file. A reversible choice inside the ticket (naming, an edge case the ticket leaves open, which implementation) is false, even at low confidence.` },
+    needs_review: { type: 'boolean', description: `true ONLY when the decision ${NEEDS_REVIEW_WHEN}. It asks the owner to look at the decision before the merge and makes no ADR file. A reversible choice inside the ticket (naming, an edge case the ticket leaves open, which implementation) is false, even at low confidence.` },
+    adr: { type: 'boolean', description: `true ONLY when ${ADR_WHEN} Only adr makes an ADR file.` },
     stage: STR, contradicts_confirmed: BOOL, dangerous: BOOL,
-    owner_confirmed: { type: 'boolean', description: 'true ONLY when the decision just restates an owner-confirmed answer for the ticket (no ADR file is written for it unless needs_review is also true). Leave out otherwise.' },
+    owner_confirmed: { type: 'boolean', description: 'true ONLY when the decision just restates an owner-confirmed answer for the ticket (no ADR file is written for it unless adr is also true). Leave out otherwise.' },
   },
-  required: ['title', 'context', 'options', 'decision', 'why', 'consequences', 'how_to_reverse', 'confidence', 'needs_review'],
+  required: ['title', 'context', 'options', 'decision', 'why', 'consequences', 'how_to_reverse', 'confidence', 'needs_review', 'adr'],
 }
 
 // Every stage result carries status, decisions and the advisor request (ADR 0001 decision 2).
@@ -303,6 +307,7 @@ function takeDecisions(ticket, stage, res) {
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
       needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
+      adr: d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX),
       owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
       decided_by: `claude (ship workflow: ${stage})`,
@@ -311,7 +316,7 @@ function takeDecisions(ticket, stage, res) {
 }
 
 function addDecision(ticket, stage, d) {
-  decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, decided_by: `claude (ship workflow: ${stage})`, ...d })
+  decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, adr: false, decided_by: `claude (ship workflow: ${stage})`, ...d })
 }
 
 // The boundary of a ticket: its Out of scope lines and the files it names (intent files plus plan-step files).
@@ -325,7 +330,7 @@ function boundaryOf(intent) {
     files: uniq([...(Array.isArray(i.files) ? i.files : []), ...(Array.isArray(i.plan_steps) ? i.plan_steps : []).flatMap(s => (s && Array.isArray(s.files) ? s.files : []))]),
   }
 }
-const BOUNDARY_RULE = `A change outside these files, or against an Out of scope line, is NOT made. Return it as a decision whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.`
+const BOUNDARY_RULE = `A change outside these files, or against an Out of scope line, is NOT made. Return it as a decision whose title starts with '${BOUNDARY_PREFIX}', needs_review true and adr false.`
 function boundaryText(label, intent) {
   const b = boundaryOf(intent)
   return `${label}\nOut of scope (the ticket's own lines):\n${b.out_of_scope.length ? b.out_of_scope.map(x => `- ${x}`).join('\n') : '- none listed'}\n` +
@@ -338,7 +343,7 @@ function runBoundaryText(only) {
   const body = ns.map(n => `Ticket #${n}\n` + boundaryText('', boundaries[n]).replace(`\n${BOUNDARY_RULE}\n`, '').trim()).join('\n\n')
   return `Boundary (${only ? `ticket #${only}` : 'union over the tickets in this run'}):\n${body}\n` +
     `The file set limits production, test and doc files alike: a test or doc file is in bounds only when the list above names it. ` +
-    `A fix that would touch a file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
+    `A fix that would touch a file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}', needs_review true and adr false.\n`
 }
 
 const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s+/g, ' ').trim(); return x.length > 200 ? `${x.slice(0, 199)}…` : x }
@@ -406,7 +411,7 @@ function stageResearch(t, intent) {
 function stageDesign(t, intent, research) {
   const w = newWt(`design-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'brainstorming',
-    `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file.\n` +
+    `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) with adr true and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file.\n` +
     `Intent: ${JSON.stringify(intent)}\nResearch brief:\n${research.research_md}${advice}`, w.dir)
   return runStage(t, 'design', build, DESIGN_SCHEMA, { model: stageModel('design', t.depth), effort: EFFORT.design })
 }
@@ -594,10 +599,10 @@ async function stageAttach(t, fin, verifyResult) {
 // ---------------------------------------------------------------------------
 const MP_OPEN = '<!-- merge-policy -->', MP_CLOSE = '<!-- /merge-policy -->'
 const PENDING = { ok: false, text: 'pending' }
-function mergeBlock({ mode, ci = PENDING, review = PENDING, intent = PENDING, adrs = PENDING, uat = { ok: false, text: 'n/a' }, why = '' }) {
+function mergeBlock({ mode, ci = PENDING, review = PENDING, intent = PENDING, open = PENDING, files = { ok: true, text: 'none (written on the final PR)' }, uat = { ok: false, text: 'n/a' }, why = '' }) {
   const head = mode === 'auto' ? 'Merge: auto' : mode === 'pending' ? 'Merge: auto (pending gates)' : `Merge: human${why ? ` (${why})` : ''}`
   const row = (name, x) => `- [${x && x.ok ? 'x' : ' '}] ${name}: ${(x && x.text) || 'pending'}`
-  return [MP_OPEN, head, row('CI', ci), row('Review', review), row('Intent', intent), row('needs_review ADRs', adrs), row('UAT', uat), MP_CLOSE].join('\n')
+  return [MP_OPEN, head, row('CI', ci), row('Review', review), row('Intent', intent), row('Open decisions', open), row('ADR files', files), row('UAT', uat), MP_CLOSE].join('\n')
 }
 
 function stageFinish(t, impl, verifyResult) {
@@ -788,7 +793,7 @@ async function humanMergeBlock(n, r) {
   const mt = tickets.find(x => x.n === n) || { n }
   const ci = r.gate && r.gate.ci, rv = r.gate && r.gate.review, it = r.gate && r.gate.intent
   await updateMergeBlock(mt, { pr: r.pr }, { labelPrefix: `#${n} merge failed · ` },
-    mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, adrs: { ok: true, text: 'none' } }))
+    mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, open: { ok: true, text: 'none' } }))
 }
 
 async function stageGate(t, fin, impl, branch) {
@@ -830,7 +835,7 @@ async function stageGate(t, fin, impl, branch) {
   const nrG = { ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' }
   if (!nrG.ok) failed.push({ gate: 'needs_review', detail: nrG.text })
   const pass = failed.length === 0
-  const block = mergeBlock({ mode: pass ? 'auto' : 'human', why: pass ? '' : `gate ${failed.map(f => f.gate).join(', ')} failed`, ci: ciG, review: reviewG, intent: intentG, adrs: nrG })
+  const block = mergeBlock({ mode: pass ? 'auto' : 'human', why: pass ? '' : `gate ${failed.map(f => f.gate).join(', ')} failed`, ci: ciG, review: reviewG, intent: intentG, open: nrG })
   await updateMergeBlock(t, fin, ctx, block)
   return { pass, failed, ci: ciG, review: reviewG, intent: intentG, head }
 }
@@ -1191,7 +1196,7 @@ const uatNotRun = (n, reason) => addDecision(n, 'uat', {
   decision: 'Continue without UAT; the ticket stays done and the PR body says UAT did not run.',
   why: 'A missing config, a start failure or an agent failure is not an acceptance failure, so no code fix is attempted.',
   consequences: 'The running app was not checked against the original request.', how_to_reverse: `Run /harness:uat ${n} by hand.`,
-  needs_review: true,
+  needs_review: true, adr: false,
 })
 
 // Serial over the tickets: one app, one port. Returns n -> { status, reason, scenarios, fixed } for the PR body.
@@ -1294,12 +1299,12 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
-    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision that needs a human look, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
+    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true and two or more options, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
     `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
-    `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
+    `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. Then run: python3 ${pluginDir}/scripts/write_adrs.py --fill-count .ship/pr-body.md --written .ship/written.json (it replaces {{ADR_COUNT}} with the number of entries in .ship/written.json; do not replace it by hand). Then run: ! grep -q '{{ADR_COUNT}}' .ship/pr-body.md && echo count-filled. It must print count-filled. If it prints nothing, run the fill-count command again. Publish the body only after it prints count-filled. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review, ticket, title). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
-  const res = await call(prompt, { label: 'write ADRs (needs_review)', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
+  const res = await call(prompt, { label: 'write ADRs', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
   return res || { adrs: [], status: 'blocked', summary: 'the ADR agent returned nothing' }
 }
 
@@ -1319,10 +1324,11 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
     review: pend ? PENDING : review.status === 'not run' ? { ok: false, text: `not run (${review.reason})` }
       : { ok: !review.notFixed.length && !review.leftover.some(f => f.score >= FIX_THRESHOLD), text: `${review.rounds} fix round(s), ${review.notFixed.length} not fixed, ${review.leftover.length} left` },
     intent: pend ? PENDING : { ok: intent.verdict === 'match', text: intent.verdict },
-    adrs: pend ? PENDING : { ok: nrCount === 0, text: nrCount ? `${nrCount} (see Decisions)` : 'none' },
+    open: pend ? PENDING : { ok: nrCount === 0, text: nrCount ? `${nrCount} (${decisions.filter(d => d.needs_review).map(d => d.title).join('; ')})` : 'none' },
+    files: { ok: true, text: pend ? 'pending' : '{{ADR_COUNT}}' },
     uat: uatG }), '')
   const excess = ((intent && intent.gaps) || []).filter(g => g.kind === 'excess' && g.behaviour_changing === true)
-  const bounded = decisions.filter(d => d.boundary && d.needs_review)
+  const bounded = decisions.filter(d => d.needs_review)
   if (excess.length || bounded.length) {
     L.push('## Needs your decision', '')
     for (const g of excess) L.push(`- excess (behaviour-changing): ${g.clause}: ${g.detail}`)

@@ -89,4 +89,4 @@ the ratchet agree on which files count.
 
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
 - docs/solutions/harness/ratchet-matches-spelling-not-property.md
-- docs/solutions/harness/ste100-adoption-decisions.md
+- docs/adr/0028-run-the-ste-linter-as-a-warn-only-per-file-ratchet.md

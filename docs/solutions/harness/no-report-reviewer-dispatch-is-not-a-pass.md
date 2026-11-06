@@ -42,7 +42,7 @@ no-report case, so the controller is left choosing silently between blocking for
 gate. And because the receipt cannot express "reviewed, but not independently", the degradation leaves
 no trace: the reviewer independence (a fresh, separately dispatched context) the chain depends on
 disappears without a record. (Model diversity was dropped as a requirement on 2026-10-02 — see
-`review-model-diversity-dropped-decisions.md`; independence of context is what remains.)
+`0024-drop-the-review-model-diversity-rule-reviewers-run-opus-5-5.md` in `docs/adr/`; independence of context is what remains.)
 
 The practical proof that independence matters: in this session the inline correctness pass verified that
 `run_state.py init` was idempotent on an existing run and stopped there — it never tested

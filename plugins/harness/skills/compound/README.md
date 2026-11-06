@@ -33,7 +33,7 @@ Each run can produce these files:
 | File | When produced |
 |---|---|
 | `docs/solutions/[category]/[slug].md` | Bug, knowledge, or failure track (one file each) |
-| `docs/solutions/[category]/[slug]-decisions.md` | Decision track (all decisions for this session) |
+| `docs/adr/NNNN-[title].md` | Decision track (one ADR per decision, written by `write_adrs.py`) |
 | `docs/solutions/critical-patterns.md` | Appended to when `severity = critical`. Updated or added on a recurrence (see Mistake Twice) |
 | `docs/solutions/INDEX.md` | Always rebuilt from scratch after every run |
 
@@ -67,14 +67,9 @@ Captures an approach that was tried and failed so a future session does not repe
 
 ---
 
-## Multi-Decision Consolidation
+## Decisions go to docs/adr/
 
-When a session produces multiple `DECISION_TRACK_N` blocks, they go into **one consolidated file** — not separate `decision-1.md`, `decision-2.md` files.
-
-- **1 decision** → `[slug].md` (standard single-decision template, no suffix)
-- **2+ decisions** → `[slug]-decisions.md` (consolidated, `## Decision 1` / `## Decision 2` sections)
-
-**Why:** Decisions from the same session are causally related. An agent reading `decision-2.md` without `decision-1.md` context loses the constraints that drove it. Consolidated files prevent this fragmentation.
+The decision track is the one track that does not write `docs/solutions/`. Each decision becomes one ADR in `docs/adr/`, written by `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py` (input shape: `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md`). Decisions live in `docs/adr/`; lessons live in `docs/solutions/`.
 
 ---
 
@@ -99,7 +94,7 @@ Every emitted file carries this frontmatter:
 
 ```yaml
 ---
-problem_type: [bug | knowledge | decision | failure]
+problem_type: [bug | knowledge | failure]
 module: [primary module, e.g. kb/embedding, services/ai, skills/compound]
 tags: [3-6 kebab-case tags, comma-separated]
 severity: [critical | standard]
@@ -114,7 +109,6 @@ confirmed_at: YYYY-MM-DD
 
 **`applicable_when` is the primary discovery field.** It completes a specific sentence form:
 - Knowledge: "Use this pattern when…"
-- Decision: "Make this decision when…"
 - Failure: "Watch for this when…"
 - Bug: inherited from `CONTEXT_ANALYSIS` (same sentence as the session-level trigger)
 
@@ -131,8 +125,6 @@ Before writing a new file, the Related Docs Finder assesses overlap with existin
 | **High** — same module AND ≥2 matching tags | Update existing file (add new info, don't duplicate) |
 | **Moderate** — same category OR ≥1 matching tag | Use `[slug]-2.md` (then `-3`, etc.) |
 | **Low** — no module or tag matches | Use `[slug].md` |
-
-The same rules apply to `[slug]-decisions.md` consolidated files.
 
 ---
 
@@ -209,7 +201,7 @@ The report names the tracks emitted, collisions, the index result, promotions (c
 ```
 ★ Compounded
   → docs/solutions/[category]/[slug].md               [knowledge]
-  → docs/solutions/[category]/[slug]-decisions.md     [decision — N tracks consolidated]
+  → docs/adr/NNNN-[title].md                          [decision — one ADR each]
   ↑ docs/solutions/critical-patterns.md               [promoted — critical]
   ~ docs/solutions/INDEX.md                           [rebuilt — N entries]
   CLAUDE.md surfaces docs/solutions/ ✓

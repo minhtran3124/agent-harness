@@ -2,7 +2,6 @@
 ticket: {ticket}
 stage: {stage}
 status: {status}
-needs_review: {needs_review}
 confidence: {confidence}
 decided_by: {decided_by}
 date: {date}

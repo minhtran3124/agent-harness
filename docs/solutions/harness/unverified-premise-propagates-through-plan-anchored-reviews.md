@@ -77,6 +77,6 @@ Together these convert the design's assumption into an invariant. Note it remain
 
 ## Related
 
-- `docs/solutions/harness/gap-closure-decisions.md` — the decision-level counterpart: ground-truth on disk before acting on a doc that asserts absence.
+- `docs/adr/0015-verify-each-research-doc-gap-on-disk-before-implementing-it.md` — the decision-level counterpart: ground-truth on disk before acting on a doc that asserts absence.
 - `docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md` — how the replacement assertion was proven to actually guard.
-- `docs/solutions/harness/resync-protected-files-decisions.md` — the Rule-4 decision taken once the premise was found false.
+- `docs/adr/0021-stop-shipping-proposed-files-from-the-harness.md` — the Rule-4 decision taken once the premise was found false.

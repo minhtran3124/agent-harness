@@ -181,8 +181,8 @@
       "assertions": [
         {
           "type": "path",
-          "text": "Output names docs/solutions/harness/review-model-diversity-dropped-decisions.md",
-          "path": "docs/solutions/harness/review-model-diversity-dropped-decisions.md"
+          "text": "Output names docs/adr/0024-drop-the-review-model-diversity-rule-reviewers-run-opus-5-5.md",
+          "path": "docs/adr/0024-drop-the-review-model-diversity-rule-reviewers-run-opus-5-5.md"
         },
         {
           "type": "action",
@@ -203,8 +203,8 @@
       "assertions": [
         {
           "type": "path",
-          "text": "Output names docs/solutions/harness/ste100-adoption-decisions.md",
-          "path": "docs/solutions/harness/ste100-adoption-decisions.md"
+          "text": "Output names docs/adr/0025-pilot-three-files-then-gate-the-ste-rewrite-rollout.md",
+          "path": "docs/adr/0025-pilot-three-files-then-gate-the-ste-rewrite-rollout.md"
         },
         {
           "type": "action",
@@ -270,7 +270,7 @@
           "type": "stale_premise",
           "text": "Record is under Possibly stale and not under Do first, Avoid or Check before done",
           "path": "docs/solutions/harness/scaffold-template-instance-parity.md",
-          "reason": "the record is marked SUPERSEDED by ADR 0010 and techstacks/ does not exist at f042f46; confirmed_at 2026-08-17 is also older than 30 days"
+          "reason": "the record is marked SUPERSEDED by ADR 0007 and techstacks/ does not exist at f042f46; confirmed_at 2026-08-17 is also older than 30 days"
         }
       ]
     }

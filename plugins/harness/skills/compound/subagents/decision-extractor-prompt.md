@@ -33,7 +33,7 @@ Examples that do NOT qualify:
 
 ## Your Job
 
-Extract structured content for the decision-track. Do NOT write any files. Return text only.
+Extract structured content for the decision-track. Do NOT write any files. Return text only. The orchestrator turns each block into one ADR in `docs/adr/`.
 
 ## Output Format
 
@@ -63,6 +63,10 @@ DECISION_TRACK:
   Consequences: |
     [What does this decision enable or constrain going forward? Be honest about
     trade-offs. Leave [none] if consequences are not clear from the session.]
+  How_to_Reverse: |
+    [How to undo this decision. Leave [none] if the session does not show it.]
+  Confidence: |
+    [high | medium | low: how sure the session evidence makes you of this decision.]
 ```
 
 ## Rules

@@ -191,7 +191,7 @@ Skills read from and write to `docs/solutions/`:
 writes ──► compound
            docs/solutions/<category>/<slug>.md, critical-patterns.md,
            INDEX.md (rebuilt by scripts/rebuild_solution_index.py)
-           front-matter: problem_type (bug | knowledge | decision | failure),
+           front-matter: problem_type (bug | knowledge | failure),
                          module, tags, severity, applicable_when,
                          affects, supersedes, confidence, confirmed_at
 
@@ -250,7 +250,7 @@ graph LR
 - **`applicable_when` is the primary discovery field.** Knowledge: "Use this pattern when…". Decision: "Make this decision when…". Bug: inherited from `CONTEXT_ANALYSIS`. Appears as an INDEX.md column so future agents scan one sentence per doc.
 - **Four track types: `bug`, `knowledge`, `decision`, `failure`.** The `failure` track records a tried-and-abandoned approach to prevent recurrence: sections are Symptom → Wrong Approach → Why It Failed → Correct Approach → Guardrail (the check/hook/rule that now prevents a repeat). Emitted only when all four required sections (Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach) are non-empty.
 - **Every `bug` doc requires `## Regression Test`.** Names the pinned test that catches a recurrence, or `[none] — <reason>` if none exists. This field is not optional.
-- **Multi-decision consolidation.** ≥2 decisions in one session → single `[slug]-decisions.md` with `## Decision 1` / `## Decision 2` sections. Rationale: decisions from the same session are causally related; reading one without the other loses the constraints that drove it.
+- **Decisions go to `docs/adr/`.** `compound`'s decision track writes one ADR per decision through `write_adrs.py`; `docs/solutions/` keeps lessons only.
 - **INDEX full rebuild (not append-only).** `scripts/rebuild_solution_index.py` runs after every run, even a run that wrote nothing. Prevents orphaned rows when files are renamed/moved/deleted. `docs/solutions/` grows to tens of files, not thousands — full scan is negligible.
 - **Mistake twice.** A learning that matches an existing record at `high` overlap is a second occurrence. The run updates that record, adds a `**Recurred:** <date>` line, and updates or adds its `critical-patterns.md` entry instead of a new append. A path-specific learning also gets a proposed path-scoped rule in the report, never a written one: adding `paths:` to `rules/` changes what loads, so a human decides. `moderate` overlap is not a recurrence.
 - **Bug root cause from the diagnosis.** When `specs/<slug>/diagnosis.md` exists, the bug track takes its root cause from the `Confirmed:` hypothesis.

@@ -17,7 +17,7 @@ Return EXACTLY this structure. Fill in the brackets.
 
 ```
 CONTEXT_ANALYSIS:
-  problem_types: [comma-separated list of applicable: bug, knowledge, decision, failure]
+  problem_types: [comma-separated list of applicable solution-doc types: bug, knowledge, failure; a decision is a track, not a problem_type]
   module: [primary module/layer, e.g. kb/embedding, streaming, auth, calculations, repos]
   tags: [3-6 relevant kebab-case tags, comma-separated]
   tracks: [comma-separated tracks to populate: bug, knowledge, decision, failure]

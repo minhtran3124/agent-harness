@@ -2,21 +2,28 @@
 """Write ADR files for one run, with numbers assigned by code.
 
 Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
-why, consequences, how_to_reverse, confidence, needs_review, decided_by, owner_confirmed?}]}.
-Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the highest confidence (ties to the first). A file is
-written only for a decision that has needs_review (critical, cross-ticket, public contract, data,
-security, cost, or a costly trade-off); confidence never decides this, it only marks a guess in the
-table. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
+why, consequences, how_to_reverse, confidence, needs_review, adr, decided_by, owner_confirmed?, date?}]}.
+`date` is optional (ISO YYYY-MM-DD, kept in the ADR front matter); without it the ADR gets today's date. It does not enter dedupe.
+Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the highest confidence (ties to the first).
+A file is written only for a decision with adr true (it changes harness behavior, a data or config
+contract, or how users work) that lists at least two real options (not n/a), and whose title does
+not start with "Boundary: " or "UAT not run". needs_review is the separate owner-ask flag and never
+makes a file; confidence never decides this, it only marks a guess in the table. Files are always born
+accepted. A decision whose ticket already has an ADR in the folder with the same title slug or the
+same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file that supersedes the old one; this check covers every ticket except
+"run"; a non-numeric placeholder ticket is only skipped on an identical decision and never supersedes. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
 Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run] [--table-out FILE]
      python3 write_adrs.py --render-section written.json [--artifact URL]
+     python3 write_adrs.py --fill-count BODY.md --written written.json   (replaces {{ADR_COUNT}} in BODY.md)
 """
 
 import argparse
 import datetime
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -34,6 +41,7 @@ REQUIRED = [
     "how_to_reverse",
     "confidence",
     "needs_review",
+    "adr",
     "decided_by",
 ]
 CONFIDENCE = ("high", "medium", "low")
@@ -67,6 +75,19 @@ def as_text(value) -> str:
     return str(value).strip()
 
 
+DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def valid_date(value) -> bool:
+    if not isinstance(value, str) or not DATE_RE.fullmatch(value):
+        return False
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
 def validate(data) -> list:
     if not isinstance(data, dict):
         raise BadInput("input must be a JSON object")
@@ -81,8 +102,12 @@ def validate(data) -> list:
                 raise BadInput(f"decisions[{i}] missing required field '{f}'")
         if not isinstance(d["needs_review"], bool):
             raise BadInput(f"decisions[{i}].needs_review must be true or false")
+        if not isinstance(d["adr"], bool):
+            raise BadInput(f"decisions[{i}].adr must be true or false")
         if "owner_confirmed" in d and not isinstance(d["owner_confirmed"], bool):
             raise BadInput(f"decisions[{i}].owner_confirmed must be true or false")
+        if "date" in d and d["date"] is not None and not valid_date(d["date"]):
+            raise BadInput(f"decisions[{i}].date must be an ISO date YYYY-MM-DD")
         if d["confidence"] not in CONFIDENCE:
             raise BadInput(
                 f"decisions[{i}].confidence must be one of {', '.join(CONFIDENCE)}"
@@ -90,14 +115,154 @@ def validate(data) -> list:
     return decisions
 
 
+NO_FILE_TITLES = ("boundary: ", "uat not run")
+
+
+def _real_options(d: dict) -> int:
+    opts = d["options"]
+    if not isinstance(opts, list):
+        opts = [opts]
+    return sum(1 for o in opts if str(o).strip().lower() not in ("", "n/a"))
+
+
 def needs_adr(d: dict) -> bool:
-    """A decision gets an ADR file only when it is flagged needs_review. Confidence does not count."""
-    return d["needs_review"]
+    """A file needs adr true, two real options and a title that is not a scope note or UAT event."""
+    if d["adr"] is not True or d.get("boundary") is True:
+        return False
+    if str(d["title"]).strip().lower().startswith(NO_FILE_TITLES):
+        return False
+    return _real_options(d) >= 2
+
+
+def _norm_context(value) -> str:
+    text = " ".join(as_text(value).lower().split())
+    return "" if text == "n/a" else text   # ship.js fills a missing context with 'n/a'
 
 
 def _context_key(d: dict) -> str:
-    text = " ".join(str(d["context"]).lower().split())
-    return "" if text == "n/a" else text   # ship.js fills a missing context with 'n/a'
+    return _norm_context(d["context"])
+
+
+SUPERSEDES_RE = re.compile(r"\A\s*Supersedes ADR [\d, ]+\.\s*")
+
+
+def existing_keys(adr_dir: Path) -> list:
+    """Read each NNNN-*.md: (number, ticket, title slug, context, decision, superseded). A file it cannot parse is skipped.
+
+    The context is read without the leading "Supersedes ADR N." line this script adds, so a later run
+    compares the original context text.
+    """
+    keys = []
+    if not adr_dir.is_dir():
+        return keys
+    for p in sorted(adr_dir.iterdir()):
+        m = ADR_RE.match(p.name)
+        if not m:
+            continue
+        try:
+            text = p.read_text()
+            fm = re.match(r"---\n(.*?)\n---\n", text, re.S)
+            tm = re.search(r"^# \d{4}\. (.+)$", text, re.M)
+            tk = re.search(r"^ticket:[ \t]*(.+?)[ \t]*$", fm.group(1), re.M) if fm else None
+            if not (tk and tm):
+                continue
+            cm = re.search(r"^## Context\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+            dm = re.search(r"^## Decision\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+            ctx = SUPERSEDES_RE.sub("", cm.group(1), count=1) if cm else ""
+            superseded = bool(re.search(r"^status:[ \t]*superseded[ \t]*$", fm.group(1), re.M))
+            keys.append((m.group(1), tk.group(1), slugify(tm.group(1)), _norm_context(ctx),
+                         _norm_context(dm.group(1)) if dm else "", superseded))
+        except (OSError, UnicodeError):
+            continue
+    return keys
+
+
+def recorded_match(d: dict, keys: list):
+    """Match against the live (not superseded) ADRs of the same numeric ticket with the same title slug or context.
+
+    Returns None (no match), (number, True) when a live match has the same decision text, or
+    ([numbers], False) with every live matching number when the decision text changed. A changed
+    decision is new content: it gets a new ADR that supersedes all of them. A superseded ADR never
+    matches, so a decision that reverts to an older text is written again.
+    """
+    ticket = str(d["ticket"]).strip()
+    if ticket.lower() == "run":
+        return None   # autopilot run-level decisions repeat across runs
+    slug, ctx = slugify(d["title"]), _context_key(d)
+    dec = " ".join(as_text(d["decision"]).lower().split())
+    hits = [(n, dtext) for n, t, s, c, dtext, sup in keys
+            if t == ticket and not sup and (s == slug or (ctx and c == ctx))]
+    if not ticket.isdigit():
+        # A placeholder ticket (a /compound run) skips only an identical decision: it never supersedes.
+        return next(((n, True) for n, dtext in hits if dtext == dec), None)
+    for n, dtext in hits:
+        if not dtext or dtext == dec:
+            return n, True
+    return ([n for n, _ in hits], False) if hits else None
+
+
+def recorded_number(d: dict, keys: list):
+    m = recorded_match(d, keys)
+    return m[0] if m and m[1] else None
+
+
+FRONTMATTER_RE = re.compile(r"\A---(\r?\n)(.*?)\r?\n---\r?\n", re.S)
+
+
+def superseded_text(text: str, new: str):
+    """The old ADR text with status superseded and superseded_by set, or None when it has no frontmatter.
+
+    Handles CRLF (the line ending of the file is kept), a missing status line (one is added) and a
+    stale superseded_by line (it is replaced, so the key appears once).
+    """
+    m = FRONTMATTER_RE.match(text)
+    if not m:
+        return None
+    nl, fm = m.group(1), m.group(2)
+    lines = [ln for ln in fm.split(nl) if not ln.startswith("superseded_by:")]
+    if any(ln.startswith("status:") for ln in lines):
+        lines = ["status: superseded" if ln.startswith("status:") else ln for ln in lines]
+    else:
+        lines.append("status: superseded")
+    lines.append(f"superseded_by: {new}")
+    return f"---{nl}" + nl.join(lines) + f"{nl}---{nl}" + text[m.end():]
+
+
+def plan_supersede(adr_dir: Path, old: str, new: str):
+    """Check that the old ADR can be marked, before anything is written. Returns (path, new text).
+
+    Raises BadInput when the file is missing, is not writable or has no frontmatter, so the run stops
+    with exit 2 and writes nothing, rather than leaving two live ADRs for one decision.
+    """
+    paths = sorted(adr_dir.glob(f"{old}-*.md"))
+    if len(paths) != 1:
+        raise BadInput(f"cannot mark ADR {old} superseded: found {len(paths)} files")
+    p = paths[0]
+    try:
+        with open(p, newline="", encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeError) as e:
+        raise BadInput(f"cannot mark ADR {old} superseded: {e}")
+    if not os.access(p, os.W_OK):
+        raise BadInput(f"cannot mark ADR {old} superseded: {p} is not writable")
+    out = superseded_text(text, new)
+    if out is None:
+        raise BadInput(f"cannot mark ADR {old} superseded: {p} has no frontmatter")
+    return p, out
+
+
+def mark_superseded(path: Path, text: str) -> None:
+    """Write the text from plan_supersede (the old ADR with status superseded and superseded_by).
+
+    Order and failure behaviour: main() runs plan_supersede for every old ADR first, so a file that
+    cannot be marked stops the run with exit 2 before any write. Only then does it write the new
+    ADRs, and after that this function marks the old ones. If this write still fails (a race),
+    main() exits 2 and names the old file, so the failure is loud and the owner sees which ADR to
+    mark by hand. The new file is written first on purpose: a dangling superseded_by is worse
+    than a loud failure.
+    """
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        f.write(text)
 
 
 def dedupe(decisions: list) -> list:
@@ -125,6 +290,8 @@ def dedupe(decisions: list) -> list:
         best = dict(min(g["items"], key=lambda d: CONFIDENCE.index(d["confidence"])))   # min keeps the first on a tie
         if any(d["needs_review"] for d in g["items"]):
             best["needs_review"] = True
+        if any(d["adr"] for d in g["items"]):
+            best["adr"] = True
         if best.get("owner_confirmed") is True and not all(
             d.get("owner_confirmed") is True for d in g["items"]
         ):
@@ -137,11 +304,14 @@ def _cell(value) -> str:
     return " ".join(as_text(value).split()).replace("|", "\\|")
 
 
-def decisions_table(decisions: list) -> str:
-    """Markdown table of every decision. ADR column: owner-confirmed, ADR file, or table only."""
+def decisions_table(decisions: list, recorded: dict = None) -> str:
+    """Markdown table of every decision. ADR column: ADR file, owner-confirmed, already recorded, or table only."""
+    recorded = recorded or {}
     rows = ["| Ticket | Title | Decision | Why | ADR |", "|---|---|---|---|---|"]
     for d in decisions:
-        if needs_adr(d):
+        if id(d) in recorded:
+            note = f"already recorded (ADR {recorded[id(d)]})"
+        elif needs_adr(d):
             note = "ADR file"
         elif d.get("owner_confirmed") is True:
             note = "owner-confirmed"
@@ -157,7 +327,7 @@ def order(decisions: list) -> list:
     return sorted(
         decisions,
         key=lambda d: (
-            not d["needs_review"],
+            not needs_adr(d),
             str(d["ticket"]).zfill(8),
             str(d["stage"]),
         ),
@@ -165,9 +335,8 @@ def order(decisions: list) -> list:
 
 
 def render(template: str, d: dict, number: int, date: str) -> str:
-    values = {k: as_text(d[k]) for k in REQUIRED}
-    values["needs_review"] = "true" if d["needs_review"] else "false"
-    values["status"] = "needs-review" if d["needs_review"] else "accepted"
+    values = {k: as_text(d[k]) for k in REQUIRED if k != "needs_review"}   # needs_review is not an ADR field
+    values["status"] = "accepted"
     values["number"] = f"{number:04d}"
     values["date"] = date
     out = template
@@ -176,7 +345,25 @@ def render(template: str, d: dict, number: int, date: str) -> str:
     return out
 
 
+def prepare_template(template: str) -> str:
+    """Drop every template line that holds the old `{needs_review}` placeholder and warn on stderr
+    (needs_review is no longer an ADR field, and a project TEMPLATE.md written for an older plugin must
+    not stop the ADR stage). Any other placeholder the script does not fill still fails with exit 2, so
+    a typo never reaches a committed ADR."""
+    cleaned = re.sub(r"(?m)^[^\n]*\{needs_review\}[^\n]*(?:\n|\Z)", "", template)
+    if cleaned != template:
+        print("warning: TEMPLATE.md has a line with {needs_review}; dropped it "
+              "(needs_review is not an ADR field)", file=sys.stderr)
+    known = set(REQUIRED) | {"status", "number", "date"}
+    known.discard("needs_review")
+    bad = sorted(set(re.findall(r"\{([a-z_]+)\}", cleaned)) - known)
+    if bad:
+        raise BadInput("TEMPLATE.md has a placeholder the script does not fill: " + ", ".join("{" + b + "}" for b in bad))
+    return cleaned
+
+
 def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
+    template = prepare_template(template)
     decisions = order(validate(data))
     number = next_number(adr_dir)
     taken = {p.name for p in adr_dir.iterdir()} if adr_dir.is_dir() else set()
@@ -197,7 +384,8 @@ def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
                 "stage": d["stage"],
                 "title": d["title"],
                 "needs_review": d["needs_review"],
-                "_text": render(template, d, number, date),
+                "_supersedes": d.get("_supersedes", []),
+                "_text": render(template, d, number, d.get("date") or date),
             }
         )
         number += 1
@@ -216,13 +404,13 @@ def render_section(written: list, artifact: str = "") -> str:
     if artifact:
         out += [f"Artifact: {artifact} (private; the ADR files are the source of truth)", ""]
     if written:
-        out += ["Needs review:", ""] + [line(w) for w in written] + [""]
+        out += ["ADRs added:", ""] + [line(w) for w in written] + [""]
     return "\n".join(out)
 
 
 # Same text as docs/adr/TEMPLATE.md in the harness repo (a test keeps them equal), so a consuming
 # repo that has no docs/adr/TEMPLATE.md can still write ADRs.
-DEFAULT_TEMPLATE = '---\nticket: {ticket}\nstage: {stage}\nstatus: {status}\nneeds_review: {needs_review}\nconfidence: {confidence}\ndecided_by: {decided_by}\ndate: {date}\n---\n\n# {number}. {title}\n\n## Context\n\n{context}\n\n## Options\n\n{options}\n\n## Decision\n\n{decision}\n\n## Why\n\n{why}\n\n## Consequences\n\n{consequences}\n\n## How to reverse\n\n{how_to_reverse}\n'
+DEFAULT_TEMPLATE = '---\nticket: {ticket}\nstage: {stage}\nstatus: {status}\nconfidence: {confidence}\ndecided_by: {decided_by}\ndate: {date}\n---\n\n# {number}. {title}\n\n## Context\n\n{context}\n\n## Options\n\n{options}\n\n## Decision\n\n{decision}\n\n## Why\n\n{why}\n\n## Consequences\n\n{consequences}\n\n## How to reverse\n\n{how_to_reverse}\n'
 
 
 def load_template(adr_dir: Path) -> str:
@@ -243,9 +431,23 @@ def main() -> int:
     ap.add_argument("--render-section", metavar="WRITTEN_JSON",
                     help="render the PR '## Decisions' section from this script's JSON output")
     ap.add_argument("--artifact", default="", help="artifact URL for the section (optional)")
+    ap.add_argument("--fill-count", metavar="BODY_FILE",
+                    help="replace {{ADR_COUNT}} in BODY_FILE with the number of entries in --written")
+    ap.add_argument("--written", metavar="WRITTEN_JSON", help="written JSON for --fill-count")
     args = ap.parse_args()
 
     try:
+        if args.fill_count:
+            try:
+                written = json.loads(Path(args.written or "").read_text())
+                body = Path(args.fill_count)
+                text = body.read_text()
+            except (OSError, json.JSONDecodeError) as e:
+                raise BadInput(f"cannot read --written or body: {e}")
+            if not isinstance(written, list):
+                raise BadInput("written JSON must be a list")
+            body.write_text(text.replace("{{ADR_COUNT}}", str(len(written))))
+            return 0
         if args.render_section:
             try:
                 written = json.loads(Path(args.render_section).read_text())
@@ -262,22 +464,45 @@ def main() -> int:
         adr_dir = Path(args.adr_dir)
         template = load_template(adr_dir)
         merged = dedupe(validate(data))
-        kept = [d for d in merged if needs_adr(d)]
+        keys = existing_keys(adr_dir)
+        recorded = {}
+        kept = []
+        for d in merged:
+            if not needs_adr(d):
+                continue
+            m = recorded_match(d, keys)
+            if m and m[1]:
+                recorded[id(d)] = m[0]
+            elif m:
+                kept.append({**d, "context": f"Supersedes ADR {', '.join(m[0])}.\n\n{as_text(d['context'])}",
+                             "_supersedes": m[0]})
+            else:
+                kept.append(d)
         items = plan({**data, "decisions": kept}, adr_dir, template, datetime.date.today().isoformat()) if kept else []
+        marks = {}   # old ADR path -> new text; the first new ADR to name an old one wins
+        for it in items:
+            for old in it.get("_supersedes", []):
+                path, text = plan_supersede(adr_dir, old, it["number"])
+                marks.setdefault(path, text)
         if not args.dry_run:
             adr_dir.mkdir(parents=True, exist_ok=True)
             for it in items:
                 if Path(it["path"]).exists():
                     raise BadInput(f"refusing to overwrite {it['path']}")
             if args.table_out:
-                Path(args.table_out).write_text(decisions_table(merged))
+                Path(args.table_out).write_text(decisions_table(merged, recorded))
             for it in items:
                 with open(it["path"], "x") as f:
                     f.write(it["_text"])
+            for path, text in marks.items():
+                try:
+                    mark_superseded(path, text)
+                except OSError as e:
+                    raise BadInput(f"new ADR written but {path} could not be marked superseded, mark it by hand: {e}")
     except (BadInput, OSError) as e:
         print(f"write_adrs: {e}", file=sys.stderr)
         return 2
-    print(json.dumps([{k: v for k, v in it.items() if k != "_text"} for it in items], indent=2))
+    print(json.dumps([{k: v for k, v in it.items() if not k.startswith("_")} for it in items], indent=2))
     return 0
 
 
