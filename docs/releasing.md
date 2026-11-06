@@ -8,11 +8,15 @@
 2. The workflow opens one PR named `chore(release): vX.Y.Z`. Its body is the new CHANGELOG section. Read the section and fix the wording in the PR if needed.
 3. Merge the PR. The **release-tag** workflow then creates the tag `vX.Y.Z` and the GitHub release from that CHANGELOG section.
 
+The **release-tag** workflow tags whenever `VERSION` changes on `main`, `plugin.json` equals `VERSION`, and a `## [X.Y.Z]` section exists in `CHANGELOG.md`, whichever PR changed `VERSION`. So only the release PR should touch `VERSION`.
+
+PR titles flow into the release notes. Read the CHANGELOG section in the release PR before you merge it: an `@name` in a title would mention that user when the release is published.
+
 A PR opened with the workflow token does not start other workflows. If the release PR shows no CI checks, push an empty commit to its branch, or close and reopen it.
 
 ## What each script does
 
-- `scripts/release.sh <patch|minor|major> [--dry-run]` raises the version in `VERSION` and `plugin.json`, then adds a dated `## [X.Y.Z]` section to `CHANGELOG.md`. The section holds the bullets that were under `[Unreleased]`, then one `- <PR title> (PR #N)` bullet for each PR merged since the last `v*` tag. It refuses a dirty tree, an unknown bump word, and a version heading that already exists. `--dry-run` prints the next version and writes nothing.
+- `scripts/release.sh <patch|minor|major> [--dry-run]` raises the version in `VERSION` and `plugin.json`, then adds a dated `## [X.Y.Z]` section to `CHANGELOG.md`. The section holds the bullets that were under `[Unreleased]`, then one `- <PR title> (PR #N)` bullet for each PR merged since the last `v*` tag. It reads only the first-parent line of `main`: merge commits, and squash or rebase commits whose subject ends in `(#N)`. It refuses a dirty tree, an unknown bump word, and a version heading that already exists. `--dry-run` prints the next version and writes nothing.
 - `scripts/release-tag.sh [--no-release]` checks that `plugin.json` equals `VERSION`, then creates the annotated tag `vX.Y.Z` at HEAD, pushes only that tag, and creates the GitHub release. It never moves, deletes or overwrites a tag: an existing tag must already point at a commit whose `VERSION` matches, or the script stops. A second run changes nothing.
 
 Run `bash scripts/release.sh minor --dry-run` to preview a release. ADR 0031 records why the flow works this way.
