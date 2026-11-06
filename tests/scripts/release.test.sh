@@ -37,6 +37,7 @@ for pair in "patch 1.2.3 1.2.4" "minor 1.2.3 1.3.0" "major 1.2.3 2.0.0"; do
   set -- $pair
   t "$1 bump turns $2 into $3 in VERSION and plugin.json"
   d=$(make_fixture "$2")
+  merge_pr "$d" 1 "seed change"
   run "$1" --root "$d"
   if [ "$RC" -eq 0 ] && [ "$(cat "$d/VERSION")" = "$3" ] \
      && grep -q "^  \"version\": \"$3\",\$" "$d/plugins/harness/.claude-plugin/plugin.json" \
@@ -46,12 +47,13 @@ for pair in "patch 1.2.3 1.2.4" "minor 1.2.3 1.3.0" "major 1.2.3 2.0.0"; do
 done
 
 t "minor resets patch and major resets minor and patch"
-d=$(make_fixture 3.4.5); run minor --root "$d"; a=$(cat "$d/VERSION")
-d=$(make_fixture 3.4.5); run major --root "$d"; b=$(cat "$d/VERSION")
+d=$(make_fixture 3.4.5); merge_pr "$d" 1 "seed change"; run minor --root "$d"; a=$(cat "$d/VERSION")
+d=$(make_fixture 3.4.5); merge_pr "$d" 1 "seed change"; run major --root "$d"; b=$(cat "$d/VERSION")
 if [ "$a" = "3.5.0" ] && [ "$b" = "4.0.0" ]; then pass; else fail "minor=$a major=$b"; fi
 
 t "plugin.json changes only on the version line"
 d=$(make_fixture 1.2.3)
+merge_pr "$d" 1 "seed change"
 run patch --root "$d"
 if [ "$(git -C "$d" diff -U0 -- plugins | grep -c '^[-+] ')" -eq 2 ]; then pass; else fail "$(git -C "$d" diff -- plugins)"; fi
 
@@ -155,8 +157,42 @@ for bad in 1.2 1.2.3.4 v1.2.3 1.0.0-x 01.2.3; do
 done
 
 t "a VERSION of 5.10.0 is accepted"
-d=$(make_fixture 5.10.0); run patch --root "$d"
+d=$(make_fixture 5.10.0); merge_pr "$d" 1 "seed change"; run patch --root "$d"
 if [ "$RC" -eq 0 ] && [ "$(cat "$d/VERSION")" = "5.10.1" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+# snap <repo> → a checksum of the three files a release would write.
+snap() { (cd "$1" && cat VERSION plugins/harness/.claude-plugin/plugin.json CHANGELOG.md | cksum); }
+
+t "an empty release (no [Unreleased] bullets, no PR since the tag) is refused and writes nothing"
+d=$(make_fixture 1.2.3); before=$(snap "$d")
+run patch --root "$d"
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'nothing to release' && echo "$OUT" | grep -q 'v1.2.3' \
+   && [ "$(snap "$d")" = "$before" ] && [ -z "$(git -C "$d" status --porcelain)" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "an empty release with --dry-run is refused too and writes nothing"
+d=$(make_fixture 1.2.3); before=$(snap "$d")
+run patch --dry-run --root "$d"
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'nothing to release' && [ "$(snap "$d")" = "$before" ] \
+   && [ -z "$(git -C "$d" status --porcelain)" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "only [Unreleased] bullets and no PR is a valid release"
+d=$(make_fixture 1.2.3)
+printf '# Changelog\n\n## [Unreleased]\n\n- feat: only bullet\n\n## [1.2.3] — 2026-01-01\n\n- seed\n' > "$d/CHANGELOG.md"
+git -C "$d" commit -q -am cl
+run patch --root "$d"
+sec=$(sed -n '/^## \[1.2.4\]/,/^## \[1.2.3\]/p' "$d/CHANGELOG.md")
+if [ "$RC" -eq 0 ] && printf '%s\n' "$sec" | grep -qx -- '- feat: only bullet'; then pass; else fail "rc=$RC out=$OUT $(cat "$d/CHANGELOG.md")"; fi
+
+t "only a merged PR and an empty [Unreleased] is a valid release"
+d=$(make_fixture 1.2.3)
+merge_pr "$d" 30 "feat: only pr"
+run patch --root "$d"
+if [ "$RC" -eq 0 ] && grep -qx -- '- feat: only pr (PR #30)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "with no tag the empty-release message says since the start"
+d=$(make_fixture 1.2.3); git -C "$d" tag -d v1.2.3 >/dev/null
+run patch --root "$d"
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'since the start'; then pass; else fail "rc=$RC out=$OUT"; fi
 
 # squash_pr <repo> <subject> → a plain one-parent commit on main, as a squash or rebase leaves.
 squash_pr() {

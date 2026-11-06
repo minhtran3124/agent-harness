@@ -112,6 +112,14 @@ while IFS= read -r -d $'\x1e' rec || [ -n "$rec" ]; do
   bullets="${bullets}- ${title} (PR #${num})"$'\n'
 done < <(git log "$range" --first-parent --reverse --format='%H%x1f%P%x1f%s%x1f%b%x1e')
 
+# Refuse an empty release before anything is written (a dry run too): no [Unreleased] bullets and
+# no merged PR since the last tag would leave VERSION ahead of the tag with nothing released.
+unreleased=$(awk '/^## \[Unreleased\]/ { f = 1; next } f && /^## \[/ { exit } f && NF { print; exit }' "$CHANGELOG")
+if [ -z "$unreleased" ] && [ -z "${bullets//[[:space:]]/}" ]; then
+  echo "release: nothing to release (no [Unreleased] bullets and no PR since ${last:-the start})" >&2
+  exit 1
+fi
+
 if [ "$DRY" -eq 1 ]; then
   echo "release: dry run, would bump ${cur} -> ${new} (${BUMP}); nothing written"
   printf '%s' "$bullets"
