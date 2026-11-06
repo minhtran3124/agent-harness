@@ -7,8 +7,8 @@
 #      file is <VERSION>; else exit 1. A tag is never moved, deleted or overwritten.
 #   3. otherwise create an annotated tag at HEAD and push only that tag
 #   4. unless --no-release: create the GitHub release from the `## [<VERSION>]` section of
-#      CHANGELOG.md; skip it when `gh release view` says it already exists. Pass --latest only when
-#      <VERSION> is above every existing v* tag.
+#      CHANGELOG.md; skip it when `gh release view` says it already exists. Pass --latest when
+#      <VERSION> is above every existing v* tag, and --latest=false otherwise (never leave it automatic).
 #
 # A re-run is safe: with the tag and the release in place it changes nothing.
 #
@@ -98,11 +98,11 @@ if "$GH" release view "${TAG}" >/dev/null 2>&1; then
   exit 0
 fi
 
-# --latest only when this version is above every v* tag that exists (local and origin).
-latest_args=()
+# --latest when this version is above every v* tag that exists (local and origin), else --latest=false.
+latest_args=(--latest=false)
 highest=$({ git tag --list 'v[0-9]*'; git ls-remote --tags origin 'refs/tags/v[0-9]*' 2>/dev/null \
   | sed -n 's|.*refs/tags/\(v[0-9][^^]*\)$|\1|p'; } | sort -V | tail -1)
 [ "$highest" = "$TAG" ] && latest_args=(--latest)
 
-"$GH" release create "${TAG}" --title "${TAG}" --notes-file "$NOTES" --verify-tag ${latest_args[@]+"${latest_args[@]}"}
+"$GH" release create "${TAG}" --title "${TAG}" --notes-file "$NOTES" --verify-tag "${latest_args[@]}"
 echo "release-tag: created GitHub release ${TAG}"

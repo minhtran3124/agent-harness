@@ -64,7 +64,7 @@ if grep -q '^release create v2.0.0 --title v2.0.0 --notes-file .* --verify-tag' 
 else fail "calls: $(gh_calls "$d") notes: $(cat "$d.gh.log.notes" 2>/dev/null)"; fi
 
 t "marks the release --latest when the version is above every existing tag"
-if grep -q -- '--latest' "$d.gh.log"; then pass; else fail "calls: $(gh_calls "$d")"; fi
+if grep -q -- ' --latest\( \|$\)' "$d.gh.log" && ! grep -q -- '--latest=false' "$d.gh.log"; then pass; else fail "calls: $(gh_calls "$d")"; fi
 
 t "a second run is a no-op: same tag, no second release"
 before=$(git -C "$d" rev-parse refs/tags/v2.0.0); n1=$(grep -c '^release create' "$d.gh.log")
@@ -104,11 +104,11 @@ git -C "$d" commit -q -am "drift"
 run "$d"
 if [ "$RC" -ne 0 ] && [ -z "$(git -C "$d" tag)" ] && [ -z "$(git -C "$d.git" tag)" ] && [ -z "$(gh_calls "$d")" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
-t "an older version than an existing tag is not marked --latest"
+t "an older version than an existing tag gets --latest=false"
 d=$(make_fixture 2.0.0)
 git -C "$d" tag -a v3.0.0 -m "newer" && git -C "$d" push -q origin refs/tags/v3.0.0 2>/dev/null
 run "$d"
-if [ "$RC" -eq 0 ] && grep -q '^release create v2.0.0' "$d.gh.log" && ! grep -q -- '--latest' "$d.gh.log"; then pass; else fail "rc=$RC calls: $(gh_calls "$d")"; fi
+if [ "$RC" -eq 0 ] && grep -q '^release create v2.0.0' "$d.gh.log" && grep -q -- ' --latest=false\( \|$\)' "$d.gh.log"; then pass; else fail "rc=$RC calls: $(gh_calls "$d")"; fi
 
 t "--no-release creates and pushes the tag and never calls gh"
 d=$(make_fixture 2.0.0)
