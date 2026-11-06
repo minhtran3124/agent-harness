@@ -48,10 +48,9 @@ if [ "$DRY" -eq 0 ] && [ -n "$(git status --porcelain)" ]; then
 fi
 
 cur=$(tr -d '[:space:]' < VERSION)
-case "$cur" in
-  [0-9]*.[0-9]*.[0-9]*) ;;
-  *) echo "release: VERSION is not x.y.z: $cur" >&2; exit 1 ;;
-esac
+# Strict check before any arithmetic: a glob would let `1.a[$(cmd)].2.3` reach $((MI + 1)).
+semver_re='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+[[ $cur =~ $semver_re ]] || { echo "release: VERSION is not x.y.z: $cur" >&2; exit 1; }
 IFS=. read -r MA MI PA <<EOF
 $cur
 EOF

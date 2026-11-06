@@ -135,4 +135,20 @@ git -C "$d" commit -q -am "empty"
 run "$d"
 if [ "$RC" -ne 0 ] && [ -z "$(git -C "$d.git" tag)" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
+t "a VERSION with a shell payload runs nothing and is refused"
+d=$(make_fixture 2.0.0)
+printf '1.a[$(touch CANARY)].2.3\n' > "$d/VERSION"
+git -C "$d" commit -q -am payload
+run "$d"
+if [ "$RC" -ne 0 ] && [ ! -e "$d/CANARY" ] && [ -z "$(git -C "$d" tag)" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+for bad in 1.2 1.2.3.4 v1.2.3 1.0.0-x 01.2.3; do
+  t "a VERSION of $bad is refused"
+  d=$(make_fixture 2.0.0)
+  printf '%s\n' "$bad" > "$d/VERSION"
+  git -C "$d" commit -q -am bad
+  run "$d"
+  if [ "$RC" -ne 0 ] && echo "$OUT" | grep -q 'VERSION is not x.y.z' && [ -z "$(git -C "$d" tag)" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+done
+
 finish

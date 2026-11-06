@@ -29,10 +29,8 @@ GH="${GH_BIN:-gh}"
 cd "$ROOT"
 [ -f VERSION ] || { echo "release-tag: VERSION not found" >&2; exit 1; }
 VERSION=$(tr -d '[:space:]' < VERSION)
-case "$VERSION" in
-  [0-9]*.[0-9]*.[0-9]*) ;;
-  *) echo "release-tag: VERSION is not x.y.z: $VERSION" >&2; exit 1 ;;
-esac
+semver_re='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+[[ $VERSION =~ $semver_re ]] || { echo "release-tag: VERSION is not x.y.z: $VERSION" >&2; exit 1; }
 TAG="v${VERSION}"
 
 bash scripts/check-plugin-version.sh || { echo "release-tag: plugin.json and VERSION differ; no tag made" >&2; exit 1; }

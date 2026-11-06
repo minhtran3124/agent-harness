@@ -138,4 +138,24 @@ merge_pr "$d" 15 "feat: no tag"
 run patch --root "$d"
 if [ "$RC" -eq 0 ] && grep -q 'no tag (PR #15)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC out=$OUT"; fi
 
+t "a VERSION with a shell payload runs nothing and is refused"
+d=$(make_fixture 1.2.3)
+printf '1.a[$(touch CANARY)].2.3\n' > "$d/VERSION"
+git -C "$d" commit -q -am payload
+run patch --root "$d"
+if [ "$RC" -ne 0 ] && [ ! -e "$d/CANARY" ]; then pass; else fail "rc=$RC canary=$(ls "$d/CANARY" 2>&1) out=$OUT"; fi
+
+for bad in 1.2 1.2.3.4 v1.2.3 1.0.0-x 01.2.3; do
+  t "a VERSION of $bad is refused"
+  d=$(make_fixture 1.2.3)
+  printf '%s\n' "$bad" > "$d/VERSION"
+  git -C "$d" commit -q -am bad
+  run patch --root "$d"
+  if [ "$RC" -ne 0 ] && echo "$OUT" | grep -q 'VERSION is not x.y.z'; then pass; else fail "rc=$RC out=$OUT"; fi
+done
+
+t "a VERSION of 5.10.0 is accepted"
+d=$(make_fixture 5.10.0); run patch --root "$d"
+if [ "$RC" -eq 0 ] && [ "$(cat "$d/VERSION")" = "5.10.1" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
 finish
