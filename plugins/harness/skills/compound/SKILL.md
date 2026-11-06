@@ -62,7 +62,7 @@ Run the authority at the end of every run, even when the run wrote nothing:
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_solution_index.py
 ```
 
-Do not manually scan/sort/render `INDEX.md`.
+Do not manually scan/sort/render `INDEX.md`; the script excludes INDEX/critical patterns and keeps frontmatter exact.
 `applicable_when` is required in every solution file. Before you finish, run both checks in `docs/solutions/README.md` (`## Checks`).
 
 Finally, verify that `CLAUDE.md` and rules make the knowledge base discoverable. If they do not,

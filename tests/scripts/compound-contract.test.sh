@@ -47,4 +47,7 @@ grep -qF 'changes what loads, so a human decides' "$ROOT/$SKILL" && pass || fail
 t "compound keeps the reason to paste inputs into a dispatched subagent"
 tr '\n' ' ' < "$ROOT/$SKILL" | grep -qF 'because a fresh context cannot see this session' && pass || fail "fresh-context reason missing"
 
+t "compound keeps the reason the index script is the only writer"
+grep -qF 'the script excludes INDEX/critical patterns and keeps frontmatter exact' "$ROOT/$SKILL" && pass || fail "index script reason missing"
+
 finish
