@@ -4,8 +4,9 @@
 #
 # The section holds the bullets that were under `## [Unreleased]` (moved, so [Unreleased] is left
 # empty), then one bullet per merged PR since the last v* tag: `- <PR title> (PR #N)`. PR numbers
-# and titles come from the merge commits (subject "Merge pull request #N from ...", title in the
-# body), so the script needs no network and no gh. It runs on a plain checkout.
+# and titles come from the first-parent commits: merge commits (title in the body) and squash or
+# rebase commits (subject ending " (#N)"). The script needs no network and no gh. It runs on a
+# plain checkout.
 #
 # Untrusted input (commit titles) is collapsed to one line and passed to awk through ENVIRON, never
 # `awk -v` (which expands backslash escapes) and never eval'd.
@@ -66,29 +67,50 @@ if grep -qF "## [${new}]" "$CHANGELOG"; then
   exit 1
 fi
 
-# One bullet per merged PR since the last v* tag (the whole history when there is none).
+# One bullet per merged PR since the last v* tag (the whole history when there is none). Walk the
+# first-parent line only, in order. A two-parent commit is a merge commit; a one-parent commit whose
+# subject ends in " (#N)" is a squash or rebase merge. Commits off the first-parent line are never
+# read: their "(#N)" is often an issue number, not a PR.
 range="HEAD"
 if last=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null); then range="${last}..HEAD"; fi
 bullets=""
+US=$'\x1f'
 while IFS= read -r -d $'\x1e' rec || [ -n "$rec" ]; do
   rec=${rec#"${rec%%[![:space:]]*}"}   # git puts a newline between records
-  subject=${rec%%$'\n'*}
-  case "$subject" in
-    *"Merge pull request #"*) ;;
-    *) continue ;;
+  [ -n "$rec" ] || continue
+  rest=${rec#*"$US"}; parents=${rest%%"$US"*}
+  rest=${rest#*"$US"}; subject=${rest%%"$US"*}
+  body=${rest#*"$US"}
+  title="" num=""
+  case "$parents" in
+    *" "*)
+      # Two parents: a merge commit. The title is the first non-empty line of the body.
+      case "$subject" in
+        *"Merge pull request #"*) ;;
+        *) continue ;;
+      esac
+      num=${subject#*"Merge pull request #"}
+      num=${num%% *}
+      title=$(printf '%s\n' "$body" | awk 'NF { print; exit }')
+      ;;
+    *)
+      # One parent: a squash or rebase merge ends its subject with " (#N)".
+      case "$subject" in
+        *" (#"*[0-9]")") ;;
+        *) continue ;;
+      esac
+      num=${subject##* (#}; num=${num%")"}
+      title=${subject% (#*}
+      ;;
   esac
-  num=${subject#*"Merge pull request #"}
-  num=${num%% *}
   case "$num" in ''|*[!0-9]*) continue ;; esac
-  # The PR title is the first non-empty line of the body.
-  title=$(printf '%s\n' "${rec#*$'\n'}" | awk 'NF { print; exit }')
   title=$(printf '%s' "$title" | tr '\r\n\t' '   ')
   case "$title" in
     "chore(bookkeeping)"*|"chore(release)"*) continue ;;
   esac
   [ -n "${title//[[:space:]]/}" ] || title="(no title)"
   bullets="${bullets}- ${title} (PR #${num})"$'\n'
-done < <(git log "$range" --merges --reverse --format='%s%n%b%x1e')
+done < <(git log "$range" --first-parent --reverse --format='%H%x1f%P%x1f%s%x1f%b%x1e')
 
 if [ "$DRY" -eq 1 ]; then
   echo "release: dry run, would bump ${cur} -> ${new} (${BUMP}); nothing written"

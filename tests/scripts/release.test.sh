@@ -158,4 +158,34 @@ t "a VERSION of 5.10.0 is accepted"
 d=$(make_fixture 5.10.0); run patch --root "$d"
 if [ "$RC" -eq 0 ] && [ "$(cat "$d/VERSION")" = "5.10.1" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
+# squash_pr <repo> <subject> → a plain one-parent commit on main, as a squash or rebase leaves.
+squash_pr() {
+  echo "$2" > "$1/sq$RANDOM.txt"; git -C "$1" add -A; git -C "$1" commit -q -m "$2"
+}
+
+t "squash-style and merge-commit PRs both appear, in first-parent order"
+d=$(make_fixture 1.2.3)
+squash_pr "$d" "feat: x (#12)"
+merge_pr "$d" 13 "fix: via merge commit"
+run patch --root "$d"
+a=$(grep -n -- '- feat: x (PR #12)' "$d/CHANGELOG.md" | cut -d: -f1); b=$(grep -n -- '- fix: via merge commit (PR #13)' "$d/CHANGELOG.md" | cut -d: -f1)
+if [ "$RC" -eq 0 ] && [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ! grep -q '(#12)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC $(cat "$d/CHANGELOG.md")"; fi
+
+t "a branch commit ending (#N) that came in through a merge commit makes no bullet"
+d=$(make_fixture 1.2.3)
+git -C "$d" checkout -q -b side
+echo s > "$d/side.txt"; git -C "$d" add -A; git -C "$d" commit -q -m "fix: y (#99)"
+git -C "$d" checkout -q main
+git -C "$d" merge -q --no-ff -m "Merge pull request #20 from o/side" -m "fix: the titled one" side
+run patch --root "$d"
+if [ "$RC" -eq 0 ] && grep -q 'the titled one (PR #20)' "$d/CHANGELOG.md" && ! grep -q '#99' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC $(cat "$d/CHANGELOG.md")"; fi
+
+t "a squash subject chore(release) or chore(bookkeeping) is skipped"
+d=$(make_fixture 1.2.3)
+squash_pr "$d" "chore(release): v1.2.3 (#14)"
+squash_pr "$d" "chore(bookkeeping): record PR #14 (#15)"
+squash_pr "$d" "feat: kept (#16)"
+run patch --root "$d"
+if [ "$RC" -eq 0 ] && grep -q 'kept (PR #16)' "$d/CHANGELOG.md" && ! grep -q 'PR #14)\|PR #15)' "$d/CHANGELOG.md"; then pass; else fail "rc=$RC $(cat "$d/CHANGELOG.md")"; fi
+
 finish
