@@ -54,6 +54,12 @@ record (0003, 0004, 0005, 0006, 0007, 0008, 0009 and 0010 do), so find the old f
 `git log --diff-filter=D --name-only --format= -- docs/adr`. Then get it back with
 `git log --diff-filter=D --format=%h -- docs/adr/<old-file>` and `git show <sha>^:docs/adr/<old-file>`.
 
+### Migrated records 0013 to 0030
+
+ADRs 0013 to 0030 are the 18 decisions that lived in eight `docs/solutions/` decision notes. They were
+written by `write_adrs.py` with ticket `legacy`, stage `solutions-migration` and the date of the source
+note. `docs/adr/` is the one store for decisions; `docs/solutions/` keeps lessons.
+
 ### Old-to-new map
 
 Each row starts with the old number. A kept record shows its new number. A deleted record shows

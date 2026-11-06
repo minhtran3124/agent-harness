@@ -3,7 +3,8 @@
 Persistent documentation of non-obvious patterns, bug fixes, and architectural decisions.
 
 - **Written by:** `/compound` after sessions with non-trivial learnings
-- **Read by:** `/brainstorming` (decision track only), `/xia2` (all tracks via INDEX-first lookup),
+- **Decisions:** ADRs in `docs/adr/` are the one store for decisions; this folder keeps lessons.
+- **Read by:** `/xia2` (all tracks via INDEX-first lookup),
   and `/compound`'s related-docs lookup; the `session-knowledge.sh` SessionStart hook
   loads `critical-patterns.md` and an `INDEX.md` pointer
 
@@ -34,7 +35,7 @@ Every solution file begins with:
 
 ```yaml
 ---
-problem_type: bug | knowledge | decision | failure
+problem_type: bug | knowledge | failure
 module: <area of codebase>
 tags: [<keyword>, <keyword>]
 severity: critical | standard
@@ -65,7 +66,6 @@ Run both from the repository root. Each exits 0 when clean.
 |---|---|
 | `bug` | Problem, Root_Cause, Fix |
 | `knowledge` | Pattern, How_to_Use |
-| `decision` | Context, Options_Considered, Decision_and_Rationale |
 | `failure` | Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach, Guardrail |
 
 ## Confidence Decay

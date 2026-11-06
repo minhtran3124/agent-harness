@@ -181,8 +181,8 @@
       "assertions": [
         {
           "type": "path",
-          "text": "Output names docs/solutions/harness/review-model-diversity-dropped-decisions.md",
-          "path": "docs/solutions/harness/review-model-diversity-dropped-decisions.md"
+          "text": "Output names docs/adr/0024-drop-the-review-model-diversity-rule-reviewers-run-opus-5-5.md",
+          "path": "docs/adr/0024-drop-the-review-model-diversity-rule-reviewers-run-opus-5-5.md"
         },
         {
           "type": "action",
@@ -203,8 +203,8 @@
       "assertions": [
         {
           "type": "path",
-          "text": "Output names docs/solutions/harness/ste100-adoption-decisions.md",
-          "path": "docs/solutions/harness/ste100-adoption-decisions.md"
+          "text": "Output names docs/adr/0025-pilot-three-files-then-gate-the-ste-rewrite-rollout.md",
+          "path": "docs/adr/0025-pilot-three-files-then-gate-the-ste-rewrite-rollout.md"
         },
         {
           "type": "action",

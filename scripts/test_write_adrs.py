@@ -387,6 +387,16 @@ def test_run_level_tickets_are_not_deduped_against_the_folder(tmp_path):
     assert len(md_files(adr)) == 2
 
 
+def test_placeholder_ticket_identical_decision_is_skipped_changed_is_not_superseding(tmp_path):
+    adr, inp = setup(tmp_path, [dec(ticket="compound")], existing=())
+    run(adr, inp)
+    assert json.loads(run(adr, inp).stdout) == []
+    assert len(md_files(adr)) == 1
+    inp.write_text(json.dumps({"decisions": [dec(ticket="compound", decision="something else")]}))
+    assert len(json.loads(run(adr, inp).stdout)) == 1
+    assert "status: superseded" not in (adr / "0001-use-a-queue.md").read_text()
+
+
 def test_malformed_existing_adr_is_ignored(tmp_path):
     adr, inp = setup(tmp_path, [dec()], existing=("0001-bad.md",))
     (adr / "0001-bad.md").write_bytes(b"\xff\xfe not an adr")
@@ -615,3 +625,36 @@ def test_unmarkable_old_adr_stops_the_run_before_any_write(tmp_path):
         old.chmod(0o644)
     assert r.returncode == 2 and "0001" in r.stderr
     assert snapshot(adr) == before
+
+
+def test_date_valid_is_kept(tmp_path):
+    adr, inp = setup(tmp_path, [dec(title="Dated", date="2026-07-17")])
+    r = run(adr, inp)
+    assert r.returncode == 0, r.stderr
+    assert "date: 2026-07-17\n" in (adr / "0002-dated.md").read_text()
+
+
+def test_date_invalid_exits_2(tmp_path):
+    for i, bad in enumerate(["2026-13-01", "17/07/2026", "2026-7-1", 20260717]):
+        d = tmp_path / f"c{i}"
+        d.mkdir()
+        adr, inp = setup(d, [dec(title="Bad", date=bad)])
+        r = run(adr, inp)
+        assert r.returncode == 2 and "date" in r.stderr
+        assert not (adr / "0002-bad.md").exists()
+
+
+def test_date_absent_uses_today(tmp_path):
+    import datetime
+    adr, inp = setup(tmp_path, [dec(title="Undated")])
+    assert run(adr, inp).returncode == 0
+    assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()
+
+
+def test_gate_mode_adrs_supersession_note_has_no_dangling_paths():
+    adr_dir = Path(__file__).resolve().parent.parent / "docs/adr"
+    for n in ("0017", "0018", "0019", "0020"):
+        text = next(adr_dir.glob(f"{n}-*.md")).read_text()
+        assert "Superseded in part" in text, n
+        assert "specs/simplify-hook-surface" not in text, n
+        assert "hooks/commit-gate.sh" not in text, n
