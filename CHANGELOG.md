@@ -2,8 +2,8 @@
 
 All notable changes to this harness are recorded here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versions are tracked in the root `VERSION`
-file. Bump on merge: **patch** for fixes/docs, **minor** for a new skill/hook or a changed
-skill/hook contract, **major** for a breaking change to the workflow or a machine-read schema.
+file. Versions change only in the release PR (see `docs/releasing.md`); the bump (**patch** for fixes and docs,
+**minor** for a new skill or hook or a changed contract, **major** for a breaking change) is chosen when releasing.
 
 ## [Unreleased]
 

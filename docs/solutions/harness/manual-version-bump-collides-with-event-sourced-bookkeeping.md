@@ -10,6 +10,9 @@ supersedes: null
 confidence: high
 confirmed_at: 2026-07-21
 ---
+
+> **Superseded (#594, ADR 0031).** The bookkeeping flow was removed. Versions now change only in a release PR that the release workflow opens; see `docs/releasing.md`. The text below is kept as history.
+
 ## Applicable When
 
 Finishing a branch / opening a PR in this repo, or hand-editing `VERSION` / `CHANGELOG.md`.
