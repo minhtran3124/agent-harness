@@ -6,9 +6,6 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 
 # Compound — durable session knowledge
 
-Use this skill when a non-obvious bug, reusable pattern, considered decision, or useful failure
-is worth preserving.
-
 ## Extract and select
 
 You hold the session. Run the context-analyzer, solution-extractor, and decision-extractor passes
@@ -41,8 +38,10 @@ allocate the next numeric suffix.
 
 The decision track is the exception: it writes `docs/adr/`, not `docs/solutions/`. Map each decision to `${CLAUDE_PLUGIN_ROOT}/skills/compound/templates/decision-consolidated.md` and run `${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py`. The extractor returns `How_to_Reverse` and `Confidence` for each decision. Copy them as given. Set `stage` to `compound`. If `How_to_Reverse` is `[none]` or empty, use `n/a` for `how_to_reverse`. If `Confidence` is not exactly `high`, `medium` or `low`, use `low`, because `write_adrs.py` exits 2 on any other value. Never invent a value.
 
+Pass `--table-out <file>` to `write_adrs.py`. Report `not recorded: <reason>` for each decision that wrote no file. Rules: `${CLAUDE_PLUGIN_ROOT}/skills/compound/references/not-recorded.md`.
+
 Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
-code. Do not change a literal string that a test or hook matches.
+code or a literal string that a test or hook matches.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its
 templates. A decision track has no `docs/solutions/` file: its **Full doc** link is the ADR path that `write_adrs.py` printed (`docs/adr/NNNN-*.md`). Name a failure's `proposed:` guardrail in the report as a proposed ratchet. Do not build it.
