@@ -250,7 +250,7 @@ def test_merge_keeps_highest_confidence_and_ties_to_first():
 def test_merge_carries_needs_review():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", needs_review=False, adr=False),
-                    dec(title="Same", confidence="low", needs_review=True)])
+                    dec(title="Same", confidence="low", needs_review=True, adr=False)])
     assert out[0]["confidence"] == "high" and out[0]["needs_review"] is True
 
 
