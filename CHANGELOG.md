@@ -7,6 +7,10 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.11.3] — 2026-11-07
+
+- fix(ship): hand spec files to the main session when the --bg guard blocks the writer (#611) (PR #613)
+
 ## [5.11.2] — 2026-11-07
 
 - fix(ship): let the main session write summary.md; no agent is asked for it (#608) (PR #609)
