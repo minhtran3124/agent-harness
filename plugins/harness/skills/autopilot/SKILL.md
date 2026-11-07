@@ -41,8 +41,8 @@ skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the
 8. **Launch.** Call Workflow with `name: "harness:autopilot-run"` and `args` as a real
    object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
    `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With
-   `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Tell the owner
-   the run ID and that `/workflows` shows progress, then wait for completion. Answer
+   `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Give the owner
+   the run ID; `/workflows` shows progress. Wait for completion. Answer
    "done yet?" from the phase and agent counts. On completion report as
    `references/launch-args.md` says.
 
