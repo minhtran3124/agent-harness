@@ -690,6 +690,7 @@ function renderSpecs(t, run) {
 }
 
 // One agent writes the files of every ticket, skipped ones included. run: { byN, final, review, intent, suite, adrs }.
+// Returns { ok, reason }. The caller records a failure; the run throws at its end (see failures below).
 async function writeSpecs(run) {
   return writeSpecFiles(tickets, run, { label: 'write specs/ flow files', phase: 'Decisions' })
 }
@@ -716,7 +717,7 @@ async function writeSpecFiles(list, run, { only, label, phase }) {
     if (files['intent.md'] && files['intent.md'].includes(REQUEST_LINE)) reqs.push(`In ${dir}/intent.md, replace the line ${REQUEST_LINE} with the issue body, verbatim, from: gh issue view ${t.n} --repo ${repo} --json body -q .body`)
     parts.push(...Object.entries(files).map(([f, text]) => `=== ${dir}/${f}\n${text}`))
   }
-  if (!parts.length) return
+  if (!parts.length) return { ok: true }
   const prompt = `Stage: write the local spec files of this run. Your session working directory is NOT the target repo.\n` +
     `1. Run: git -C ${repoDir} check-ignore -q specs/x. If it exits non-zero, specs/ is not gitignored: write nothing and return status blocked with blocked_reason "specs/ is not gitignored in ${repoDir}".\n` +
     `2. Run: date +%F, and use its output wherever a file below says ${DATE_TOKEN}.\n` +
@@ -725,9 +726,16 @@ async function writeSpecFiles(list, run, { only, label, phase }) {
     `${trimmed}/specs/ is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${parts.join('\n\n')}`
   try {
     const res = await call(prompt, { label, phase, schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
-    if (!res || res.status === 'blocked') log(`spec files not written: ${(res && (res.blocked_reason || res.summary)) || 'no answer'}`)
+    if (!res || res.status === 'blocked') {
+      const reason = (res && (res.blocked_reason || res.summary)) || 'no answer'
+      log(`spec files not written: ${reason}`)
+      return { ok: false, reason }
+    }
+    return { ok: true }
   } catch (e) {
-    log(`spec files not written: ${e && e.message ? e.message : String(e)}`)
+    const reason = e && e.message ? e.message : String(e)
+    log(`spec files not written: ${reason}`)
+    return { ok: false, reason }
   }
 }
 
@@ -1387,6 +1395,7 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
+const failures = []  // stages whose output is missing; the run throws once, at the end, after the worktree log
 const results = []   // one entry per ticket, in input order after the run
 const byN = new Map()
 const groups = [...new Set(tickets.map(t => t.group))].sort((a, b) => a - b)
@@ -1462,9 +1471,11 @@ const publicTicket = r => ({ n: r.n, status: r.status, pr: r.pr, summary: r.summ
 
 if (!deliveredAll.length) {
   log('ship: no ticket was delivered; nothing to review, verify or record')
-  await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
+  const sp = await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
+  if (sp && !sp.ok) failures.push(`spec files: ${sp.reason}`)
   out.tickets = ordered().map(publicTicket)
   out.worktrees = [...worktrees]
+  if (failures.length) throw new Error(`ship: ${failures.join('; ')}`)
   return out
 }
 
@@ -1480,6 +1491,11 @@ if (single) {
   finalPr = { pr: (prelim && prelim.pr) || 0, url: (prelim && prelim.url) || '', branch: finalBranch }
 }
 out.final = { pr: finalPr.pr || null, url: finalPr.url, branch: finalBranch }
+// Local mode opens no PR. Say where the code is, so the report cannot imply it is on the base branch.
+if (LOCAL) {
+  out.delivery = { mode: 'local', branch: finalBranch, base, range: `${base}..${finalBranch}`, baseChanged: false }
+  log(`local mode: no PR was opened. The code is on branch ${finalBranch} (commits ${out.delivery.range}); ${base} has not changed.`)
+}
 
 phase('Review')
 const review = await stageReview(finalPr)
@@ -1506,12 +1522,15 @@ out.artifact = artifact
 const ciSnap = await stageCiSnapshot(finalPr)
 const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat, ciSnap))
 takeDecisions('run', 'adr', adr)
+if (adr.status === 'blocked') failures.push(`ADR stage: ${adr.blocked_reason || adr.summary || 'blocked'}`)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))
 log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
 
-await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
+const specsRes = await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
+if (specsRes && !specsRes.ok) failures.push(`spec files: ${specsRes.reason}`)
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
+if (failures.length) throw new Error(`ship: ${failures.join('; ')}. The run did not complete: the PR (if any) is open without this output.`)
 return out

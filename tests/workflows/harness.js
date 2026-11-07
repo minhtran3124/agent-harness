@@ -818,6 +818,43 @@ test('i: local mode never mentions pushing or opening a PR and fetches no issue'
   }
 })
 
+test('i2: a blocked ADR stage fails the run at the end, after the worktree log, and names the stage', async () => {
+  let err
+  const logs = []
+  try {
+    const r = await run({}, c => (c.label === 'adr' ? { status: 'blocked', blocked_reason: 'cannot write docs/adr', adrs: [] } : undefined))
+    logs.push(...r.logs)
+  } catch (e) { err = e }
+  assert(err, 'the run completed although the ADR stage was blocked')
+  assert(/ADR stage: cannot write docs\/adr/.test(err.message), err.message)
+})
+
+test('i3: an ADR agent that returns nothing fails the run', async () => {
+  let err
+  try { await run({}, c => (c.label === 'adr' ? null : undefined)) } catch (e) { err = e }
+  assert(err && /ADR stage: the ADR agent returned nothing/.test(err.message), err && err.message)
+})
+
+test('i4: a blocked final spec write fails the run; a blocked early spec write does not', async () => {
+  let err
+  try { await run({}, c => (c.label === 'specs' ? { status: 'blocked', blocked_reason: 'specs/ is not gitignored' } : undefined)) } catch (e) { err = e }
+  assert(err && /spec files: specs\/ is not gitignored/.test(err.message), err && err.message)
+  const ok = await run({}, c => (c.label === 'specs-early' ? { status: 'blocked', blocked_reason: 'x' } : undefined))
+  assert(ok.result.tickets.every(t => t.status === 'done'), 'an early spec failure must not fail the run')
+})
+
+test('i5: local mode reports the branch, the commit range and that the base did not change; a remote run has no delivery', async () => {
+  const single = await run({ local: true }, null)
+  assert.deepStrictEqual(single.result.delivery, { mode: 'local', branch: 'feat/1-add-the-thing', base: 'v5.0.0', range: 'v5.0.0..feat/1-add-the-thing', baseChanged: false })
+  assert(single.logs.some(l => l.includes('local mode: no PR was opened') && l.includes('feat/1-add-the-thing') && l.includes('v5.0.0 has not changed')), single.logs.join('\n'))
+  const multi = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, null)
+  assert.strictEqual(multi.result.delivery.branch, 'feat/ms')
+  assert.strictEqual(multi.result.delivery.range, 'v5.0.0..feat/ms')
+  const remote = await run({}, null)
+  assert.strictEqual(remote.result.delivery, undefined)
+  assert.strictEqual(remote.result.final.pr, 101)
+})
+
 test('j: no agent gets max or ultra effort, and every agent gets an explicit effort', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1, [], { depth: 'M' }), T(3, 2, [1])] }, null)
   for (const c of calls) assert(['low', 'medium', 'high'].includes(c.opts.effort), `${c.label}: ${c.opts.effort}`)
@@ -1254,19 +1291,25 @@ test('s1: one writer at the end puts the five flow files of every ticket in the 
   }
 })
 
-test('s2: blocked, merge-blocked and skipped tickets get spec files with their real status; a failed write changes nothing', async () => {
-  const { calls, result } = await run({ local: true, tickets: [T(1, 1, [], { body: 'FULL-BODY-1' }), T(2, 1), T(3, 2, [1]), T(4, 2)] }, c => {
-    if (c.label === 'implement:1') return ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '' })
-    if (c.label === 'merge:g2') return ok({ merged: [], failed: [{ n: 4, reason: 'conflict' }] })
-    if (c.label === 'specs') return new Error('write failed')
-  })
+test('s2: blocked, merge-blocked and skipped tickets get spec files with their real status; a failed write fails the run at the end', async () => {
+  const seen = []
+  let err
+  try {
+    await run({ local: true, tickets: [T(1, 1, [], { body: 'FULL-BODY-1' }), T(2, 1), T(3, 2, [1]), T(4, 2)] }, (c, calls) => {
+      if (!seen.length) seen.push(calls)
+      if (c.label === 'implement:1') return ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '' })
+      if (c.label === 'merge:g2') return ok({ merged: [], failed: [{ n: 4, reason: 'conflict' }] })
+      if (c.label === 'specs') return new Error('write failed')
+    })
+  } catch (e) { err = e }
+  assert(err && /spec files: write failed/.test(err.message), err && err.message)
+  const calls = seen[0]
   const p = named(calls, /^specs$/)[0].prompt
   assert(p.includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
   assert(p.includes('=== /repo/specs/3-ticket-3/summary.md') && p.includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
   assert(p.includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
   assert(p.includes('FULL-BODY-1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket body as the request')
   assert(p.includes('## Original request') && p.includes('## Deviations from plan') && p.includes('| Command | Result | Covers |'), 'template headings')
-  assert.strictEqual(result.tickets.find(t => t.n === 2).status, 'done')
 })
 
 test('s3: when no ticket is delivered the spec files are still written', async () => {

@@ -29,6 +29,12 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 Short, in the owner's language: final PR link, per-ticket status, what was skipped and why, review
 rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact link.
 
+In local mode there is no PR. Print the result's `delivery` field: the branch that holds the code, the commit
+range (`<base>..<branch>`) and the sentence "the base branch has not changed". Never write that the code is on the base.
+
+If the Workflow ends with an error whose text starts with "ship", a stage output is missing (the ADR files or the
+`specs/` files). Say which stage the error names. A PR that was opened before the error is still open and lacks that output.
+
 Name the script that ran: take it from the `Script file:` line of the Workflow result. If it is not
 the repo's `plugins/harness/workflows/ship.js`, say so. If the result has no such line, write
 `script path not shown`. Do not read the session directory to find it.
