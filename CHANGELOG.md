@@ -7,6 +7,10 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.11.2] — 2026-11-07
+
+- fix(ship): let the main session write summary.md; no agent is asked for it (#608) (PR #609)
+
 ## [5.11.1] — 2026-11-07
 
 - chore(release): refuse a second release PR; shellcheck the release scripts (#599) (PR #600)
