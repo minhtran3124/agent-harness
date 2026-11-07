@@ -7,6 +7,11 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.11.1] — 2026-11-07
+
+- chore(release): refuse a second release PR; shellcheck the release scripts (#599) (PR #600)
+- fix(ship): fail the run on a missing ADR/spec output; report the branch in local mode (PR #605)
+
 ## [5.11.0] — 2026-11-06
 
 - chore(release): replace bookkeeping with an on-demand release PR and automatic tags (#594) (PR #595)
