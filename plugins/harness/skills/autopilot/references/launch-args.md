@@ -26,6 +26,11 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 
 ## Completion report
 
+First write the result's `specFiles`. No agent may write a report file such as `summary.md`, so the run returns
+each such file as `{ path, text }`. For each entry, replace `{{DATE}}` in `text` with the output of `date +%F`
+and write `text` to `path` with the Write tool. Write only paths under `specs/` of the target repo; never stage or
+commit them. Then say in the report how many spec files you wrote.
+
 Short, in the owner's language: final PR link, per-ticket status, what was skipped and why, review
 rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact link.
 
