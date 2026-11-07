@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "5.11.1",
+  "version": "5.11.2",
   "description": "Skill framework for Claude Code: triage, plan, implement, review, ship.",
   "author": {
     "name": "Minh Tran"
