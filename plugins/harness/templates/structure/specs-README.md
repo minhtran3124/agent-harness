@@ -28,7 +28,9 @@ A step that runs inside a workflow (`Mode: auto`) writes no `specs/` file. It re
 the workflow script writes the files to the main checkout's `specs/<slug>/`, so they stay after the
 worktree is removed. Autopilot writes `intent.md` after the intent stage (at depth S also `design.md`
 and `plan.md`), and `design.md`, `plan.md` and `research-brief.md` after the plan stage. It writes
-`decision.md` and `summary.md` at the end, and it rewrites all five files at the end.
+`decision.md` at the end, and it rewrites the other files at the end. The Write tool refuses a report
+file such as `summary.md` from a subagent, so no agent writes `summary.md`: the run result carries its text
+in `specFiles`, and the main session writes it after the run.
 
 ## What stays tracked
 

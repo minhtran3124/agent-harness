@@ -131,6 +131,8 @@ const UAT_SCHEMA = stageSchema({
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
+// The spec writer lists each file the Write tool refused, so the main session can write it from the run result.
+const SPECS_SCHEMA = stageSchema({ refused: { type: 'array', items: STR, description: 'absolute path of each file the Write tool refused to write' } })
 const MERGE_SCHEMA = stageSchema({
   merged: { type: 'array', items: NUM },
   failed: { type: 'array', items: { type: 'object', properties: { n: NUM, reason: STR }, required: ['n', 'reason'] } },
@@ -625,8 +627,11 @@ function stageFinish(t, impl, verifyResult) {
 // stage results and a cheap agent writes them into the main checkout, so they outlive the worktrees. Early files
 // are written per ticket as each stage ends: intent.md after the intent stage (at depth S also design.md and
 // plan.md), design.md, plan.md and research-brief.md after the plan stage. decision.md and summary.md need
-// end-of-run data, so they are written at the end, and the end pass rewrites all five files. A failed render or
-// write never changes the outcome of the run: it is only logged.
+// end-of-run data, so they are written at the end, and the end pass rewrites the other files. The Write tool
+// refuses a report file such as summary.md from a subagent (#608), so no agent is asked for summary.md: the
+// script returns its text in the run result (specFiles) and the main session writes it. A file the writer
+// reports as refused goes to specFiles too. An early write never changes the outcome of the run; a blocked or
+// failed end pass fails it (see failures below).
 // ---------------------------------------------------------------------------
 const specs = {}   // ticket number -> the stage results the flow files are rendered from
 const specDir = t => `${trimmed}/specs/${t.n}-${slugOf(t.title)}`
@@ -689,10 +694,14 @@ function renderSpecs(t, run) {
   return files
 }
 
+// Files no agent is asked to write: the Write tool refuses them from a subagent (#608). The main session writes them.
+const MAIN_WRITES = ['summary.md']
+
 // One agent writes the files of every ticket, skipped ones included. run: { byN, final, review, intent, suite, adrs }.
-// Returns { ok, reason }. The caller records a failure; the run throws at its end (see failures below).
+// Returns { ok, reason, pending }: pending is the [{ path, text }] list the main session writes. The caller records
+// a failure; the run throws at its end (see failures below).
 async function writeSpecs(run) {
-  return writeSpecFiles(tickets, run, { label: 'write specs/ flow files', phase: 'Decisions' })
+  return writeSpecFiles(tickets, run, { hold: MAIN_WRITES, label: 'write specs/ flow files', phase: 'Decisions' })
 }
 
 // Early write for one ticket: only the named files, rendered from an empty run (no decision.md or summary.md).
@@ -707,35 +716,43 @@ async function writeSpecsEarly(t, files) {
   }
 }
 
-async function writeSpecFiles(list, run, { only, label, phase }) {
-  const parts = [], reqs = []
+async function writeSpecFiles(list, run, { only, hold = [], label, phase }) {
+  const parts = [], reqs = [], byPath = new Map(), pending = []
   for (const t of list) {
     let files
     try { files = renderSpecs(t, run) } catch (e) { log(`#${t.n} spec files not rendered: ${e && e.message ? e.message : String(e)}`); continue }
     if (only) files = Object.fromEntries(Object.entries(files).filter(([f]) => only.includes(f)))
     const dir = specDir(t)
+    for (const f of hold) if (files[f] != null) { pending.push({ path: `${dir}/${f}`, text: files[f] }); delete files[f] }
     if (files['intent.md'] && files['intent.md'].includes(REQUEST_LINE)) reqs.push(`In ${dir}/intent.md, replace the line ${REQUEST_LINE} with the issue body, verbatim, from: gh issue view ${t.n} --repo ${repo} --json body -q .body`)
-    parts.push(...Object.entries(files).map(([f, text]) => `=== ${dir}/${f}\n${text}`))
+    for (const [f, text] of Object.entries(files)) { byPath.set(`${dir}/${f}`, text); parts.push(`=== ${dir}/${f}\n${text}`) }
   }
-  if (!parts.length) return { ok: true }
+  if (!parts.length) return { ok: true, pending }
   const prompt = `Stage: write the local spec files of this run. Your session working directory is NOT the target repo.\n` +
     `1. Run: git -C ${repoDir} check-ignore -q specs/x. If it exits non-zero, specs/ is not gitignored: write nothing and return status blocked with blocked_reason "specs/ is not gitignored in ${repoDir}".\n` +
     `2. Run: date +%F, and use its output wherever a file below says ${DATE_TOKEN}.\n` +
     `3. Write each file below with the Write tool, by absolute path, with exactly the text between its === line and the next one (overwrite a file that exists; create missing folders).\n` +
     `${reqs.length ? `${reqs.join('\n')}\n` : ''}` +
+    `If the Write tool refuses a file (for example: subagents must not write report files), do not write it another way: skip it, write the other files, and list its absolute path in refused. A refused file is not a reason to return blocked.\n` +
     `${trimmed}/specs/ is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${parts.join('\n\n')}`
   try {
-    const res = await call(prompt, { label, phase, schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    const res = await call(prompt, { label, phase, schema: SPECS_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') {
       const reason = (res && (res.blocked_reason || res.summary)) || 'no answer'
       log(`spec files not written: ${reason}`)
-      return { ok: false, reason }
+      return { ok: false, reason, pending }
     }
-    return { ok: true }
+    for (const p of Array.isArray(res.refused) ? res.refused : []) {
+      const path = typeof p === 'string' ? p.trim() : ''
+      if (!byPath.has(path) || pending.some(x => x.path === path)) { if (path) log(`spec writer refused an unknown file: ${path}`); continue }
+      pending.push({ path, text: byPath.get(path) })
+      log(`spec file refused by the Write tool; the main session writes it: ${path}`)
+    }
+    return { ok: true, pending }
   } catch (e) {
     const reason = e && e.message ? e.message : String(e)
     log(`spec files not written: ${reason}`)
-    return { ok: false, reason }
+    return { ok: false, reason, pending }
   }
 }
 
@@ -1465,14 +1482,18 @@ for (const g of groups) {
 const deliveredAll = ordered().filter(r => r.status === 'done')
 const out = {
   single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [],
-  intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], artifact: { fallback: 'docs/adr/' }, decisions,
+  intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], artifact: { fallback: 'docs/adr/' }, decisions, specFiles: [],
 }
+// The files the main session writes after the run (summary.md, and any file the writer was refused).
+// {{DATE}} stays in the text: the main session replaces it with the output of date +%F.
+const specFilesOut = res => ((res && res.pending) || []).map(f => ({ path: f.path, text: f.text }))
 const publicTicket = r => ({ n: r.n, status: r.status, pr: r.pr, summary: r.summary, reason: r.reason })
 
 if (!deliveredAll.length) {
   log('ship: no ticket was delivered; nothing to review, verify or record')
   const sp = await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   if (sp && !sp.ok) failures.push(`spec files: ${sp.reason}`)
+  out.specFiles = specFilesOut(sp)
   out.tickets = ordered().map(publicTicket)
   out.worktrees = [...worktrees]
   if (failures.length) throw new Error(`ship: ${failures.join('; ')}`)
@@ -1528,6 +1549,7 @@ log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
 
 const specsRes = await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
 if (specsRes && !specsRes.ok) failures.push(`spec files: ${specsRes.reason}`)
+out.specFiles = specFilesOut(specsRes)
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]

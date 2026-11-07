@@ -1273,50 +1273,57 @@ test('vb7: local mode has no Verify heading', async () => {
 test('s1: one writer at the end puts the five flow files of every ticket in the main checkout specs/', async () => {
   for (const depth of ['S', 'M', 'L']) {
     const dec = { title: 'D-ADR', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'low', needs_review: true }
-    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, c => {
+    const { calls, result } = await run({ tickets: [T(1, 1, [], { depth })] }, c => {
       if (c.label === 'intent:1') return ok({ goal: 'GOAL-1', approach: 'APPROACH-1', acceptance: ['works'], decisions: [dec], plan_steps: [{ title: 'STEP-1', files: ['a.js'], covers: ['AC1'], done_when: 'true' }] })
       if (c.label === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-d-adr.md', needs_review: true, ticket: '1', title: 'D-ADR' }] })
     })
     const w = named(calls, /^specs$/)
     assert.strictEqual(w.length, 1, `${depth}: ${labelsOf(calls).join()}`)
     const p = w[0].prompt
-    for (const f of ['intent.md', 'design.md', 'decision.md', 'plan.md', 'summary.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f} missing`)
+    for (const f of ['intent.md', 'design.md', 'decision.md', 'plan.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f} missing`)
+    assert(!p.includes('summary.md'), `${depth}: the writer must not be asked for summary.md`)
+    assert.deepStrictEqual(result.specFiles.map(f => f.path), ['/repo/specs/1-ticket-1/summary.md'], `${depth}: specFiles`)
+    const sum = result.specFiles[0].text
     assert(p.includes('check-ignore') && p.includes('date +%F') && p.includes('Date: {{DATE}}') && p.includes('gh issue view 1 --repo o/r --json body -q .body'), depth)
     assert(!p.includes('/.ship-repo/'), `${depth}: spec files must not go to a worktree`)
     assert(p.includes(depth === 'S' ? '- Covers: AC1' : 'PLAN-MD'), `${depth}: plan text`)
     assert(p.includes(depth === 'L' ? '=== /repo/specs/1-ticket-1/research-brief.md' : 'APPROACH-1'), `${depth}: design or research`)
-    assert(p.includes('AC1: works') && p.includes('- ADR: docs/adr/0002-d-adr.md') && p.includes('D1 D-ADR → docs/adr/0002-d-adr.md') && p.includes('- intent-review: match'), depth)
+    assert(p.includes('AC1: works') && p.includes('- ADR: docs/adr/0002-d-adr.md'), depth)
+    assert(sum.includes('D1 D-ADR → docs/adr/0002-d-adr.md') && sum.includes('- intent-review: match') && sum.includes('Date: {{DATE}}'), `${depth}: summary text`)
     assert(labelsOf(calls).indexOf('specs') > labelsOf(calls).indexOf('adr'))
     assert(!named(calls, /^implement:1$/)[0].prompt.includes('PLAN.md'), `${depth}: implement still told to write PLAN.md`)
   }
 })
 
 test('s2: blocked, merge-blocked and skipped tickets get spec files with their real status; a failed write fails the run at the end', async () => {
-  const seen = []
+  const tickets = [T(1, 1, [], { body: 'FULL-BODY-1' }), T(2, 1), T(3, 2, [1]), T(4, 2)]
+  const script = fail => c => {
+    if (c.label === 'implement:1') return ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '' })
+    if (c.label === 'merge:g2') return ok({ merged: [], failed: [{ n: 4, reason: 'conflict' }] })
+    if (fail && c.label === 'specs') return new Error('write failed')
+  }
   let err
-  try {
-    await run({ local: true, tickets: [T(1, 1, [], { body: 'FULL-BODY-1' }), T(2, 1), T(3, 2, [1]), T(4, 2)] }, (c, calls) => {
-      if (!seen.length) seen.push(calls)
-      if (c.label === 'implement:1') return ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '' })
-      if (c.label === 'merge:g2') return ok({ merged: [], failed: [{ n: 4, reason: 'conflict' }] })
-      if (c.label === 'specs') return new Error('write failed')
-    })
-  } catch (e) { err = e }
+  try { await run({ local: true, tickets }, script(true)) } catch (e) { err = e }
   assert(err && /spec files: write failed/.test(err.message), err && err.message)
-  const calls = seen[0]
+  const { calls, result } = await run({ local: true, tickets }, script(false))
   const p = named(calls, /^specs$/)[0].prompt
-  assert(p.includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
-  assert(p.includes('=== /repo/specs/3-ticket-3/summary.md') && p.includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
-  assert(p.includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
+  const sum = path => (result.specFiles.find(f => f.path === path) || {}).text || ''
+  assert.strictEqual(result.specFiles.length, 4, result.specFiles.map(f => f.path).join())
+  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
+  assert(sum('/repo/specs/3-ticket-3/summary.md').includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
+  assert(sum('/repo/specs/4-ticket-4/summary.md').includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
   assert(p.includes('FULL-BODY-1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket body as the request')
-  assert(p.includes('## Original request') && p.includes('## Deviations from plan') && p.includes('| Command | Result | Covers |'), 'template headings')
+  assert(p.includes('## Original request') && !p.includes('summary.md'), 'writer prompt')
+  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('## Deviations from plan') && sum('/repo/specs/1-ticket-1/summary.md').includes('| Command | Result | Covers |'), 'template headings')
 })
 
 test('s3: when no ticket is delivered the spec files are still written', async () => {
-  const { calls } = await run({}, c => (c.label === 'implement:1' ? ok({ status: 'blocked', blocked_reason: 'nope', worktree: '', branch: '' }) : undefined))
+  const { calls, result } = await run({}, c => (c.label === 'implement:1' ? ok({ status: 'blocked', blocked_reason: 'nope', worktree: '', branch: '' }) : undefined))
   const w = named(calls, /^specs$/)
   assert.strictEqual(w.length, 1, labelsOf(calls).join())
-  assert(w[0].prompt.includes('Status: blocked (implement: nope)') && w[0].prompt.includes('code review: not run'))
+  assert(w[0].prompt.includes('=== /repo/specs/1-add-the-thing/intent.md') && !w[0].prompt.includes('summary.md'))
+  assert.strictEqual(result.specFiles.length, 1)
+  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope)') && result.specFiles[0].text.includes('code review: not run'))
 })
 
 test('s4: early spec writes happen after the intent and plan stages, before implement, in the main checkout', async () => {
@@ -1346,6 +1353,31 @@ test('s5: the intent.md early write exists when implement is blocked or the plan
   const b = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'plan:1' ? new Error('plan failed') : undefined))
   assert(named(b.calls, /^specs-early$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/intent.md'))
   assert.strictEqual(named(b.calls, /^implement:/).length, 0)
+})
+
+test('s7 (#608): a writer that may not write report files: a one-ticket local run completes and summary.md goes to the main session', async () => {
+  // The stub writer acts like the Write tool guard: it refuses any summary.md it is asked for.
+  const guard = c => {
+    if (c.label !== 'specs') return undefined
+    const asked = [...c.prompt.matchAll(/^=== (\S+)$/gm)].map(m => m[1])
+    const refused = asked.filter(p => p.endsWith('/summary.md'))
+    return refused.length ? ok({ status: 'blocked', blocked_reason: 'Wrote 4 of 5 spec files, but summary.md was not written' }) : ok({ refused: [] })
+  }
+  const r = await run({ local: true }, guard)
+  assert(r.result.tickets.every(t => t.status === 'done'), JSON.stringify(r.result.tickets))
+  assert.deepStrictEqual(r.result.specFiles.map(f => f.path), ['/repo/specs/1-add-the-thing/summary.md'])
+  assert(r.result.specFiles[0].text.startsWith('# Summary: Add the thing'), r.result.specFiles[0].text.slice(0, 60))
+  assert(named(r.calls, /^specs$/)[0].prompt.includes('list its absolute path in refused'), 'writer told how to report a refusal')
+})
+
+test('s8: a file the writer reports as refused goes to specFiles and does not fail the run; an unknown path is ignored', async () => {
+  const r = await run({ local: true }, c => (c.label === 'specs' ? ok({ refused: ['/repo/specs/1-add-the-thing/decision.md', '/etc/passwd'] }) : undefined))
+  assert(r.result.tickets.every(t => t.status === 'done'))
+  assert.deepStrictEqual(r.result.specFiles.map(f => f.path), ['/repo/specs/1-add-the-thing/summary.md', '/repo/specs/1-add-the-thing/decision.md'])
+  assert(r.result.specFiles[1].text.startsWith('# Decisions: Add the thing'))
+  assert(r.logs.some(l => l.includes('refused an unknown file: /etc/passwd')), r.logs.join('\n'))
+  const early = await run({}, c => (c.label === 'specs-early' ? ok({ refused: ['/repo/specs/1-add-the-thing/intent.md'] }) : undefined))
+  assert.deepStrictEqual(early.result.specFiles.map(f => f.path), ['/repo/specs/1-add-the-thing/summary.md'], 'an early refusal is rewritten by the end pass')
 })
 
 test('s6: a failing or blocked early write changes nothing', async () => {
