@@ -630,7 +630,7 @@ function stageFinish(t, impl, verifyResult) {
 // end-of-run data, so they are written at the end, and the end pass rewrites the other files. The Write tool
 // refuses a report file such as summary.md from a subagent (#608), so no agent is asked for summary.md: the
 // script returns its text in the run result (specFiles) and the main session writes it. A file the writer
-// reports as refused goes to specFiles too. An early write never changes the outcome of the run; a blocked or
+// reports as refused goes to specFiles too, and so does every file of a write the --bg guard blocked (#611). An early write never changes the outcome of the run; a blocked or
 // failed end pass fails it (see failures below).
 // ---------------------------------------------------------------------------
 const specs = {}   // ticket number -> the stage results the flow files are rendered from
@@ -696,6 +696,9 @@ function renderSpecs(t, run) {
 
 // Files no agent is asked to write: the Write tool refuses them from a subagent (#608). The main session writes them.
 const MAIN_WRITES = ['summary.md']
+// In a claude --bg session a subagent may not write to the shared checkout until the parent session isolates (#611).
+// The writer then reports blocked; the script hands every file of that write to the main session instead of failing.
+const BG_GUARD = /(hasn't|has not) isolated|shared checkout/i
 
 // One agent writes the files of every ticket, skipped ones included. run: { byN, final, review, intent, suite, adrs }.
 // Returns { ok, reason, pending }: pending is the [{ path, text }] list the main session writes. The caller records
@@ -733,12 +736,18 @@ async function writeSpecFiles(list, run, { only, hold = [], label, phase }) {
     `2. Run: date +%F, and use its output wherever a file below says ${DATE_TOKEN}.\n` +
     `3. Write each file below with the Write tool, by absolute path, with exactly the text between its === line and the next one (overwrite a file that exists; create missing folders).\n` +
     `${reqs.length ? `${reqs.join('\n')}\n` : ''}` +
-    `If the Write tool refuses a file (for example: subagents must not write report files), do not write it another way: skip it, write the other files, and list its absolute path in refused. A refused file is not a reason to return blocked.\n` +
+    `If the Write tool refuses a file (for example: subagents must not write report files, or the parent bg session has not isolated, so writes to the shared checkout are blocked), do not write it another way: skip it, write the other files, and list its absolute path in refused. Never call EnterWorktree, never create a worktree and never use Bash to get around a refusal. A refused file is not a reason to return blocked.\n` +
     `${trimmed}/specs/ is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${parts.join('\n\n')}`
+  const allToMain = reason => {   // the --bg guard refused the writer: the main session writes every file
+    for (const [path, text] of byPath) if (!pending.some(x => x.path === path)) pending.push({ path, text })
+    log(`spec writer blocked by the shared-checkout guard of a --bg session (${reason}); ${pending.length} file(s) go to the main session (the end pass redoes an early write)`)
+    return { ok: true, pending }
+  }
   try {
     const res = await call(prompt, { label, phase, schema: SPECS_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') {
       const reason = (res && (res.blocked_reason || res.summary)) || 'no answer'
+      if (BG_GUARD.test(reason)) return allToMain(reason)
       log(`spec files not written: ${reason}`)
       return { ok: false, reason, pending }
     }
@@ -751,6 +760,7 @@ async function writeSpecFiles(list, run, { only, hold = [], label, phase }) {
     return { ok: true, pending }
   } catch (e) {
     const reason = e && e.message ? e.message : String(e)
+    if (BG_GUARD.test(reason)) return allToMain(reason)
     log(`spec files not written: ${reason}`)
     return { ok: false, reason, pending }
   }

@@ -1380,6 +1380,24 @@ test('s8: a file the writer reports as refused goes to specFiles and does not fa
   assert.deepStrictEqual(early.result.specFiles.map(f => f.path), ['/repo/specs/1-add-the-thing/summary.md'], 'an early refusal is rewritten by the end pass')
 })
 
+test('s9 (#611): in a claude --bg session the shared-checkout guard blocks the writer: the run completes and every file goes to the main session', async () => {
+  // The stub writer acts like the --bg guard: every Write into the main checkout is refused, and it returns blocked.
+  const BG = "This subagent's parent bg session hasn't isolated yet, so writes to the shared checkout are blocked."
+  const guard = c => (c.label === 'specs' || c.label === 'specs-early' ? ok({ status: 'blocked', blocked_reason: BG }) : undefined)
+  const r = await run({ local: true }, guard)
+  assert(r.result.tickets.every(t => t.status === 'done'), JSON.stringify(r.result.tickets))
+  const dir = '/repo/specs/1-add-the-thing'
+  assert.deepStrictEqual(r.result.specFiles.map(f => f.path).sort(), ['decision.md', 'design.md', 'intent.md', 'plan.md', 'summary.md'].map(f => `${dir}/${f}`))
+  assert(r.result.specFiles.find(f => f.path === `${dir}/intent.md`).text.startsWith('# Intent: Add the thing'))
+  assert(r.logs.some(l => l.includes('shared-checkout guard')), r.logs.join('\n'))
+  const p = named(r.calls, /^specs$/)[0].prompt
+  assert(p.includes('EnterWorktree') && p.includes('list its absolute path in refused'), 'writer told not to isolate itself and to report the block as refused')
+  // A block for any other reason still fails the run (see i4).
+  let err = null
+  try { await run({ local: true }, c => (c.label === 'specs' ? ok({ status: 'blocked', blocked_reason: 'specs/ is not gitignored in /repo' }) : undefined)) } catch (e) { err = e }
+  assert(err && /spec files: specs\/ is not gitignored/.test(err.message), err && err.message)
+})
+
 test('s6: a failing or blocked early write changes nothing', async () => {
   const base = await run({}, null)
   for (const out of [new Error('write failed'), { status: 'blocked', blocked_reason: 'not ignored', summary: '' }]) {

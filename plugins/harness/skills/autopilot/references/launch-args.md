@@ -27,9 +27,13 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 ## Completion report
 
 First write the result's `specFiles`. No agent may write a report file such as `summary.md`, so the run returns
-each such file as `{ path, text }`. For each entry, replace `{{DATE}}` in `text` with the output of `date +%F`
-and write `text` to `path` with the Write tool. Write only paths under `specs/` of the target repo; never stage or
-commit them. Then say in the report how many spec files you wrote.
+each such file as `{ path, text }`. In a `claude --bg` session the shared-checkout guard can block every spec file
+of the writer agent, so `specFiles` may then hold all of them (#611). Before you write, run
+`git check-ignore -q specs/x` in the target repo; if it exits non-zero, write nothing and say in the report that `specs/` is
+not gitignored. For each entry, replace `{{DATE}}` in `text` with the output of `date +%F` and write `text` to
+`path` with the Write tool. If `text` still has the line `{{REQUEST}}`, replace it with the issue body, verbatim,
+from `gh issue view <n> --repo <repo> --json body -q .body`. Write only paths under `specs/` of the target repo;
+never stage or commit them. Then say in the report how many spec files you wrote.
 
 Short, in the owner's language: final PR link, per-ticket status, what was skipped and why, review
 rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact link.

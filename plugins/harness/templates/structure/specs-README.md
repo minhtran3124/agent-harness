@@ -30,7 +30,8 @@ worktree is removed. Autopilot writes `intent.md` after the intent stage (at dep
 and `plan.md`), and `design.md`, `plan.md` and `research-brief.md` after the plan stage. It writes
 `decision.md` at the end, and it rewrites the other files at the end. The Write tool refuses a report
 file such as `summary.md` from a subagent, so no agent writes `summary.md`: the run result carries its text
-in `specFiles`, and the main session writes it after the run.
+in `specFiles`, and the main session writes it after the run. In a `claude --bg` session the shared-checkout
+guard can block the writer agent; then every spec file goes to `specFiles` and the main session writes them all.
 
 ## What stays tracked
 
