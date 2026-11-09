@@ -7,7 +7,7 @@ a mechanical gate.
 ## Hook details
 
 In the `CLAUDE.md` table, wired (✅) means registered in `plugins/harness/hooks/hooks.json` and firing; dormant (⬜)
-means present on disk but not registered. Each hook is registered in exec form (`bash` plus the script path under `${CLAUDE_PLUGIN_ROOT}/hooks/`), so it needs no execute bit at run time. All hooks except `merge-guard.sh` fail open (`merge-guard.sh` fails closed, see its section): a missing `jq`/`git`, or a
+means present on disk but not registered. Each hook is registered in exec form (`bash` plus the script path under `${CLAUDE_PLUGIN_ROOT}/hooks/`), so it needs no execute bit at run time. All hooks except `merge-guard.sh` fail open (`merge-guard.sh` fails closed, see its section; `stop-evidence.sh` blocks on its risk floor when its judge fails, see its section): a missing `jq`/`git`, or a
 payload they cannot parse, lets the action through.
 
 ### `secrets-scan.sh` (PreToolUse, Bash)
