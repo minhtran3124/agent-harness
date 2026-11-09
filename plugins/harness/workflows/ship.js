@@ -284,8 +284,36 @@ const lbl = (what, subject) => {
 }
 const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
-// A plugin agent type (harness:<role>) may not resolve; then the default agent reads the role file itself.
+// Every agent call is recorded for the run result (stats.byStage). The owner reads it to see which stage
+// ran how often and on which model and effort, before deciding which stage to cut or to upgrade. There is no
+// timing: a workflow script must stay deterministic (no Date, no Math.random), so a resumed run replays the same.
+const callStats = []
+// "#3 intent · Title" -> "intent"; "#3 gate code-review · round 1" -> "gate code-review"; "fix r1.2 · file" -> "fix".
+const stageKey = label => String(label || 'unlabelled').replace(/^#\d+\s+/, '').split(' · ')[0].replace(/\s+r\d+(\.\d+)?$/, '').replace(/\s+retry$/, '')
+function statsOut() {
+  const byStage = {}
+  for (const c of callStats) {
+    const e = byStage[c.stage] || (byStage[c.stage] = { calls: 0, ok: 0, failed: 0, models: [], efforts: [] })
+    e.calls++
+    if (c.ok) e.ok++; else e.failed++
+    if (c.model && !e.models.includes(c.model)) e.models.push(c.model)
+    if (c.effort && !e.efforts.includes(c.effort)) e.efforts.push(c.effort)
+  }
+  return { agentCalls: callStats.length, byStage }
+}
 async function call(prompt, opts, roleFile) {
+  let ok = false
+  try {
+    const res = await callInner(prompt, opts, roleFile)
+    ok = res !== null && res !== undefined
+    return res
+  } finally {
+    callStats.push({ stage: stageKey(opts.label), model: opts.model, effort: opts.effort, ok })
+  }
+}
+
+// A plugin agent type (harness:<role>) may not resolve; then the default agent reads the role file itself.
+async function callInner(prompt, opts, roleFile) {
   if (!opts.agentType) return agent(prompt, clean(opts))
   try {
     return await agent(prompt, clean(opts))
@@ -1506,6 +1534,7 @@ if (!deliveredAll.length) {
   out.specFiles = specFilesOut(sp)
   out.tickets = ordered().map(publicTicket)
   out.worktrees = [...worktrees]
+  out.stats = statsOut()
   if (failures.length) throw new Error(`ship: ${failures.join('; ')}`)
   return out
 }
@@ -1563,6 +1592,8 @@ out.specFiles = specFilesOut(specsRes)
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]
+out.stats = statsOut()
+log(`stats: ${out.stats.agentCalls} agent call(s) in ${Object.keys(out.stats.byStage).length} stage(s)`)
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 if (failures.length) throw new Error(`ship: ${failures.join('; ')}. The run did not complete: the PR (if any) is open without this output.`)
 return out

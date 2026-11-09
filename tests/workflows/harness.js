@@ -182,6 +182,17 @@ test('a: one ticket has no integration or merge agent and a feat/<n>- branch', a
   assert(named(calls, /^finish:1$/)[0].prompt.includes('base v5.0.0'))
 })
 
+test('p1: the result counts every agent call by stage, with model and effort', async () => {
+  const { result, calls } = await run({}, null)
+  const s = result.stats
+  assert.strictEqual(s.agentCalls, calls.length)
+  assert.strictEqual(s.byStage.intent.calls, 1, Object.keys(s.byStage).join())
+  assert.deepStrictEqual(s.byStage.implement.models, ['sonnet'])
+  assert.deepStrictEqual(s.byStage.implement.efforts, ['medium'])
+  assert.strictEqual(Object.values(s.byStage).reduce((n, e) => n + e.calls, 0), calls.length)
+  assert.strictEqual(Object.values(s.byStage).reduce((n, e) => n + e.failed, 0), 0)
+})
+
 const noRepoTouch = /^(request:|artifact|final-pr)/
 test('a2: no agent call uses isolation (it binds to the session cwd, not the target repo)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1), T(3, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
