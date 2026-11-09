@@ -8,8 +8,8 @@ as contracts when you change a hook, a skill or a script.
 
 - `plugins/harness/` - the plugin (name `harness`). `.claude-plugin/marketplace.json` at the repo root lists it.
 - `plugins/harness/skills/<name>/SKILL.md` - the skills, with their prompts, templates and scripts.
-- `plugins/harness/agents/` - the six subagent role files (model, effort and tools are in their frontmatter).
-- `plugins/harness/hooks/` - `hooks.json` plus four Bash hooks: rule delivery at session start, secrets scan on commit, PR-opened reminder, merged-worktree cleanup.
+- `plugins/harness/agents/` - the subagent role files (model, effort and tools are in their frontmatter).
+- `plugins/harness/hooks/` - `hooks.json` plus the Bash hooks listed in the `CLAUDE.md` Hooks table.
 - `plugins/harness/rules/behavior.md` - the one behavioral rule.
 - `plugins/harness/workflows/ship.js` - the autonomous Workflow script that `/harness:autopilot` launches.
 - `plugins/harness/templates/structure/` - scaffold files that `plugins/harness/scripts/init-structure.sh` copies into a consumer repo.
