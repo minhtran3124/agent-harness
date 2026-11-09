@@ -7,6 +7,10 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.11.4] — 2026-11-09
+
+- docs: fix stale counts and invocation wording across harness docs (PR #615)
+
 ## [5.11.3] — 2026-11-07
 
 - fix(ship): hand spec files to the main session when the --bg guard blocks the writer (#611) (PR #613)
