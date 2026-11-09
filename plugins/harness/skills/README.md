@@ -1,6 +1,6 @@
 # Claude Skills — Reference & Workflow
 
-Skills are reusable prompt programs invoked by name through the active runtime. Each skill has a defined scope, hard rules, and a handoff to the next skill.
+Skills are reusable prompt programs that Claude Code runs as `/harness:<skill>`. Each skill has a defined scope, hard rules, and a handoff to the next skill.
 
 This file is the single source of truth for overview, workflow, and cross-skill concerns — consult the `SKILL.md` of each skill for runtime behavior.
 
@@ -18,7 +18,7 @@ plugin is not verified, so the namespaced form is used where a model must invoke
 ### Full Cycle (3+ layers, migration, or spans multiple services)
 
 ```
-init-structure.sh --root <project>   (first-time setup; run from the harness repo)
+init-structure.sh --root <project>   (first-time setup; /harness:setup runs it)
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
 intake  (readiness gate — run first on every ticket)
@@ -105,7 +105,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 | `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` and a design ADR in `docs/adr/` (depth L) |
 | `own` | **User-invoked only** (`/harness:own <grill \| brainstorm> <target>`). Runs `grilling` or `brainstorming` in ownership mode: on at most 3 big decisions (hard to reverse, or low agent confidence) the owner answers first, then sees the agent's recommendation and a counter-argument, then decides. `brainstorm` adds the owner's sketch, design-breaking assumptions and an optional teach-back. Never in autopilot or `--no-ask` runs | The base skill's output, plus owner first answer, agent recommendation and counter-argument per big decision in `decision.md`; `## Owner reasoning` in `design.md` (brainstorm) |
 | `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
-| `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
+| `diagnosing-bugs` | **User- or intake-invoked**. Run `/harness:diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
 
 ### Planning
 
@@ -125,8 +125,8 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 | Skill | Trigger | Output |
 |---|---|---|
 | `intent-review` | Checks the diff range against the owner's original request verbatim, blind to the plan; dispatches the `intent-reviewer` agent with only those two inputs. **Standalone** on any diff plus its request, or run by the ship workflow as its last pass | Findings classified `gap` / `excess` / `drift` → fix · ask the owner (auto mode: record a decision) · list in the PR |
-| `tickets` | **User-invoked** (`/tickets <brief path> [--max 30] [--milestone <name> \| --no-milestone]`). Reads a brief, splits it into tickets, shows one table, asks one go/no-go question, then creates the issues and an epic with `gh`, under a milestone if the owner chooses one. Stops on a secret in the brief. Each ticket is written to pass `intake` as READY. Never edits existing issues | GitHub issues, an epic and an optional milestone; next step `/harness:autopilot <milestone>` or `/harness:autopilot #n #m ...` |
-| `autopilot` | **User-invoked** (`/autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`intake`), groups them by dependency (`skills/autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go. The script writes `specs/` files as each stage ends: `intent.md` after the intent stage (at depth S also `design.md` and `plan.md`), `design.md`, `plan.md` and `research-brief.md` after the plan stage, `decision.md` at the end, and it rewrites the others at the end; the run result carries `summary.md` in `specFiles` and the main session writes it | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
+| `tickets` | **User-invoked** (`/harness:tickets <brief path> [--max 30] [--milestone <name> \| --no-milestone]`). Reads a brief, splits it into tickets, shows one table, asks one go/no-go question, then creates the issues and an epic with `gh`, under a milestone if the owner chooses one. Stops on a secret in the brief. Each ticket is written to pass `intake` as READY. Never edits existing issues | GitHub issues, an epic and an optional milestone; next step `/harness:autopilot <milestone>` or `/harness:autopilot #n #m ...` |
+| `autopilot` | **User-invoked** (`/harness:autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`intake`), groups them by dependency (`skills/autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go. The script writes `specs/` files as each stage ends: `intent.md` after the intent stage (at depth S also `design.md` and `plan.md`), `design.md`, `plan.md` and `research-brief.md` after the plan stage, `decision.md` at the end, and it rewrites the others at the end; the run result carries `summary.md` in `specFiles` and the main session writes it | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
 | `decision-record` | **Stage- or user-invoked**. A model decided something on its own during an autonomous run. Stage agents return `decisions[]`. The final ADR stage runs `scripts/write_adrs.py`, commits `docs/adr/NNNN-*.md` and renders the PR `## Decisions` section | ADR files + a `## Decisions` PR section (and one private artifact when available) |
 | `recall` | **User-invoked only** (`/harness:recall <task description>`). Use it when you start a task and want to see what `docs/solutions/` already knows about it. Manual only, with no automatic trigger. Read-only: it runs in a forked `Explore` context with `Read`, `Grep` and `Glob`, opens at most 3 records and never writes a file. Not `compound` (which writes records) | Matching record paths with one line each, things to avoid from `failure` and `bug` records, and a `Search surface:` line that lists every file read. With no match it prints `no match` and the `Search surface:` line |
 | `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings |
@@ -137,21 +137,6 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 | `verify` | Use it when a ticket has a `Verify:` row and its code is ready, or run `/harness:verify`. Picks the checks by ticket type (BE, FE, FE+BE, docs). Browser steps use the Claude Code Playwright plugin tools only, and pass or fail comes from assertions. The agent infers the start recipe and writes `verify.config.json` (names of the login variables, never values). Never a project-level skill named `verify` | A pass or fail table, stills in `.playwright-mcp/<ticket>/` (gitignored), and a committed `verify.config.json`. A fixture app in `tests/fixtures/verify-app/` lets you try it by hand |
 | `uat` | Use it after a ticket is built, for FE, BE and FE+BE tickets, or run `/harness:uat N`. Reads only the issue body and the Confirmed decisions comment (never the plan, the diff or the `Verify:` row), numbers the acceptance bullets AC1..ACn, and checks the running app through `verify/references/run-app.md`. `ship.js` runs it as the UAT phase between intent review and testing | A table of scenarios (each naming an AC id, negative, extra or not-browser-checkable) with PASS or FAIL, assertion and still path. Never fixes code |
 | `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges), writes `specs/<slug>/summary.md` |
-
----
-
-## External Skills (referenced but live elsewhere)
-
-The global `superpowers` plugin or the active runtime's user-level skill directory supplies these skills, not this repo. No skill, agent, or rule in this repo names them, so no workflow step depends on them:
-
-| Skill | Role |
-|---|---|
-| `test-driven-development` | Tests-first protocol (the implementer prompt carries its own red-test rule) |
-| `requesting-code-review` | Structured review template |
-| `session-tracker` | Session resumption across conversations |
-| `skill-creator` | Authoring new skills |
-
-If one of these isn't available in your environment, the workflows degrade gracefully — treat them as optional.
 
 ---
 
