@@ -974,6 +974,26 @@ test('p3c: depth S and depth L keep their flow: S has no plan agent, L has a pla
   assert(named(l.calls, /^implement:1$/)[0].prompt.includes('Follow this plan:') && !named(l.calls, /^implement:1$/)[0].prompt.includes('as plan_md'))
 })
 
+test('p5: stages that only run a gh or git command get the core rules; stages that read or edit code get all of them', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 2, [1])] }, null)
+  const block = c => (c.prompt.match(/(Core rules|Rules) \(all of them apply\):[\s\S]*?\n\n/) || [''])[0]
+  const lite = calls.filter(c => /^(setup-integration|merge:|final-pr|ci-snapshot|adr|suite|artifact|gci:|gbody:|advisor:)/.test(c.label || ''))
+  const full = calls.filter(c => /^(intent:|implement:|review:|fix:|uat:)/.test(c.label || ''))
+  assert(lite.length >= 8 && full.length >= 4, `${lite.length} lite, ${full.length} full: ${labelsOf(calls).join()}`)
+  for (const c of lite) {
+    const b = block(c)
+    assert(b.startsWith('Core rules'), `${c.label}: header`)
+    assert(b.includes('Never force-push') && b.includes('Done" needs real command output') && b.includes('You cannot start other agents'), `${c.label}: hard rules stay`)
+    for (const gone of ['needs_review: true ONLY', 'adr: true ONLY', 'owner_confirmed: true ONLY', '/repo/CLAUDE.md', 'Run only the tests related']) assert(!b.includes(gone), `${c.label}: carries "${gone}"`)
+  }
+  for (const c of full) {
+    const b = block(c)
+    assert(b.startsWith('Rules (all of them apply)'), `${c.label}: header`)
+    for (const need of ['Never force-push', 'needs_review: true ONLY', 'adr: true ONLY', 'owner_confirmed: true ONLY', '/repo/CLAUDE.md', 'Run only the tests related']) assert(b.includes(need), `${c.label}: lost "${need}"`)
+  }
+  assert(block(lite[0]).length < block(full[0]).length * 0.6, `core block ${block(lite[0]).length} vs full ${block(full[0]).length}`)
+})
+
 test('p2b: implement runs on opus at depth L and on sonnet at depth S and M, with no profile', async () => {
   for (const [depth, model] of [['L', 'opus'], ['M', 'sonnet'], ['S', 'sonnet']]) {
     const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, null)
