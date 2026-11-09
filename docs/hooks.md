@@ -134,7 +134,7 @@ delivered this way is not verified in a live session.
 
 ## One fixed hook set
 
-The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `stop-evidence.sh`, `pr-opened.sh` and `clean-worktrees.sh` (PostToolUse and SessionStart). Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
+The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `merge-guard.sh`, `stop-evidence.sh`, `pr-opened.sh` and `clean-worktrees.sh` (PostToolUse and SessionStart). Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
 
 ## Permissions
 
