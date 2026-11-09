@@ -61,6 +61,7 @@ function legacyLabel(l) {
     const r = l.match(/round (\d+)( retry)?$/); return `review:r${r[1]}${r[2] ? ':retry' : ''}`
   }
   if ((m = head.match(/^fix r(\d+)\.(\d+)$/))) return `fix:r${m[1]}:${m[2]}`
+  if ((m = head.match(/^fix r(\d+)$/))) return `fix:r${m[1]}:all`
   if ((m = head.match(/^#(\d+) advisor (.+)$/))) return `advisor:${m[2]}:${m[1]}`
   if ((m = head.match(/^#(\d+) (.+?)( retry)?$/))) {
     const verb = TICKET_VERBS[m[2]]
@@ -103,6 +104,11 @@ function defaults(c, st) {
   if (l === 'ci-snapshot') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'finalsha' }
   if (l === 'diffstat') return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
   if (l.startsWith('review:')) return ok({ findings: [], skill_invoked: true, skill_error: '' })
+  if (/^fix:r\d+:all$/.test(l)) {   // one agent for every finding of the round: it reports each finding by id
+    st.fix++
+    const ids = [...c.prompt.matchAll(/^Finding (\S+) \(score/gm)].map(m => m[1])
+    return ok({ fix_status: 'fixed', base_sha: `base${st.fix}`, commit: `c${st.fix}`, findings: ids.map((id, i) => ({ id, fix_status: 'fixed', commit: `c${st.fix}.${i + 1}` })) })
+  }
   if (l.startsWith('fix:') || l === 'intent-fix') { st.fix++; return ok({ fix_status: 'fixed', base_sha: `base${st.fix}`, commit: `c${st.fix}` }) }
   if (l.startsWith('request:')) return { body: `REQUEST-BODY-${n}` }
   if (l === 'intent-review') return { verdict: 'match', findings: [] }
@@ -699,12 +705,15 @@ test('e: review loop fixes findings >= threshold, re-reviews the fix diff only, 
     if (c.label === 'review:r1') return ok({ skill_invoked: true, findings: [F('f5', 70)] })
     if (c.label === 'review:r2') return ok({ skill_invoked: true, findings: [F('f6', 75)] })
   })
-  assert.strictEqual(named(calls, /^fix:/).length, 3, labelsOf(calls).join())
+  assert.strictEqual(named(calls, /^fix:/).length, 2, labelsOf(calls).join())   // round 1: one agent for f1 and f2; round 2: one finding, one agent
   assert.strictEqual(named(calls, /^review:/).length, 3)
   const ls = labelsOf(calls)
-  assert(ls.indexOf('fix:r1:1') < ls.indexOf('fix:r1:2') && ls.indexOf('fix:r1:2') < ls.indexOf('review:r1'), 'fixes run sequentially, then re-review')
-  assert(named(calls, /^review:r1$/)[0].prompt.includes('base1..c2'), 're-review range is the fix commits')
-  assert(named(calls, /^review:r2$/)[0].prompt.includes('base3..c3'))
+  assert(ls.indexOf('fix:r1:all') < ls.indexOf('review:r1') && ls.indexOf('review:r1') < ls.indexOf('fix:r2:1'), 'one fix agent per round, then re-review')
+  const batch = named(calls, /^fix:r1:all$/)[0].prompt
+  assert(batch.includes('Finding f1 (score 80)') && batch.includes('Finding f2 (score 60)') && batch.includes('one commit per finding'), batch.slice(0, 600))
+  assert(!batch.includes('f3') && !batch.includes('S-f4'), 'below the threshold and pre-existing findings are not in the batch')
+  assert(named(calls, /^review:r1$/)[0].prompt.includes('base1..c1'), 're-review range is the fix commits')
+  assert(named(calls, /^review:r2$/)[0].prompt.includes('base2..c2'))
   assert(!named(calls, /^review:r1$/)[0].prompt.includes('origin/v5.0.0...') )
   assert(named(calls, /^review:r0$/)[0].prompt.includes("args 'low 101'") || named(calls, /^review:r0$/)[0].prompt.includes("'low 101'"))
   assert.strictEqual(result.review.rounds, 2)
@@ -712,6 +721,25 @@ test('e: review loop fixes findings >= threshold, re-reviews the fix diff only, 
   assert(result.review.leftover.some(f => f.id === 'f6'))
   assert(result.review.preExisting.some(f => f.id === 'f4'))
   assert(!named(calls, /^fix:/).some(c => c.prompt.includes('f4') && c.prompt.includes('S-f4')), 'pre-existing findings are not fixed')
+})
+
+test('e1b: a batch fix reports each finding; a skipped, failed or unreported finding is listed as not fixed with its reason', async () => {
+  const F = (id, score) => ({ id, path: 'a.js', line: 1, summary: `S-${id}`, score })
+  const run1 = reply => run({}, c => {
+    if (c.label === 'review:r0') return ok({ skill_invoked: true, findings: [F('f1', 80), F('f2', 70), F('f3', 60)] })
+    if (c.label === 'fix:r1:all') return reply
+  })
+  const a = await run1(ok({ fix_status: 'fixed', base_sha: 'b0', commit: 'cz', findings: [
+    { id: 'f1', fix_status: 'fixed', commit: 'c1' }, { id: 'f2', fix_status: 'skipped', commit: '', reason: 'wrong finding' }] }))
+  assert.deepStrictEqual(a.result.review.fixed.map(f => f.id), ['f1'])
+  const nf = Object.fromEntries(a.result.review.notFixed.map(f => [f.id, f.reason]))
+  assert.strictEqual(nf.f2, 'wrong finding')
+  assert.strictEqual(nf.f3, 'the fix agent did not report this finding')
+  assert(named(a.calls, /^review:r1$/)[0].prompt.includes('b0..cz'), 'the re-review covers the whole fix range')
+  const b = await run1(null)
+  assert.strictEqual(b.result.review.fixed.length, 0)
+  assert.deepStrictEqual(b.result.review.notFixed.map(f => f.reason), ['fix agent returned nothing', 'fix agent returned nothing', 'fix agent returned nothing'])
+  assert.strictEqual(named(b.calls, /^review:r1$/).length, 0, 'no fix commit, no re-review')
 })
 
 test('e2: nothing at or above the threshold means no fix agent', async () => {

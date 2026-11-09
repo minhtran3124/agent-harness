@@ -158,6 +158,8 @@ const REVIEW_SCHEMA = stageSchema({
 }, ['findings', 'skill_invoked'])
 const FIX_SCHEMA = stageSchema({
   fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, base_sha: STR, commit: STR, test_added: STR,
+  findings: { type: 'array', description: 'When the prompt gave you several findings: one entry per finding id.',
+    items: { type: 'object', properties: { id: STR, fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, commit: STR, reason: STR }, required: ['id', 'fix_status'] } },
 }, ['fix_status'])
 const QA_SCHEMA = stageSchema({
   ready: { type: 'boolean', description: 'true only when acceptance tests were committed and each fails for the right reason. false when the ticket has nothing to test from outside, the repo has no way to run such a test, or the public interface is too thin.' },
@@ -1099,13 +1101,17 @@ async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) {   // wtKey names the worktree; the label is display text
+function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX, many = false) {   // wtKey names the worktree; the label is display text
   const w = newWt(`${ctx.wtPrefix}fix-${wtKey || label}`, null, ctx.ref)
+  const how = many
+    ? `Make one commit per finding ("git add", then "git commit"), each with a test that fails without its fix; run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
+      `Then land them: ${land(ctx.branch)}. Return commit as the sha of your last commit, and findings[] with one entry per finding id (fix_status fixed, skipped or failed; commit; reason). ${extra || ''}` +
+      `If a finding is wrong or cannot be fixed safely, change nothing for it and return it as skipped or failed with the reason. Return fix_status fixed when at least one finding is fixed.`
+    : `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
+      `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
+      `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
   const prompt = `${w.setup}${RULES}\n\n` +
-    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${ctx.boundary == null ? runBoundaryText() : ctx.boundary}` +
-    `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
-    `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
-    `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
+    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${ctx.boundary == null ? runBoundaryText() : ctx.boundary}${how}`
   return call(prompt, { label, phase: phaseName || 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
 }
 
@@ -1147,16 +1153,30 @@ async function reviewLoop(ctx, target) {
     if (!todo.length) break
     out.rounds++
     const commits = []
-    for (let k = 0; k < todo.length; k++) {   // sequential: each fix lands before the next starts
-      const f = todo[k]
-      const res = await fixAgent(lbl(`${P}fix r${out.rounds}.${k + 1}`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`, '', undefined, `r${out.rounds}-${k + 1}`, ctx)
+    const findingLine = f => `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`
+    const boundaryReason = res => {
+      const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
+      return bd ? `needs your decision: ${bd.title}` : ''
+    }
+    if (todo.length === 1) {
+      const f = todo[0]
+      const res = await fixAgent(lbl(`${P}fix r${out.rounds}.1`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), findingLine(f), '', undefined, `r${out.rounds}-1`, ctx)
       takeDecisions(ctx.ticket, 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
-      else {
-        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
-        const reason = bd ? `needs your decision: ${bd.title}` : (res && res.summary) || 'fix agent returned nothing'
-        out.notFixed.push({ id: f.id, summary: f.summary, reason })
+      else out.notFixed.push({ id: f.id, summary: f.summary, reason: boundaryReason(res) || (res && res.summary) || 'fix agent returned nothing' })
+    } else {
+      // One agent fixes every finding of the round, one commit each, in one context. The agent reports each finding by id.
+      const res = await fixAgent(lbl(`${P}fix r${out.rounds}`, `${todo.length} findings`),
+        `Fix each of these ${todo.length} review findings, in this order:\n${todo.map(findingLine).join('\n')}`, '', undefined, `r${out.rounds}-all`, ctx, true)
+      takeDecisions(ctx.ticket, 'review-fix', res)
+      const per = new Map(((res && Array.isArray(res.findings)) ? res.findings : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]))
+      let anyFixed = false
+      for (const f of todo) {
+        const r = per.get(f.id)
+        if (r && r.fix_status === 'fixed' && r.commit) { anyFixed = true; out.fixed.push({ id: f.id, summary: f.summary, commit: r.commit }) }
+        else out.notFixed.push({ id: f.id, summary: f.summary, reason: (r && r.reason) || boundaryReason(res) || (res ? (r ? `fix agent reported ${r.fix_status}` : 'the fix agent did not report this finding') : 'fix agent returned nothing') })
       }
+      if (anyFixed && res.commit && res.base_sha) commits.push(res)
     }
     if (!commits.length) { findings = []; break }
     // Re-review only what the fix commits changed.

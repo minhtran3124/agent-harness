@@ -71,7 +71,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
      promise comes from its prompt (it has Bash for `git diff`), not from a hook.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
-   more get one fix agent each; re-review only the fix commits; at most 2 rounds.
+   more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
 6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
    FE+BE tickets (docs tickets and local mode skip it with a log line). The agent gets the issue body and the
