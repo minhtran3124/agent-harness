@@ -36,8 +36,8 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 - When tasks are independent, the orchestrator spawns subagents in parallel (several `Agent` calls
   in one message, or a workflow `parallel()`), not one after another. It runs tasks in sequence
   only when one needs the result of another.
-- Workflow design and plan stages use Opus 5.5 at depth L; the plan stage stays on Sonnet 5.5 at
-  depth M and S. Depth L is the difficulty signal, so this fixed rule is an intentional exception to the flexible rule above.
+- Workflow design and plan stages use Opus 5.5 at depth L; there is no plan stage at depth M and S:
+  the implement agent writes the plan itself at depth M. Depth L is the difficulty signal, so this fixed rule is an intentional exception to the flexible rule above.
 - Call the advisor when:
   - the ticket depth is L, or the ticket is important (design or plan review, before implement);
   - the same check fails twice after a fix;
