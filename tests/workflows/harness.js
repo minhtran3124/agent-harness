@@ -916,10 +916,35 @@ test('p2: at depth L, design and plan stay on opus even when the profile names a
   }
 })
 
-test('p3: profile validation rejects locked stages, unknown stages and bad values', async () => {
+test('p2b: implement runs on opus at depth L and on sonnet at depth S and M, with no profile', async () => {
+  for (const [depth, model] of [['L', 'opus'], ['M', 'sonnet'], ['S', 'sonnet']]) {
+    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, null)
+    const impl = named(calls, /^implement:1$/)
+    assert(impl.length === 1 && impl[0].opts.model === model && impl[0].opts.effort === 'medium', `${depth}: ${impl[0].opts.model}/${impl[0].opts.effort}`)
+  }
+})
+
+test('p2c: a profile may set implement and fix; it wins at every depth; finish keeps its own model', async () => {
+  const profile = { stages: { implement: { model: 'sonnet', effort: 'high' }, fix: { model: 'opus' } } }
+  const l = await run({ profile, tickets: [T(1, 1, [], { depth: 'L' })] }, null)
+  const implL = named(l.calls, /^implement:1$/)[0]
+  assert(implL.opts.model === 'sonnet' && implL.opts.effort === 'high', 'profile beats the depth L default')
+  const opus = { stages: { implement: { model: 'opus' } } }
+  const s = await run({ profile: opus }, null)
+  assert.strictEqual(named(s.calls, /^implement:1$/)[0].opts.model, 'opus')
+  const fin = named(s.calls, /^finish:1$/)[0]
+  assert(fin.opts.model === 'sonnet' && fin.opts.effort === 'medium', 'finish does not follow implement')
+})
+
+test('p2d: the fix stage takes its model from the profile', async () => {
+  const profile = { stages: { fix: { model: 'opus', effort: 'high' } } }
+  const { calls } = await run({ profile, tickets: [T(1, 1)] }, c => (/^review:r0$/.test(c.label || '') ? ok({ findings: [{ id: 'F1', path: 'a.js', line: 1, summary: 'x', score: 80 }], skill_invoked: true, skill_error: '' }) : undefined))
+  const fixes = named(calls, /^fix:/)
+  assert(fixes.length > 0 && fixes.every(c => c.opts.model === 'opus' && c.opts.effort === 'high'), fixes.map(c => c.opts.model).join())
+})
+
+test('p3: profile validation rejects unknown stages and bad values', async () => {
   const bad = async (stages, re) => { await assert.rejects(() => run({ profile: { stages } }, null), re) }
-  await bad({ implement: { model: 'opus' } }, /stages\.implement is locked/)
-  await bad({ fix: { effort: 'high' } }, /stages\.fix is locked/)
   await bad({ nope: { model: 'opus' } }, /stages\.nope is not a stage/)
   await bad({ review: { model: 'fable' } }, /review\.model must be one of/)
   await bad({ review: { effort: 'huge' } }, /review\.effort must be one of/)

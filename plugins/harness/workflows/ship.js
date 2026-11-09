@@ -18,18 +18,20 @@ export const meta = {
 // ---------------------------------------------------------------------------
 const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
   verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku',
-  qa: 'sonnet', security: 'opus' }
+  qa: 'sonnet', security: 'opus', finish: 'sonnet' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
-  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', security: 'high' }
-// args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage. These stages
-// are locked to their defaults and a profile cannot change them.
-const LOCKED_STAGES = ['implement', 'fix']
+  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', security: 'high', finish: 'medium' }
+// args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage, any stage.
 const PROFILE_MODELS = ['haiku', 'sonnet', 'opus']
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
-// Depth L is the difficulty signal: design and plan run on Opus there, whatever the profile says;
-// every other stage and depth uses MODEL.
+// Depth L is the difficulty signal: design and plan run on Opus there, whatever the profile says. Implement
+// also runs on Opus at depth L, unless the profile names the implement stage: then the profile wins at every
+// depth. Every other stage and depth uses MODEL. PROFILE_SET is filled when the profile is applied below.
+const PROFILE_SET = new Set()
 function stageModel(stage, depth) {
-  return depth === 'L' && (stage === 'design' || stage === 'plan') ? 'opus' : MODEL[stage]
+  if (depth === 'L' && (stage === 'design' || stage === 'plan')) return 'opus'
+  if (depth === 'L' && stage === 'implement' && !PROFILE_SET.has('implement')) return 'opus'
+  return MODEL[stage]
 }
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
@@ -220,8 +222,7 @@ function validateProfile(p) {
   const stages = p.stages === undefined ? {} : p.stages
   if (!stages || typeof stages !== 'object' || Array.isArray(stages)) throw new Error('ship: args.profile.stages must be an object')
   for (const [stage, cfg] of Object.entries(stages)) {
-    if (LOCKED_STAGES.includes(stage)) throw new Error(`ship: args.profile.stages.${stage} is locked (${MODEL[stage]}/${EFFORT[stage]}) and cannot be set`)
-    if (!(stage in MODEL)) throw new Error(`ship: args.profile.stages.${stage} is not a stage; use one of ${Object.keys(MODEL).filter(s => !LOCKED_STAGES.includes(s)).join(', ')}`)
+    if (!(stage in MODEL)) throw new Error(`ship: args.profile.stages.${stage} is not a stage; use one of ${Object.keys(MODEL).join(', ')}`)
     if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) throw new Error(`ship: args.profile.stages.${stage} must be an object`)
     for (const k of Object.keys(cfg)) if (k !== 'model' && k !== 'effort') throw new Error(`ship: args.profile.stages.${stage}.${k} is not a field; use model or effort`)
     if (cfg.model !== undefined && !PROFILE_MODELS.includes(cfg.model)) throw new Error(`ship: args.profile.stages.${stage}.model must be one of ${PROFILE_MODELS.join(', ')}`)
@@ -233,6 +234,7 @@ validateArgs(args)
 for (const [stage, cfg] of Object.entries((args.profile && args.profile.stages) || {})) {
   if (cfg.model) MODEL[stage] = cfg.model
   if (cfg.effort) EFFORT[stage] = cfg.effort
+  PROFILE_SET.add(stage)
 }
 
 const { repo, repoDir, pluginDir, remote, base, slug, testCmd, lintCmd, fullTestCmd, advisorModel } = args
@@ -512,7 +514,7 @@ function stageImplement(t, branch, planText, boundary, qa) {
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
     `Return ${w.dir} as worktree, and your branch.\n\n${qaRule}${boundary || ''}\n${planText}${advice}`, w.dir)
-  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: stageModel('implement', t.depth), effort: EFFORT.implement })
 }
 
 // One verify run. mode: 'verify' (head), 'verify-retry' (head again) or 'verify-base' (base commit, a separate worktree).
@@ -647,7 +649,7 @@ function stageFinish(t, impl, verifyResult) {
     ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
     : ''
   const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
-  return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
+  return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.finish, effort: EFFORT.finish })
 }
 
 // ---------------------------------------------------------------------------

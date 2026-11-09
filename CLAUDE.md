@@ -15,8 +15,8 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 - Main session: Sonnet 5.5 by default. `/harness:autopilot` reads its models from the autopilot
   profile (`plugins/harness/skills/autopilot/profile.json`, overridden per project by
   `<repo>/.claude/autopilot-profile.json`); it warns when the session model differs from the profile's
-  `orchestrator`. The profile can set every `ship.js` stage except `implement` and `fix`, which stay
-  Sonnet 5.5 at `medium`.
+  `orchestrator`. The profile can set every `ship.js` stage. Without a profile entry, `implement` and `fix` run
+  Sonnet 5.5 at `medium`, except that `implement` runs Opus 5.5 at `medium` at depth L.
 - Outside autopilot, the main session chooses the model and effort for each subagent from the task
   itself, whatever model the main session runs on. It always passes `model` to an agent that has no
   model in its frontmatter, because such an agent otherwise inherits the main session's model.

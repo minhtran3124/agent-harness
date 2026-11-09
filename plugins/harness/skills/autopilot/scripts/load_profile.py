@@ -6,7 +6,7 @@ Override: <repo-dir>/.claude/autopilot-profile.json, if it exists. A top-level k
           default one; `stages` is merged per stage.
 Output JSON (stdout): the merged profile.
 Exit 2 names the problem: a file that does not parse, an unknown key or a value that is not allowed.
-ship.js checks `stages` again (stage names, locked stages) when it starts.
+ship.js checks `stages` again (stage names) when it starts.
 """
 import argparse
 import json
@@ -24,7 +24,6 @@ ROLE_MODELS = {
 }
 STAGE_MODELS = {"haiku", "sonnet", "opus"}
 EFFORTS = {"low", "medium", "high", "xhigh", "max"}
-LOCKED = {"implement", "fix"}
 
 
 def read(path):
@@ -43,8 +42,6 @@ def check(profile, source):
             if not isinstance(value, dict):
                 raise ValueError(f"{source}: stages must be an object")
             for stage, cfg in value.items():
-                if stage in LOCKED:
-                    raise ValueError(f"{source}: stages.{stage} is locked and cannot be set")
                 if not isinstance(cfg, dict) or set(cfg) - {"model", "effort"}:
                     raise ValueError(f"{source}: stages.{stage} must be an object with model and/or effort")
                 if "model" in cfg and cfg["model"] not in STAGE_MODELS:
