@@ -61,6 +61,7 @@ function legacyLabel(l) {
     const r = l.match(/round (\d+)( retry)?$/); return `review:r${r[1]}${r[2] ? ':retry' : ''}`
   }
   if ((m = head.match(/^fix r(\d+)\.(\d+)$/))) return `fix:r${m[1]}:${m[2]}`
+  if ((m = head.match(/^fix r(\d+)$/))) return `fix:r${m[1]}:all`
   if ((m = head.match(/^#(\d+) advisor (.+)$/))) return `advisor:${m[2]}:${m[1]}`
   if ((m = head.match(/^#(\d+) (.+?)( retry)?$/))) {
     const verb = TICKET_VERBS[m[2]]
@@ -81,7 +82,7 @@ function defaults(c, st) {
   if (l.startsWith('research:')) return ok({ research_md: 'RESEARCH' })
   if (l.startsWith('design:')) return ok({ design_md: 'DESIGN' })
   if (l.startsWith('plan:')) return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
-  if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [] })
+  if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [], plan_md: 'PLAN-MD', plan_steps: [] })
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
   if (l.startsWith('qa:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
@@ -103,6 +104,11 @@ function defaults(c, st) {
   if (l === 'ci-snapshot') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'finalsha' }
   if (l === 'diffstat') return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
   if (l.startsWith('review:')) return ok({ findings: [], skill_invoked: true, skill_error: '' })
+  if (/^fix:r\d+:all$/.test(l)) {   // one agent for every finding of the round: it reports each finding by id
+    st.fix++
+    const ids = [...c.prompt.matchAll(/^Finding (\S+) \(score/gm)].map(m => m[1])
+    return ok({ fix_status: 'fixed', base_sha: `base${st.fix}`, commit: `c${st.fix}`, findings: ids.map((id, i) => ({ id, fix_status: 'fixed', commit: `c${st.fix}.${i + 1}` })) })
+  }
   if (l.startsWith('fix:') || l === 'intent-fix') { st.fix++; return ok({ fix_status: 'fixed', base_sha: `base${st.fix}`, commit: `c${st.fix}` }) }
   if (l.startsWith('request:')) return { body: `REQUEST-BODY-${n}` }
   if (l === 'intent-review') return { verdict: 'match', findings: [] }
@@ -180,6 +186,17 @@ test('a: one ticket has no integration or merge agent and a feat/<n>- branch', a
   assert.strictEqual(result.final.branch, 'feat/1-add-the-thing')
   assert.strictEqual(result.final.pr, 101)
   assert(named(calls, /^finish:1$/)[0].prompt.includes('base v5.0.0'))
+})
+
+test('p1: the result counts every agent call by stage, with model and effort', async () => {
+  const { result, calls } = await run({}, null)
+  const s = result.stats
+  assert.strictEqual(s.agentCalls, calls.length)
+  assert.strictEqual(s.byStage.intent.calls, 1, Object.keys(s.byStage).join())
+  assert.deepStrictEqual(s.byStage.implement.models, ['sonnet'])
+  assert.deepStrictEqual(s.byStage.implement.efforts, ['medium'])
+  assert.strictEqual(Object.values(s.byStage).reduce((n, e) => n + e.calls, 0), calls.length)
+  assert.strictEqual(Object.values(s.byStage).reduce((n, e) => n + e.failed, 0), 0)
 })
 
 const noRepoTouch = /^(request:|artifact|final-pr)/
@@ -688,12 +705,15 @@ test('e: review loop fixes findings >= threshold, re-reviews the fix diff only, 
     if (c.label === 'review:r1') return ok({ skill_invoked: true, findings: [F('f5', 70)] })
     if (c.label === 'review:r2') return ok({ skill_invoked: true, findings: [F('f6', 75)] })
   })
-  assert.strictEqual(named(calls, /^fix:/).length, 3, labelsOf(calls).join())
+  assert.strictEqual(named(calls, /^fix:/).length, 2, labelsOf(calls).join())   // round 1: one agent for f1 and f2; round 2: one finding, one agent
   assert.strictEqual(named(calls, /^review:/).length, 3)
   const ls = labelsOf(calls)
-  assert(ls.indexOf('fix:r1:1') < ls.indexOf('fix:r1:2') && ls.indexOf('fix:r1:2') < ls.indexOf('review:r1'), 'fixes run sequentially, then re-review')
-  assert(named(calls, /^review:r1$/)[0].prompt.includes('base1..c2'), 're-review range is the fix commits')
-  assert(named(calls, /^review:r2$/)[0].prompt.includes('base3..c3'))
+  assert(ls.indexOf('fix:r1:all') < ls.indexOf('review:r1') && ls.indexOf('review:r1') < ls.indexOf('fix:r2:1'), 'one fix agent per round, then re-review')
+  const batch = named(calls, /^fix:r1:all$/)[0].prompt
+  assert(batch.includes('Finding f1 (score 80)') && batch.includes('Finding f2 (score 60)') && batch.includes('one commit per finding'), batch.slice(0, 600))
+  assert(!batch.includes('f3') && !batch.includes('S-f4'), 'below the threshold and pre-existing findings are not in the batch')
+  assert(named(calls, /^review:r1$/)[0].prompt.includes('base1..c1'), 're-review range is the fix commits')
+  assert(named(calls, /^review:r2$/)[0].prompt.includes('base2..c2'))
   assert(!named(calls, /^review:r1$/)[0].prompt.includes('origin/v5.0.0...') )
   assert(named(calls, /^review:r0$/)[0].prompt.includes("args 'low 101'") || named(calls, /^review:r0$/)[0].prompt.includes("'low 101'"))
   assert.strictEqual(result.review.rounds, 2)
@@ -701,6 +721,25 @@ test('e: review loop fixes findings >= threshold, re-reviews the fix diff only, 
   assert(result.review.leftover.some(f => f.id === 'f6'))
   assert(result.review.preExisting.some(f => f.id === 'f4'))
   assert(!named(calls, /^fix:/).some(c => c.prompt.includes('f4') && c.prompt.includes('S-f4')), 'pre-existing findings are not fixed')
+})
+
+test('e1b: a batch fix reports each finding; a skipped, failed or unreported finding is listed as not fixed with its reason', async () => {
+  const F = (id, score) => ({ id, path: 'a.js', line: 1, summary: `S-${id}`, score })
+  const run1 = reply => run({}, c => {
+    if (c.label === 'review:r0') return ok({ skill_invoked: true, findings: [F('f1', 80), F('f2', 70), F('f3', 60)] })
+    if (c.label === 'fix:r1:all') return reply
+  })
+  const a = await run1(ok({ fix_status: 'fixed', base_sha: 'b0', commit: 'cz', findings: [
+    { id: 'f1', fix_status: 'fixed', commit: 'c1' }, { id: 'f2', fix_status: 'skipped', commit: '', reason: 'wrong finding' }] }))
+  assert.deepStrictEqual(a.result.review.fixed.map(f => f.id), ['f1'])
+  const nf = Object.fromEntries(a.result.review.notFixed.map(f => [f.id, f.reason]))
+  assert.strictEqual(nf.f2, 'wrong finding')
+  assert.strictEqual(nf.f3, 'the fix agent did not report this finding')
+  assert(named(a.calls, /^review:r1$/)[0].prompt.includes('b0..cz'), 'the re-review covers the whole fix range')
+  const b = await run1(null)
+  assert.strictEqual(b.result.review.fixed.length, 0)
+  assert.deepStrictEqual(b.result.review.notFixed.map(f => f.reason), ['fix agent returned nothing', 'fix agent returned nothing', 'fix agent returned nothing'])
+  assert.strictEqual(named(b.calls, /^review:r1$/).length, 0, 'no fix commit, no re-review')
 })
 
 test('e2: nothing at or above the threshold means no fix agent', async () => {
@@ -862,10 +901,10 @@ test('j: no agent gets max or ultra effort, and every agent gets an explicit eff
   assert.strictEqual(models.suite, 'haiku'); assert.strictEqual(models.research, 'haiku'); assert.strictEqual(models.implement, 'sonnet')
 })
 
-test('j2: design and plan run on opus at depth L only; plan stays sonnet at depth M, S runs neither', async () => {
+test('j2: design and plan run on opus at depth L only; depth M has no plan agent (implement writes the plan), S runs neither', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'S' }), T(2, 1, [], { depth: 'M' }), T(3, 1, [], { depth: 'L' })] }, null)
   const models = (n, stage) => named(calls, new RegExp(`^${stage}:${n}$`)).map(c => c.opts.model)
-  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), ['sonnet'])   // depth S writes no plan stage
+  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), [])   // depth S and M have no plan agent
   assert.deepStrictEqual(models(1, 'design'), []); assert.deepStrictEqual(models(2, 'design'), [])
   assert(models(3, 'design').length > 0 && models(3, 'design').every(m => m === 'opus'), 'L design on opus')
   assert(models(3, 'plan').length > 0 && models(3, 'plan').every(m => m === 'opus'), 'L plan on opus')
@@ -905,10 +944,85 @@ test('p2: at depth L, design and plan stay on opus even when the profile names a
   }
 })
 
-test('p3: profile validation rejects locked stages, unknown stages and bad values', async () => {
+test('p3a: depth M has no plan agent; the implement agent is told to write the plan, and plan_md reaches plan.md', async () => {
+  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1'
+    ? ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [], plan_md: 'MY-OWN-PLAN', plan_steps: [] }) : undefined))
+  assert.strictEqual(named(calls, /^plan:/).length, 0, labelsOf(calls).join())
+  const impl = named(calls, /^implement:1$/)
+  assert.strictEqual(impl.length, 1)
+  assert(impl[0].prompt.includes('/plug/skills/writing-plans/SKILL.md') && impl[0].prompt.includes('as plan_md') && impl[0].prompt.includes('Intent: {'), impl[0].prompt.slice(-700))
+  assert(!impl[0].prompt.includes('Follow this plan:'), 'no plan from another agent')
+  const w = named(calls, /^specs$/)[0].prompt
+  assert(w.includes('MY-OWN-PLAN'), 'plan.md carries the plan the implement agent wrote')
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('p3b: depth M with no plan_md from implement still ships; plan.md falls back to the intent steps and the run logs it', async () => {
+  const { calls, logs, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1'
+    ? ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [] }) : undefined))
+  assert.strictEqual(result.tickets[0].status, 'done')
+  assert(logs.some(l => l.includes('implement returned no plan_md')), logs.join('\n'))
+  assert(named(calls, /^specs$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/plan.md'))
+})
+
+test('p3c: depth S and depth L keep their flow: S has no plan agent, L has a plan agent and the implement prompt follows it', async () => {
+  const s = await run({ tickets: [T(1, 1, [], { depth: 'S' })] }, null)
+  assert.strictEqual(named(s.calls, /^plan:/).length, 0)
+  assert(!named(s.calls, /^implement:1$/)[0].prompt.includes('as plan_md'))
+  const l = await run({ tickets: [T(1, 1, [], { depth: 'L' })] }, null)
+  assert.strictEqual(named(l.calls, /^plan:1$/).length, 1)
+  assert(named(l.calls, /^implement:1$/)[0].prompt.includes('Follow this plan:') && !named(l.calls, /^implement:1$/)[0].prompt.includes('as plan_md'))
+})
+
+test('p5: stages that only run a gh or git command get the core rules; stages that read or edit code get all of them', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 2, [1])] }, null)
+  const block = c => (c.prompt.match(/(Core rules|Rules) \(all of them apply\):[\s\S]*?\n\n/) || [''])[0]
+  const lite = calls.filter(c => /^(setup-integration|merge:|final-pr|ci-snapshot|adr|suite|artifact|gci:|gbody:|advisor:)/.test(c.label || ''))
+  const full = calls.filter(c => /^(intent:|implement:|review:|fix:|uat:)/.test(c.label || ''))
+  assert(lite.length >= 8 && full.length >= 4, `${lite.length} lite, ${full.length} full: ${labelsOf(calls).join()}`)
+  for (const c of lite) {
+    const b = block(c)
+    assert(b.startsWith('Core rules'), `${c.label}: header`)
+    assert(b.includes('Never force-push') && b.includes('Done" needs real command output') && b.includes('You cannot start other agents'), `${c.label}: hard rules stay`)
+    for (const gone of ['needs_review: true ONLY', 'adr: true ONLY', 'owner_confirmed: true ONLY', '/repo/CLAUDE.md', 'Run only the tests related']) assert(!b.includes(gone), `${c.label}: carries "${gone}"`)
+  }
+  for (const c of full) {
+    const b = block(c)
+    assert(b.startsWith('Rules (all of them apply)'), `${c.label}: header`)
+    for (const need of ['Never force-push', 'needs_review: true ONLY', 'adr: true ONLY', 'owner_confirmed: true ONLY', '/repo/CLAUDE.md', 'Run only the tests related']) assert(b.includes(need), `${c.label}: lost "${need}"`)
+  }
+  assert(block(lite[0]).length < block(full[0]).length * 0.6, `core block ${block(lite[0]).length} vs full ${block(full[0]).length}`)
+})
+
+test('p2b: implement runs on opus at depth L and on sonnet at depth S and M, with no profile', async () => {
+  for (const [depth, model] of [['L', 'opus'], ['M', 'sonnet'], ['S', 'sonnet']]) {
+    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, null)
+    const impl = named(calls, /^implement:1$/)
+    assert(impl.length === 1 && impl[0].opts.model === model && impl[0].opts.effort === 'medium', `${depth}: ${impl[0].opts.model}/${impl[0].opts.effort}`)
+  }
+})
+
+test('p2c: a profile may set implement and fix; it wins at every depth; finish keeps its own model', async () => {
+  const profile = { stages: { implement: { model: 'sonnet', effort: 'high' }, fix: { model: 'opus' } } }
+  const l = await run({ profile, tickets: [T(1, 1, [], { depth: 'L' })] }, null)
+  const implL = named(l.calls, /^implement:1$/)[0]
+  assert(implL.opts.model === 'sonnet' && implL.opts.effort === 'high', 'profile beats the depth L default')
+  const opus = { stages: { implement: { model: 'opus' } } }
+  const s = await run({ profile: opus }, null)
+  assert.strictEqual(named(s.calls, /^implement:1$/)[0].opts.model, 'opus')
+  const fin = named(s.calls, /^finish:1$/)[0]
+  assert(fin.opts.model === 'sonnet' && fin.opts.effort === 'medium', 'finish does not follow implement')
+})
+
+test('p2d: the fix stage takes its model from the profile', async () => {
+  const profile = { stages: { fix: { model: 'opus', effort: 'high' } } }
+  const { calls } = await run({ profile, tickets: [T(1, 1)] }, c => (/^review:r0$/.test(c.label || '') ? ok({ findings: [{ id: 'F1', path: 'a.js', line: 1, summary: 'x', score: 80 }], skill_invoked: true, skill_error: '' }) : undefined))
+  const fixes = named(calls, /^fix:/)
+  assert(fixes.length > 0 && fixes.every(c => c.opts.model === 'opus' && c.opts.effort === 'high'), fixes.map(c => c.opts.model).join())
+})
+
+test('p3: profile validation rejects unknown stages and bad values', async () => {
   const bad = async (stages, re) => { await assert.rejects(() => run({ profile: { stages } }, null), re) }
-  await bad({ implement: { model: 'opus' } }, /stages\.implement is locked/)
-  await bad({ fix: { effort: 'high' } }, /stages\.fix is locked/)
   await bad({ nope: { model: 'opus' } }, /stages\.nope is not a stage/)
   await bad({ review: { model: 'fable' } }, /review\.model must be one of/)
   await bad({ review: { effort: 'huge' } }, /review\.effort must be one of/)
@@ -1331,9 +1445,13 @@ test('s4: early spec writes happen after the intent and plan stages, before impl
     const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, null)
     const labels = labelsOf(calls), impl = labels.indexOf('implement:1')
     const early = named(calls, /^specs-early$/)
-    assert(early.length >= 1 && early.every(c => labels.indexOf('specs-early') < impl && labels.lastIndexOf('specs-early') < impl), `${depth}: ${labels.join()}`)
+    const at = labels.map((l, i) => (l === 'specs-early' ? i : -1)).filter(i => i >= 0)
+    assert(early.length >= 1 && at[0] < impl, `${depth}: ${labels.join()}`)
+    // Depth M has no plan agent: its plan.md is written once from the intent steps before implement, then again after implement returns plan_md.
+    if (depth === 'M') assert(at.some(i => i > impl), 'M: plan.md is written again after implement')
+    else assert(at.every(i => i < impl), `${depth}: all early writes before implement`)
     assert(labels.indexOf('specs-early') > labels.indexOf('intent:1'), `${depth}: after intent`)
-    if (depth !== 'S') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
+    if (depth === 'L') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
     const p = early.map(c => c.prompt).join('\n')
     for (const f of ['intent.md', 'plan.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f}`)
     if (depth !== 'S') assert(p.includes('=== /repo/specs/1-ticket-1/design.md'), `${depth}: design.md`)
@@ -1347,12 +1465,13 @@ test('s4: early spec writes happen after the intent and plan stages, before impl
   }
 })
 
-test('s5: the intent.md early write exists when implement is blocked or the plan stage throws', async () => {
+test('s5: the intent.md early write exists when implement is blocked or throws', async () => {
   const a = await run({}, c => (c.label === 'implement:1' ? ok({ status: 'blocked', blocked_reason: 'nope', worktree: '', branch: '' }) : undefined))
   assert(named(a.calls, /^specs-early$/)[0].prompt.includes("=== /repo/specs/1-add-the-thing/intent.md"))
-  const b = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'plan:1' ? new Error('plan failed') : undefined))
+  const b = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1' ? new Error('implement failed') : undefined))
   assert(named(b.calls, /^specs-early$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/intent.md'))
-  assert.strictEqual(named(b.calls, /^implement:/).length, 0)
+  assert.strictEqual(named(b.calls, /^plan:/).length, 0)
+  assert.strictEqual(b.result.tickets[0].status, 'blocked')
 })
 
 test('s7 (#608): a writer that may not write report files: a one-ticket local run completes and summary.md goes to the main session', async () => {

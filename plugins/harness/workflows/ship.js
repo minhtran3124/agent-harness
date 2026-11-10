@@ -18,18 +18,20 @@ export const meta = {
 // ---------------------------------------------------------------------------
 const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
   verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku',
-  qa: 'sonnet', security: 'opus' }
+  qa: 'sonnet', security: 'opus', finish: 'sonnet' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
-  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', security: 'high' }
-// args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage. These stages
-// are locked to their defaults and a profile cannot change them.
-const LOCKED_STAGES = ['implement', 'fix']
+  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', security: 'high', finish: 'medium' }
+// args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage, any stage.
 const PROFILE_MODELS = ['haiku', 'sonnet', 'opus']
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
-// Depth L is the difficulty signal: design and plan run on Opus there, whatever the profile says;
-// every other stage and depth uses MODEL.
+// Depth L is the difficulty signal: design and plan run on Opus there, whatever the profile says. Implement
+// also runs on Opus at depth L, unless the profile names the implement stage: then the profile wins at every
+// depth. Every other stage and depth uses MODEL. PROFILE_SET is filled when the profile is applied below.
+const PROFILE_SET = new Set()
 function stageModel(stage, depth) {
-  return depth === 'L' && (stage === 'design' || stage === 'plan') ? 'opus' : MODEL[stage]
+  if (depth === 'L' && (stage === 'design' || stage === 'plan')) return 'opus'
+  if (depth === 'L' && stage === 'implement' && !PROFILE_SET.has('implement')) return 'opus'
+  return MODEL[stage]
 }
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
@@ -48,25 +50,28 @@ const NEEDS_REVIEW_WHEN = 'affects another ticket, a public contract or interfac
 const CO_AUTHOR = 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'
 const PR_FOOTER = '🤖 Generated with [Claude Code](https://claude.com/claude-code)'
 
-const rulesCommon = repoDir => `Rules (all of them apply):
-- No human is in the loop. Never ask anyone anything. On any ambiguity pick the recommended option and return it as a decision in decisions[].
+// The rules every agent gets, in three groups. RULES_CORE: what is true for any stage. RULES_CODE: what only a stage that reads or
+// edits the project's code needs. RULES_DECISIONS: how to record a decision. A stage that only runs a gh or git command gets the core
+// group alone (RULES_LITE); the others get all three (RULES). The core group is the only place for the hard rules.
+const rulesCore = repoDir => `- No human is in the loop. Never ask anyone anything. On any ambiguity pick the recommended option and return it as a decision in decisions[].
 - Never merge into the base branch or main. Never force-push. Never touch secrets. Never weaken a test to make it pass.
-- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
 - Work only in your own worktree and on your own branch. Never edit files in the owner's checkout.
 - Your session working directory is NOT the target repo. Use absolute paths; run every git command as git -C <path> or after cd <your worktree>.
-- adr: true ONLY when ${ADR_WHEN} Only adr makes an ADR file, so be strict.
-- needs_review: true ONLY when the decision ${NEEDS_REVIEW_WHEN}. needs_review asks the owner to look at the decision before the merge; it makes no ADR file, so be strict. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false, even when you are unsure (set confidence low then). It is still recorded as a decision.
 - summary is one plain sentence about what changed in the code. Never write about pushes, pull requests, the mode, or test counts in it.
 - "Done" needs real command output. Report what you ran and its exit code; never claim a result you did not see.
-- Run only the tests related to your change. The full suite is the last stage's job.
 - Commit messages end with the line: ${CO_AUTHOR}
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
+- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
+const rulesCode = repoDir => `- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
+- Run only the tests related to your change. The full suite is the last stage's job.`
+const rulesDecisions = () => `- adr: true ONLY when ${ADR_WHEN} Only adr makes an ADR file, so be strict.
+- needs_review: true ONLY when the decision ${NEEDS_REVIEW_WHEN}. needs_review asks the owner to look at the decision before the merge; it makes no ADR file, so be strict. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false, even when you are unsure (set confidence low then). It is still recorded as a decision.
 - owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has adr: true (adr wins); the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
-- Never write ADR files. Return decisions[] instead; one stage at the end writes them.
-- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
+- Never write ADR files. Return decisions[] instead; one stage at the end writes them.`
+const rulesCommon = repoDir => `Rules (all of them apply):\n${rulesCore(repoDir)}\n${rulesCode(repoDir)}\n${rulesDecisions()}`
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -108,6 +113,8 @@ const DESIGN_SCHEMA = stageSchema({ design_md: STR }, ['design_md'])
 const PLAN_SCHEMA = stageSchema({ plan_md: STR, plan_steps: { type: 'array', items: STEP } }, ['plan_md'])
 const IMPLEMENT_SCHEMA = stageSchema({
   worktree: STR, branch: STR, files: strList,
+  plan_md: { type: 'string', description: 'Depth M only: the full plan text you wrote before the first edit, in the shape of the plan template. Leave out when the prompt gave you the plan.' },
+  plan_steps: { type: 'array', items: STEP, description: 'Depth M only: the steps of that plan.' },
   commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } },
   verify: { type: 'array', items: { type: 'object', properties: { command: STR, exit: NUM, notes: STR, covers: strList }, required: ['command', 'exit'] } },
 }, ['worktree', 'branch'])
@@ -154,6 +161,8 @@ const REVIEW_SCHEMA = stageSchema({
 }, ['findings', 'skill_invoked'])
 const FIX_SCHEMA = stageSchema({
   fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, base_sha: STR, commit: STR, test_added: STR,
+  findings: { type: 'array', description: 'When the prompt gave you several findings: one entry per finding id.',
+    items: { type: 'object', properties: { id: STR, fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, commit: STR, reason: STR }, required: ['id', 'fix_status'] } },
 }, ['fix_status'])
 const QA_SCHEMA = stageSchema({
   ready: { type: 'boolean', description: 'true only when acceptance tests were committed and each fails for the right reason. false when the ticket has nothing to test from outside, the repo has no way to run such a test, or the public interface is too thin.' },
@@ -220,8 +229,7 @@ function validateProfile(p) {
   const stages = p.stages === undefined ? {} : p.stages
   if (!stages || typeof stages !== 'object' || Array.isArray(stages)) throw new Error('ship: args.profile.stages must be an object')
   for (const [stage, cfg] of Object.entries(stages)) {
-    if (LOCKED_STAGES.includes(stage)) throw new Error(`ship: args.profile.stages.${stage} is locked (${MODEL[stage]}/${EFFORT[stage]}) and cannot be set`)
-    if (!(stage in MODEL)) throw new Error(`ship: args.profile.stages.${stage} is not a stage; use one of ${Object.keys(MODEL).filter(s => !LOCKED_STAGES.includes(s)).join(', ')}`)
+    if (!(stage in MODEL)) throw new Error(`ship: args.profile.stages.${stage} is not a stage; use one of ${Object.keys(MODEL).join(', ')}`)
     if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) throw new Error(`ship: args.profile.stages.${stage} must be an object`)
     for (const k of Object.keys(cfg)) if (k !== 'model' && k !== 'effort') throw new Error(`ship: args.profile.stages.${stage}.${k} is not a field; use model or effort`)
     if (cfg.model !== undefined && !PROFILE_MODELS.includes(cfg.model)) throw new Error(`ship: args.profile.stages.${stage}.model must be one of ${PROFILE_MODELS.join(', ')}`)
@@ -233,11 +241,14 @@ validateArgs(args)
 for (const [stage, cfg] of Object.entries((args.profile && args.profile.stages) || {})) {
   if (cfg.model) MODEL[stage] = cfg.model
   if (cfg.effort) EFFORT[stage] = cfg.effort
+  PROFILE_SET.add(stage)
 }
 
 const { repo, repoDir, pluginDir, remote, base, slug, testCmd, lintCmd, fullTestCmd, advisorModel } = args
 // The harness files (skills, agents, scripts) live in the plugin directory, not in the target repo.
 const RULES = `${rulesCommon(repoDir)}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
+// Stages that only run a gh or git command: the core rules, with no project-rules reading and no decision rules.
+const RULES_LITE = `Core rules (all of them apply):\n${rulesCore(repoDir)}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
 const tickets = args.tickets
@@ -284,8 +295,36 @@ const lbl = (what, subject) => {
 }
 const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
-// A plugin agent type (harness:<role>) may not resolve; then the default agent reads the role file itself.
+// Every agent call is recorded for the run result (stats.byStage). The owner reads it to see which stage
+// ran how often and on which model and effort, before deciding which stage to cut or to upgrade. There is no
+// timing: a workflow script must stay deterministic (no Date, no Math.random), so a resumed run replays the same.
+const callStats = []
+// "#3 intent · Title" -> "intent"; "#3 gate code-review · round 1" -> "gate code-review"; "fix r1.2 · file" -> "fix".
+const stageKey = label => String(label || 'unlabelled').replace(/^#\d+\s+/, '').split(' · ')[0].replace(/\s+r\d+(\.\d+)?$/, '').replace(/\s+retry$/, '')
+function statsOut() {
+  const byStage = {}
+  for (const c of callStats) {
+    const e = byStage[c.stage] || (byStage[c.stage] = { calls: 0, ok: 0, failed: 0, models: [], efforts: [] })
+    e.calls++
+    if (c.ok) e.ok++; else e.failed++
+    if (c.model && !e.models.includes(c.model)) e.models.push(c.model)
+    if (c.effort && !e.efforts.includes(c.effort)) e.efforts.push(c.effort)
+  }
+  return { agentCalls: callStats.length, byStage }
+}
 async function call(prompt, opts, roleFile) {
+  let ok = false
+  try {
+    const res = await callInner(prompt, opts, roleFile)
+    ok = res !== null && res !== undefined
+    return res
+  } finally {
+    callStats.push({ stage: stageKey(opts.label), model: opts.model, effort: opts.effort, ok })
+  }
+}
+
+// A plugin agent type (harness:<role>) may not resolve; then the default agent reads the role file itself.
+async function callInner(prompt, opts, roleFile) {
   if (!opts.agentType) return agent(prompt, clean(opts))
   try {
     return await agent(prompt, clean(opts))
@@ -353,7 +392,7 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 class Blocked extends Error {}
 
 async function askAdvisor(t, stage, question, state) {
-  const prompt = `${RULES}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
+  const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nQuestion: ${question || '(the stage gave no question; review its work)'}\n` +
     `Stage summary: ${state || '(none)'}\n` +
     `Answer with: Recommendation, Reasons, Risks, Confidence. Read only what the question needs. Do not edit anything.`
@@ -426,6 +465,13 @@ function stagePlan(t, intent, extra) {
   return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan })
 }
 
+// Depth M: the prompt text that tells the implement agent to write the plan itself before it codes.
+function foldedPlanText(intent) {
+  return `Plan: no plan exists yet and no other agent writes one. Before your first edit, read ${pluginDir}/skills/writing-plans/SKILL.md and write the plan for this ticket with it, in Mode: auto, ` +
+    `in the shape of ${pluginDir}/templates/specs/plan.md. Return the full plan text as plan_md and its steps as plan_steps (the script saves plan_md as specs/<slug>/plan.md). Then take the steps one at a time.\n` +
+    `Intent: ${JSON.stringify(intent)}`
+}
+
 // A depth-L ticket gets one advisor look at its design and plan before any code is written.
 async function advisePlan(t, design, plan) {
   return askAdvisor(t, 'plan-review', 'Is this design and plan sound and complete enough to implement? Name what to change.',
@@ -484,7 +530,7 @@ function stageImplement(t, branch, planText, boundary, qa) {
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
     `Return ${w.dir} as worktree, and your branch.\n\n${qaRule}${boundary || ''}\n${planText}${advice}`, w.dir)
-  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: stageModel('implement', t.depth), effort: EFFORT.implement })
 }
 
 // One verify run. mode: 'verify' (head), 'verify-retry' (head again) or 'verify-base' (base commit, a separate worktree).
@@ -506,7 +552,7 @@ function stageVerify(t, impl, mode) {
 async function commentVerify(t, text) {
   if (LOCAL) return
   try {
-    await call(`Run: gh issue comment ${t.n} --repo ${repo} --body "<the text below, as one quoted argument>"\n\n${RULES}\n\nText:\n${text}\nPost the comment and return status ok. Edit nothing else.`,
+    await call(`Run: gh issue comment ${t.n} --repo ${repo} --body "<the text below, as one quoted argument>"\n\n${RULES_LITE}\n\nText:\n${text}\nPost the comment and return status ok. Edit nothing else.`,
       { label: lbl(`#${t.n} post verify comment`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   } catch (e) { log(`#${t.n} verify comment failed: ${e && e.message}`) }
 }
@@ -578,7 +624,7 @@ async function stageAttach(t, fin, verifyResult) {
       `The --attach flag needs gh 2.99.0 or newer. The comment body must not contain an image line: the evidence file is attached with --attach only.\n` +
       (flaky ? `Then add this note to the end of the PR body: read it with gh pr view ${fin.pr} --repo ${repo} --json body -q .body, append "${note}", and write it back with gh pr edit ${fin.pr} --repo ${repo} --body-file <file>.\n` : '') +
       `If the command is denied or fails (old gh, permission denied, any error), do not retry and do not work around it. Return status ok (never blocked) and one decision with needs_review true, titled "Attach the verify GIF by hand for #${t.n}", whose decision field holds this exact command so the owner can paste it as written: ${cmd}\n` +
-      `Commit nothing; the evidence file stays uncommitted. Otherwise return status ok.\n\n${RULES}`,
+      `Commit nothing; the evidence file stays uncommitted. Otherwise return status ok.\n\n${RULES_LITE}`,
       { label: lbl(`#${t.n} attach evidence`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     takeDecisions(t.n, 'attach', res)
     return !!res && res.status !== 'blocked' && !((res.decisions || []).some(d => d && d.needs_review === true))
@@ -619,7 +665,7 @@ function stageFinish(t, impl, verifyResult) {
     ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
     : ''
   const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
-  return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
+  return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.finish, effort: EFFORT.finish })
 }
 
 // ---------------------------------------------------------------------------
@@ -801,7 +847,7 @@ function judgeReview(rv) {
 
 function stageCi(t, fin, ctx, label) {
   const pr = fin.pr
-  const prompt = `${RULES}\n\nStage: ci. Read the CI result of PR ${pr} in ${repo}. Edit nothing. ${notCwd()}\n` +
+  const prompt = `${RULES_LITE}\n\nStage: ci. Read the CI result of PR ${pr} in ${repo}. Edit nothing. ${notCwd()}\n` +
     `1. Poll until the PR has at least one check for its current head: gh pr checks ${pr} --repo ${repo} --json name,bucket (repeat every ${CI_INTERVAL} s). A push can need a moment before its checks appear.\n` +
     `2. Then run: gh pr checks ${pr} --repo ${repo} --watch --interval ${CI_INTERVAL}\n` +
     `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
@@ -813,7 +859,7 @@ function stageCi(t, fin, ctx, label) {
 // Rewrites the merge-policy block of the ticket PR body. A failure is only logged.
 async function updateMergeBlock(t, fin, ctx, block) {
   try {
-    await call(`${RULES}\n\nStage: update the PR body. ${notCwd()}\nRead the body: gh pr view ${fin.pr} --repo ${repo} --json body -q .body\n` +
+    await call(`${RULES_LITE}\n\nStage: update the PR body. ${notCwd()}\nRead the body: gh pr view ${fin.pr} --repo ${repo} --json body -q .body\n` +
       `Replace everything from the line ${MP_OPEN} to the line ${MP_CLOSE} (both included) with the block below, change nothing else, write the result to a temp file and run: gh pr edit ${fin.pr} --repo ${repo} --body-file <file>. ` +
       `If the body has no such block, add the block at the top. Return status ok.\n\n${block}`,
       { label: `${ctx.labelPrefix}PR body`, phase: 'Gate', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
@@ -883,14 +929,14 @@ async function runTicket(t) {
     boundaries[t.n] = boundaryOf(intent)
     const boundary = boundaryText(`Boundary for ticket #${t.n}:`, intent)
     await writeSpecsEarly(t, t.depth === 'S' ? ['intent.md', 'design.md', 'plan.md'] : ['intent.md'])
-    let planText
+    let planText, foldedPlan = false
     if (t.depth === 'S') {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
     } else if (t.depth === 'M') {
-      const plan = await stagePlan(t, intent)
-      spec.plan = plan
+      // Depth M has no plan agent. The implement agent writes the plan, then builds it: one context, no hand-off.
+      foldedPlan = true
       await writeSpecsEarly(t, ['design.md', 'plan.md'])
-      planText = `Follow this plan:\n${plan.plan_md}`
+      planText = foldedPlanText(intent)
     } else {
       const research = spec.research = await stageResearch(t, intent)
       const design = spec.design = await stageDesign(t, intent, research)
@@ -910,6 +956,12 @@ async function runTicket(t) {
       } catch (e) { log(`#${t.n} qa: no acceptance tests (${e && e.message ? e.message : String(e)})`) }
     }
     const impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
+    if (foldedPlan) {
+      if (typeof impl.plan_md === 'string' && impl.plan_md.trim()) {
+        spec.plan = { plan_md: impl.plan_md, plan_steps: impl.plan_steps || [] }
+        await writeSpecsEarly(t, ['plan.md'])
+      } else log(`#${t.n} implement returned no plan_md; plan.md keeps the steps from the intent stage`)
+    }
     if (qa) {
       const bad = await stageTestGuard(t, impl, qa)
       if (bad.length) throw new Blocked(`the implementer changed ${qa.dir}/ in ${bad.map(c => `${c.sha} ${c.subject}`).join('; ')}`)
@@ -969,7 +1021,7 @@ function stageSetupIntegration() {
   const how = LOCAL
     ? `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} branch ${integBranch} ${baseRef}`
     : `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} push ${remote} ${baseRef}:refs/heads/${integBranch}`
-  return call(`${how}\n\n${RULES}\n\n${notCwd()}\n\nCreate the integration branch ${integBranch} from ${baseRef} using exactly the commands above (only refs change; never check anything out in ${repoDir}). ` +
+  return call(`${how}\n\n${RULES_LITE}\n\n${notCwd()}\n\nCreate the integration branch ${integBranch} from ${baseRef} using exactly the commands above (only refs change; never check anything out in ${repoDir}). ` +
     `If it already exists, report that in summary and change nothing. Return status ok when ${integBranch} points at ${baseRef} or a descendant of it.`,
     { label: 'set up integration branch', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
 }
@@ -982,7 +1034,7 @@ async function stageMerge(group, done) {
     ? `Merge each branch below into ${integBranch} with "git merge --no-ff". On a conflict, run "git merge --abort", change nothing for that branch and return its ticket in failed with the reason. Then run: git update-ref refs/heads/${integBranch} HEAD   (local mode: nothing is pushed).`
     : `Merge each ticket PR below into ${integBranch}. Each PR passed its gate at the head commit shown. Run each command as its own Bash call, never joined with &&, ; or a subshell: for example gh pr merge <pr> --repo ${repo} --merge --match-head-commit <head> is one call (the merge guard needs --repo and reads the PR base). These PRs target ${integBranch}, never ${base}. A PR that is already MERGED into ${integBranch} counts as merged: check its state first with gh pr view <pr> --repo ${repo} --json state, and do not merge it again. On a conflict, a head mismatch or any other failure, change nothing: do not merge locally, do not push, do not close the PR, and return that ticket in failed with the reason (a human merges it). If gh pr merge is denied by a permission rule or by the merge guard, do not look for a workaround: return that ticket in failed with a reason that names the denial and the fix (the owner allows gh pr merge into ${integBranch}*), and do not just write denied.`
   const w = newWt(`merge-g${group}`, `scratch/${slug}-merge-g${group}`, integRef)
-  const prompt = `${w.setup}${RULES}\n\nStage: merge group ${group} into ${integBranch}.\n${how}\n${list}\n` +
+  const prompt = `${w.setup}${RULES_LITE}\n\nStage: merge group ${group} into ${integBranch}.\n${how}\n${list}\n` +
     `Return merged (ticket numbers) and failed ([{n, reason}]). Never merge into ${base}.`
   const res = await call(prompt, { label: `merge ticket branches · group ${group}`, phase: 'Merge', schema: MERGE_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
   takeDecisions('run', 'merge', res)
@@ -993,7 +1045,7 @@ async function stageMerge(group, done) {
 async function stageCiSnapshot(finalPr) {
   if (LOCAL || !(finalPr && finalPr.pr > 0)) return null
   try {
-    const res = await call(`${RULES}\n\nStage: ci snapshot. Run once, without --watch: gh pr checks ${finalPr.pr} --repo ${repo} --json name,bucket   and: gh pr view ${finalPr.pr} --repo ${repo} --json headRefOid -q .headRefOid\n` +
+    const res = await call(`${RULES_LITE}\n\nStage: ci snapshot. Run once, without --watch: gh pr checks ${finalPr.pr} --repo ${repo} --json name,bucket   and: gh pr view ${finalPr.pr} --repo ${repo} --json headRefOid -q .headRefOid\n` +
       `Exit code 1 and 8 are expected results. Return checks (name and bucket, unchanged) and headRefOid; an empty list when there are none. Edit nothing. ${notCwd()}`,
       { label: 'CI snapshot', phase: 'Decisions', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     const checks = (res && res.checks) || []
@@ -1007,7 +1059,7 @@ async function stageCiSnapshot(finalPr) {
 }
 
 function stageFinalPr(done, bodyTemplate) {
-  const prompt = `${RULES}\n\nStage: open the final pull request ${integBranch} -> ${base} in ${repo}.\n` +
+  const prompt = `${RULES_LITE}\n\nStage: open the final pull request ${integBranch} -> ${base} in ${repo}.\n` +
     (LOCAL
       ? `Local mode: do not push and do not open a pull request. Return pr: 0.\n`
       : `Write the body below to a temp file and run: gh pr create --repo ${repo} --base ${base} --head ${integBranch} --title "${slug}" --body-file <file>. Return its number and url.\n`) +
@@ -1054,13 +1106,17 @@ async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) {   // wtKey names the worktree; the label is display text
+function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX, many = false) {   // wtKey names the worktree; the label is display text
   const w = newWt(`${ctx.wtPrefix}fix-${wtKey || label}`, null, ctx.ref)
+  const how = many
+    ? `Make one commit per finding ("git add", then "git commit"), each with a test that fails without its fix; run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
+      `Then land them: ${land(ctx.branch)}. Return commit as the sha of your last commit, and findings[] with one entry per finding id (fix_status fixed, skipped or failed; commit; reason). ${extra || ''}` +
+      `If a finding is wrong or cannot be fixed safely, change nothing for it and return it as skipped or failed with the reason. Return fix_status fixed when at least one finding is fixed.`
+    : `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
+      `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
+      `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
   const prompt = `${w.setup}${RULES}\n\n` +
-    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${ctx.boundary == null ? runBoundaryText() : ctx.boundary}` +
-    `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
-    `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
-    `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
+    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${ctx.boundary == null ? runBoundaryText() : ctx.boundary}${how}`
   return call(prompt, { label, phase: phaseName || 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
 }
 
@@ -1102,16 +1158,30 @@ async function reviewLoop(ctx, target) {
     if (!todo.length) break
     out.rounds++
     const commits = []
-    for (let k = 0; k < todo.length; k++) {   // sequential: each fix lands before the next starts
-      const f = todo[k]
-      const res = await fixAgent(lbl(`${P}fix r${out.rounds}.${k + 1}`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`, '', undefined, `r${out.rounds}-${k + 1}`, ctx)
+    const findingLine = f => `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`
+    const boundaryReason = res => {
+      const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
+      return bd ? `needs your decision: ${bd.title}` : ''
+    }
+    if (todo.length === 1) {
+      const f = todo[0]
+      const res = await fixAgent(lbl(`${P}fix r${out.rounds}.1`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), findingLine(f), '', undefined, `r${out.rounds}-1`, ctx)
       takeDecisions(ctx.ticket, 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
-      else {
-        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
-        const reason = bd ? `needs your decision: ${bd.title}` : (res && res.summary) || 'fix agent returned nothing'
-        out.notFixed.push({ id: f.id, summary: f.summary, reason })
+      else out.notFixed.push({ id: f.id, summary: f.summary, reason: boundaryReason(res) || (res && res.summary) || 'fix agent returned nothing' })
+    } else {
+      // One agent fixes every finding of the round, one commit each, in one context. The agent reports each finding by id.
+      const res = await fixAgent(lbl(`${P}fix r${out.rounds}`, `${todo.length} findings`),
+        `Fix each of these ${todo.length} review findings, in this order:\n${todo.map(findingLine).join('\n')}`, '', undefined, `r${out.rounds}-all`, ctx, true)
+      takeDecisions(ctx.ticket, 'review-fix', res)
+      const per = new Map(((res && Array.isArray(res.findings)) ? res.findings : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]))
+      let anyFixed = false
+      for (const f of todo) {
+        const r = per.get(f.id)
+        if (r && r.fix_status === 'fixed' && r.commit) { anyFixed = true; out.fixed.push({ id: f.id, summary: f.summary, commit: r.commit }) }
+        else out.notFixed.push({ id: f.id, summary: f.summary, reason: (r && r.reason) || boundaryReason(res) || (res ? (r ? `fix agent reported ${r.fix_status}` : 'the fix agent did not report this finding') : 'fix agent returned nothing') })
       }
+      if (anyFixed && res.commit && res.base_sha) commits.push(res)
     }
     if (!commits.length) { findings = []; break }
     // Re-review only what the fix commits changed.
@@ -1298,7 +1368,7 @@ async function stageUat(delivered) {
 }
 
 async function stageSuite() {
-  const prompt = (label, cmd, only) => `${newWt(`suite-${label}`, null, finalRef).setup}${RULES}\n\n` +
+  const prompt = (label, cmd, only) => `${newWt(`suite-${label}`, null, finalRef).setup}${RULES_LITE}\n\n` +
     `Stage: verify. ${only ? `Re-run ONLY these failing tests: ${only.join(', ')} (use the narrowest command the project supports; ${testCmd} is the related-tests template).` : `Run the full suite: ${cmd}`}\n` +
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
@@ -1317,7 +1387,7 @@ async function stageSuite() {
 async function stageArtifact(results) {
   // Local mode publishes nothing outside the machine: no push, no PR, no artifact.
   if (LOCAL) return { fallback: 'docs/adr/' }
-  const prompt = `${RULES}\n\nStage: build ONE private artifact for this run. If the 'ink-artifact' skill and the Artifact tool both exist, use the skill to build it: one section per ticket, decisions with needs_review: true first. Keep it private.\n` +
+  const prompt = `${RULES_LITE}\n\nStage: build ONE private artifact for this run. If the 'ink-artifact' skill and the Artifact tool both exist, use the skill to build it: one section per ticket, decisions with needs_review: true first. Keep it private.\n` +
     `If either is missing, build nothing, return created: false and fallback: 'docs/adr/' (the ADR files are the source of truth).\n` +
     `Tickets: ${JSON.stringify(results.map(r => ({ n: r.n, status: r.status, summary: r.summary, reason: r.reason, url: r.url })))}\n` +
     `Decisions: ${JSON.stringify(decisions)}`
@@ -1331,7 +1401,7 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
     ? `Local mode: save the final body as PR-BODY.md at the worktree root (do not commit it) and return its absolute path as body_file.`
     : `Update the pull request: gh pr edit ${finalPr.pr} --repo ${repo} --body-file .ship/pr-body.md`
   const w = newWt('adr', null, finalRef)
-  const prompt = `${w.setup}${RULES}\n\n` +
+  const prompt = `${w.setup}${RULES_LITE}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
     `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true and two or more options, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
@@ -1506,6 +1576,7 @@ if (!deliveredAll.length) {
   out.specFiles = specFilesOut(sp)
   out.tickets = ordered().map(publicTicket)
   out.worktrees = [...worktrees]
+  out.stats = statsOut()
   if (failures.length) throw new Error(`ship: ${failures.join('; ')}`)
   return out
 }
@@ -1563,6 +1634,8 @@ out.specFiles = specFilesOut(specsRes)
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]
+out.stats = statsOut()
+log(`stats: ${out.stats.agentCalls} agent call(s) in ${Object.keys(out.stats.byStage).length} stage(s)`)
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 if (failures.length) throw new Error(`ship: ${failures.join('; ')}. The run did not complete: the PR (if any) is open without this output.`)
 return out

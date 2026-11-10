@@ -38,13 +38,13 @@ then go on with the current model. Do not stop the run for it.
 keys of `MODEL` in `workflows/ship.js`, for example `review`, `intent`, `plan`, `qa` or `security`.
 `workflows/ship.js` rejects an unknown stage when it starts.
 
-Two rules hold whatever the profile says:
-
-- `implement` and `fix` are locked to Sonnet 5.5 at `medium`. A profile that names them fails.
-- At depth L, `design` and `plan` run on Opus.
+Every stage can be set, `implement` and `fix` included. One rule holds whatever the profile says:
+at depth L, `design` and `plan` run on Opus. Without a profile entry, `implement` runs on Opus at
+depth L and on Sonnet at depth M and S (both at `medium`), and `fix` runs on Sonnet at `medium`. A
+profile entry for `implement` replaces that depth rule at every depth.
 
 ## Model plan in step 7
 
 State the orchestrator, the researcher and intake models, the advisor, and each stage the profile
-overrides. Then add the fixed parts: implement and fix on Sonnet at `medium`, and Opus for design
-and plan at depth L.
+overrides. Then add the defaults: Opus for design, plan and implement at depth L; implement on Sonnet
+at depth M and S; fix on Sonnet at `medium`.

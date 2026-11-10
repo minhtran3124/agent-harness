@@ -37,7 +37,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
 ## Phases
 
 1. Setup: validate args, create the integration branch (multi only).
-2. Tickets: intent, then plan by depth (S in the prompt, M plan, L research + design + plan + advisor),
+2. Tickets: intent, then plan by depth (S in the prompt, M written by the implement agent itself before it codes, L research + design + plan + advisor),
    implement, verify, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
    Verify runs the `harness:verify` skill in the implement worktree against the issue's `Verify:` row
    (default agent, not read-only). A failure gets one retry: a pass on retry is `flaky`, a second failure
@@ -71,7 +71,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
      promise comes from its prompt (it has Bash for `git diff`), not from a hook.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
-   more get one fix agent each; re-review only the fix commits; at most 2 rounds.
+   more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
 6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
    FE+BE tickets (docs tickets and local mode skip it with a log line). The agent gets the issue body and the
@@ -112,7 +112,7 @@ review; it is left out when both are empty. `{{DECISIONS}}` stays after Final ve
 
 Stage agents run the skill by path with `Mode: auto`, never ask, and return `decisions[]`. Workflow
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
-Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L and keeps Sonnet for the plan stage at depth M. Depth L is the difficulty signal, so this fixed rule fits "the orchestrator chooses the model per task difficulty"; there is no args override.
+Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L; depth M has no plan stage, because the implement agent writes the plan. It also picks Opus for the implement stage at depth L unless the profile names `implement`. Depth L is the difficulty signal, so this rule fits "the orchestrator chooses the model per task difficulty". Every stage, `implement` and `fix` included, can be set through `args.profile.stages`; the design and plan rule at depth L cannot be overridden.
 
 ## Local mode
 

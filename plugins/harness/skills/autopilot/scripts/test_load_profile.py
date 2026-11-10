@@ -41,10 +41,12 @@ def test_override_replaces_keys_and_merges_stages(tmp_path):
     assert out["stages"] == {"review": {"model": "opus"}, "qa": {"effort": "low"}}
 
 
-def test_locked_stage_exits_2(tmp_path):
-    override(tmp_path, {"stages": {"implement": {"model": "opus"}}})
+def test_implement_and_fix_stages_can_be_set(tmp_path):
+    override(tmp_path, {"stages": {"implement": {"model": "opus"}, "fix": {"effort": "high"}}})
     r = run(tmp_path)
-    assert r.returncode == 2 and "implement is locked" in r.stderr
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout)
+    assert out["stages"] == {"implement": {"model": "opus"}, "fix": {"effort": "high"}}
 
 
 def test_bad_values_exit_2(tmp_path):
