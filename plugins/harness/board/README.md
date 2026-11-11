@@ -17,6 +17,15 @@ Then open `http://127.0.0.1:4317`. Start the board before or during `/harness:au
 newer run of the same project by itself (`--no-follow` keeps the first one). It works for any project
 that runs `ship.js`, because it only needs the project path.
 
+## Embed it in another page
+
+- `?embed=1` hides the board's own header and footer note and makes the background transparent, so a host
+  page (such as a local dashboard) can show the board in an `<iframe>`. `?theme=light|dark` follows the host's theme.
+- In embed mode the page posts `{type: 'afb-height', height}` to its parent when its height changes, so the
+  host can size the iframe without an inner scroll bar. It sends nothing else.
+- The page loads `flow.json` and `events` with relative URLs. A reverse proxy can serve the board under a
+  path such as `/board/<project>/` (note the final `/`); the board itself still binds `127.0.0.1` only.
+
 ## Where the data comes from
 
 Claude Code writes these files for every Workflow run. The board reads them and nothing else:

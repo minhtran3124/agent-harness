@@ -194,6 +194,16 @@ test('qb10: flow.json is consistent and the page has no external resources', () 
   assert.throws(() => B.parseArgs(['--port', '70000']), /--port/);
 });
 
+test('qb11: the page works under a path prefix and has an embed mode', () => {
+  const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'board.html'), 'utf8');
+  // A proxy can serve the board at /board/<project>/: every URL the page loads is relative.
+  assert.ok(!/(fetch|EventSource)\(\s*['"]\//.test(html), 'the page requests an absolute path');
+  assert.ok(/EventSource\('events'\)/.test(html) && /fetch\('flow\.json'\)/.test(html));
+  // ?embed=1 hides the page header and footer note; the host page gets only a height number.
+  assert.ok(/\.embed \.top,\.embed \.note\{display:none\}/.test(html));
+  assert.ok(/postMessage\(\{type:'afb-height',height:h\}/.test(html));
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of cases) {
