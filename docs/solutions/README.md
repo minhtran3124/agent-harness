@@ -51,11 +51,11 @@ confirmed_at: YYYY-MM-DD
 
 ## Checks
 
-Run both from the repository root. Each exits 0 when clean.
+Run both from the root of the harness repo. Each exits 0 when clean. A project that uses the harness has only the first script, in its plugin directory.
 
 - `python3 plugins/harness/scripts/rebuild_solution_index.py --check` verifies that `INDEX.md` matches
   the solution files and that no solution file lacks `applicable_when`.
-- `python3 scripts/check_frontmatter_contract.py` verifies that every skill and agent has frontmatter
+- `python3 scripts/check_frontmatter_contract.py` (harness repo only) verifies that every skill and agent has frontmatter
   with a non-empty `name` and `description`, that `name` matches the file or directory, and that the
   description has a trigger cue ("use" or "when").
 
