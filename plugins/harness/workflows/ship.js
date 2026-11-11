@@ -35,6 +35,7 @@ function stageModel(stage, depth) {
 }
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
+const MAX_QA_FIX_ROUNDS = 3   // hard cap on fix rounds after a failed UAT or QA check
 const CI_WAIT_MS = 600000  // the ticket gate waits at most this long for CI (one Bash call)
 const CI_INTERVAL = 30     // seconds between gh pr checks polls
 // Paths whose change makes the review level 'high'.
@@ -134,7 +135,7 @@ const UAT_SCHEMA = stageSchema({
     required: ['id', 'covers', 'kind', 'status'] } },
   non_ac_failures: { type: 'array', items: { type: 'object', properties: { id: STR, detail: STR }, required: ['id', 'detail'] } },
   console_errors: NUM,
-  head_sha: { type: 'string', description: 'qa-verifier only: the output of git rev-parse HEAD in its worktree' },
+  head_sha: { type: 'string', description: 'the output of git rev-parse HEAD in the checker\'s worktree' },
 }, ['passed_ac', 'scenarios'])
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
@@ -1107,13 +1108,13 @@ async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX, many = false) {   // wtKey names the worktree; the label is display text
+function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX, many = false, opts = {}) {   // wtKey names the worktree; the label is display text
   const w = newWt(`${ctx.wtPrefix}fix-${wtKey || label}`, null, ctx.ref)
   const how = many
     ? `Make one commit per finding ("git add", then "git commit"), each with a test that fails without its fix; run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
       `Then land them: ${land(ctx.branch)}. Return commit as the sha of your last commit, and findings[] with one entry per finding id (fix_status fixed, skipped or failed; commit; reason). ${extra || ''}` +
       `If a finding is wrong or cannot be fixed safely, change nothing for it and return it as skipped or failed with the reason. Return fix_status fixed when at least one finding is fixed.`
-    : `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
+    : `Make one commit ("git add", then "git commit"), ${opts.docs ? 'add a check script or a test where one is possible; for plain docs or config, edit the file the finding names' : 'include a test that fails without the fix'}, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
       `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
       `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
   const prompt = `${w.setup}${RULES}\n\n` +
@@ -1294,7 +1295,7 @@ function uatAgent(label, wtName, t, body, owner, configPath, qa = false) {
     `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
     (owner ? `Owner-confirmed decisions (the owner's own words):\n<<<\n${owner}\n>>>\n\n` : '') +
     `Config: ${configPath} (read-only; use this path, not the repo root; run its startCommand from ${w.dir}). If that file does not exist, use verify.config.json at the root of your own worktree ${w.dir} (verify commits it to the ticket branch); report blocked only when neither exists.\n` +
-    `Return passed_ac, scenarios (id, covers, kind, status, assertion, still), non_ac_failures and console_errors. If the run could not happen (no config, app will not start, no credentials), return status blocked with blocked_reason.`
+    `Return passed_ac, scenarios (id, covers, kind, status, assertion, still), non_ac_failures, console_errors and head_sha (git rev-parse HEAD in your worktree). If the run could not happen (no config, app will not start, no credentials), return status blocked with blocked_reason.`
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
@@ -1315,6 +1316,15 @@ const uatNotRun = (n, reason, qa = false) => addDecision(n, 'uat', {
   how_to_reverse: qa ? `Check the acceptance criteria of #${n} by hand.` : `Run /harness:uat ${n} by hand.`,
   needs_review: true, adr: false,
 })
+
+// After a fix round the acceptance folder must be unchanged. Range: the first fix's base to the final branch tip, so a fix
+// that pushed and then reported failure is still seen. Only the QA writer's own commit may touch the folder.
+async function fixCommitGuard(t, base, qa) {
+  const res = await call(
+    `git -C ${repoDir} fetch ${remote} && git -C ${repoDir} log --format='%h %s' ${base}..${finalRef} -- ${qa.dir}\n\n${notCwd()}\nRun the command above. Return one entry (sha, subject) per line the log prints. Do not edit anything.`,
+    { label: lbl(`#${t.n} fix commit check`, t.title), phase: 'UAT', schema: TESTGUARD_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  return ((res && res.commits) || []).filter(c => c.subject.trim() !== QA_SUBJECT(t.n))
+}
 
 // Serial over the tickets: one app, one port. Returns n -> { status, reason, scenarios, fixed } for the PR body.
 async function stageUat(delivered) {
@@ -1342,31 +1352,73 @@ async function stageUat(delivered) {
     }
     takeDecisions(t.n, W, res)
     rec.scenarios = res.scenarios || []
-    if (!uatOk(res)) {
+    rec.sha = res.head_sha || ''
+    const startSha = res.head_sha || ''   // fallback base for the acceptance-test guard when no fix reports its base
+    const accept = specs[t.n] && specs[t.n].qa
+    // Fix loop for UAT and the qa-verifier. Verifies: the loop stops after MAX_QA_FIX_ROUNDS fix rounds, after a fix that
+    // landed nothing, or after a check that could not run. Does not verify: that a fix is right beyond the ACs the check
+    // can see; the fix commits are not reviewed again (the full suite still runs after this phase).
+    const fixes = []
+    let notRun = false
+    while (!uatOk(res) && fixes.length < MAX_QA_FIX_ROUNDS) {
+      const k = fixes.length + 1
+      const sfx = k === 1 ? '' : ` r${k}`, key = k === 1 ? '' : `-r${k}`
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
-      const fix = await fixAgent(lbl(`#${t.n} ${qa ? 'QA check' : 'UAT'} fix`, t.title),
-        `${qa ? 'The QA check of the delivered result' : 'UAT on the running app'} found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. ${qa ? 'For a docs, config or script change, edit the file the AC names; add a test only where one can fail without the fix.' : 'Console errors are report-only: do not fix them unless a failing AC needs it.'}`,
-        '', 'UAT', `${W}-${t.n}`)
+      const rows = failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the check summary) ' + (res.summary || '')
+      const tried = fixes.map((f, i) => `Round ${i + 1} tried: ${f.summary}`).join('\n')
+      let advice = ''
+      if (k === MAX_QA_FIX_ROUNDS && k > 1) {
+        try { advice = await askAdvisor(t, `${W}-fix`, `${k - 1} fix round${k === 2 ? '' : 's'} did not make these acceptance criteria pass. What should the last fix do differently?`, `Failing rows:\n${rows}\n${tried}`) } catch (e) { log(`${NAME} #${t.n}: advisor failed (${e && e.message}); continuing without it`) }
+      }
+      const text = `${qa ? 'The QA check of the delivered result' : 'UAT on the running app'} found acceptance criteria of ticket #${t.n} that fail:\n${rows}\n` +
+        (tried ? `Earlier fix rounds (their code is already in your checkout):\n${tried}\n` : '') +
+        `Fix the code so the owner's request holds. ${qa ? 'For a docs, config or script change, edit the file the AC names.' : 'Console errors are report-only: do not fix them unless a failing AC needs it.'}` +
+        (accept ? `\nNever edit the acceptance tests under ${accept.dir}/.` : '') +
+        (advice ? `\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}` : '')
+      let fix = null
+      try { fix = await fixAgent(lbl(`#${t.n} ${NAME} fix${sfx}`, t.title), text, '', 'UAT', `${W}-${t.n}${key}`, RUN_CTX, false, { docs: qa }) }
+      catch (e) { log(`${NAME} #${t.n}: fix round ${k} failed (${e && e.message})`) }
       takeDecisions(t.n, `${W}-fix`, fix)
-      rec.fixed = !!(fix && fix.fix_status === 'fixed')
-      // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(lbl(`#${t.n} ${qa ? 'QA check' : 'UAT'} rerun`, t.title), `${W}-rerun-${t.n}`, t, body.text, owner.text, configPath, qa) : res   // own worktree: it must see the fix
-      if (!rec.fixed) log(`${NAME} #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
+      // A fix that landed no commit changes nothing: a rerun would test the same code, so stop and let the last result stand.
+      const landed = !!(fix && fix.fix_status === 'fixed' && fix.commit && fix.commit !== fix.base_sha)
+      fixes.push({ summary: (fix && (fix.summary || '').trim()) || 'no summary', base: fix && fix.base_sha, landed })
+      if (!landed) { log(`${NAME} #${t.n}: fix round ${k} ${fix && fix.fix_status || 'returned nothing'}, loop stopped`); break }
+      rec.fixed = fixes.filter(f => f.landed).length
+      const again = await runUat(lbl(`#${t.n} ${NAME} rerun${sfx}`, t.title), `${W}-rerun-${t.n}${key}`, t, body.text, owner.text, configPath, qa)   // own worktree: it must see the fix
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || `the ${NAME} rerun agent returned nothing`
         uatNotRun(t.n, `rerun: ${why}`, qa); rec.status = 'not run'; rec.reason = `rerun: ${why}`
-        continue
+        notRun = true
+        break
       }
       takeDecisions(t.n, `${W}-rerun`, again)
       rec.scenarios = again.scenarios || rec.scenarios
+      rec.sha = again.head_sha || rec.sha
       res = again
     }
-    if (!uatOk(res)) {
-      rec.status = 'failed'; rec.reason = 'UAT AC failed'
-      r.status = 'blocked'; r.reason = 'UAT AC failed'   // code stays, the PR still opens, nothing is reverted
+    // A fix must not touch the blind acceptance tests, even when the check then passes.
+    const sp = accept, firstBase = (fixes[0] && fixes[0].base) || startSha
+    const badFix = fixes.length && sp && firstBase
+      ? await fixCommitGuard(t, firstBase, sp) : []
+    if (badFix.length) {
+      const what = `${NAME} fix changed ${sp.dir}/ in ${badFix.map(c => `${c.sha} ${c.subject}`).join('; ')}`
+      rec.status = 'failed'; rec.reason = what; r.status = 'blocked'; r.reason = what
       addDecision(t.n, 'uat', {
-        title: `UAT AC failed for #${t.n}`, context: 'An acceptance criterion still failed on the running app after one fix round and one rerun.',
-        options: ['Mark the ticket blocked, keep the code', 'Revert the code', 'Ignore the failure'], decision: 'Mark the ticket blocked with reason "UAT AC failed" and keep the code.',
+        title: `${NAME} fix touched the acceptance tests of #${t.n}`, context: what,
+        options: ['Mark the ticket blocked, keep the code', 'Revert the fix commits'], decision: 'Mark the ticket blocked and keep the code.',
+        why: 'The blind acceptance tests are the honest measure of the ticket; a fix may not change them.',
+        consequences: 'The PR body says Refs instead of Closes for this ticket.', how_to_reverse: 'Revert the fix commits that touch the acceptance folder, then fix the code instead.', needs_review: true,
+      })
+      continue
+    }
+    if (notRun) continue
+    if (!uatOk(res)) {
+      const k = fixes.length, landedN = rec.fixed || 0, why = `${NAME} AC failed`
+      rec.status = 'failed'; rec.reason = why
+      r.status = 'blocked'; r.reason = why   // code stays, the PR still opens, nothing is reverted
+      addDecision(t.n, 'uat', {
+        title: `${why} for #${t.n}`, context: `An acceptance criterion still failed after ${k} fix round${k === 1 ? '' : 's'} and ${landedN} rerun${landedN === 1 ? '' : 's'}.`,
+        options: ['Mark the ticket blocked, keep the code', 'Revert the code', 'Ignore the failure'], decision: `Mark the ticket blocked with reason "${why}" and keep the code.`,
         why: 'The owner decided that an AC failure fails the ticket, with no revert.',
         consequences: 'The PR body says Refs instead of Closes for this ticket and the run output shows it blocked.', how_to_reverse: 'Fix the AC, then close the issue by hand.',
         needs_review: true,
@@ -1394,8 +1446,8 @@ async function stageSuite() {
     { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
   const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
-  return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
+  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, fixRan: true, note: 'the re-run agent returned nothing' }
+  return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, fixRan: true, note: `${first.failed} failed first; re-ran only those` }
 }
 
 async function stageArtifact(results) {
@@ -1493,7 +1545,7 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   if (uatRows.length) {
     L.push('', '## UAT sign-off', '', 'A human ticks these. Nothing enforces or waits on them.')
     for (const [n, u] of uatRows) {
-      L.push(`- ${ref(Number(n))} ${u.qa ? 'QA check' : 'UAT'}: ${u.status}${u.fixed ? ' (one fix round ran, not re-reviewed)' : ''}${u.reason ? ` (${u.reason})` : ''}`)
+      L.push(`- ${ref(Number(n))} ${u.qa ? 'QA check' : 'UAT'}: ${u.status}${u.sha ? ` at ${String(u.sha).slice(0, 7)}` : ''}${u.fixed ? ` (${u.fixed} fix round(s) ran, not re-reviewed)` : ''}${u.sha && suite.fixRan ? ' (checked on an older commit; the suite fix came after)' : ''}${u.reason ? ` (${u.reason})` : ''}`)
       for (const s of u.scenarios) L.push(`  - [ ] ${s.id} ${s.covers} (${s.kind}): ${s.status}${s.assertion ? `: ${s.assertion}` : ''}`)
     }
     if (uatRows.some(([, u]) => !u.qa)) L.push('- [ ] Copy reads right', '- [ ] Layout looks right', '- [ ] The flow feels right')
