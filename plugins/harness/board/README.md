@@ -37,6 +37,15 @@ until you stop it. Verifies: a board for this project answers on the printed URL
 that the board outlives the Claude Code session, or that the directory is the one Claude Code writes its runs under (if
 the board shows "No ship.js run found" during a run, start it with `--project <path>` by hand).
 
+## Embed it in another page
+
+- `?embed=1` hides the board's own header and footer note and makes the background transparent, so a host
+  page (such as a local dashboard) can show the board in an `<iframe>`. `?theme=light|dark` follows the host's theme.
+- In embed mode the page posts `{type: 'afb-height', height}` to its parent when its height changes, so the
+  host can size the iframe without an inner scroll bar. It sends nothing else.
+- The page loads `flow.json` and `events` with relative URLs. A reverse proxy can serve the board under a
+  path such as `/board/<project>/` (note the final `/`); the board itself still binds `127.0.0.1` only.
+
 ## Where the data comes from
 
 Claude Code writes these files for every Workflow run. The board reads them and nothing else:

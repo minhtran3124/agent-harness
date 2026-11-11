@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Agent Flow Board</title>
 <link rel="icon" href="data:,">
+<script>
+// Embed mode (?embed=1): another local page shows the board in an iframe. ?theme=light|dark follows that page.
+(function(){var q=new URLSearchParams(location.search),r=document.documentElement;
+ if(q.get('embed')==='1')r.classList.add('embed');
+ var t=q.get('theme');if(t==='light'||t==='dark')r.setAttribute('data-theme',t);})();
+</script>
 <style>
 /* Same look as the Agent Flow Prototype; the data now comes from the board.js event stream, not a simulation.
    No web fonts: the page must work offline on 127.0.0.1. */
@@ -118,6 +124,10 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
 .log .dot.running{background:var(--run)} .log .dot.done{background:var(--ok)} .log .dot.failed{background:var(--bad)} .log .dot.waiting{background:var(--warn)}
 .log .who{font:500 12px var(--font-mono);color:var(--muted)}
 .empty{padding:24px;text-align:center;color:var(--muted)}
+/* Embed mode: the host page has its own title, theme control and frame. */
+.embed body{background:transparent}
+.embed .top,.embed .note{display:none}
+.embed .page{max-width:none;padding:2px 0 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -163,7 +173,7 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
 <script>
 (function(){
 'use strict';
-var W=176,H=76,MAX_ROUNDS=3;
+var W=176,H=76,MAX_ROUNDS=3,EMBED=document.documentElement.classList.contains('embed');
 var FLOW=null,N={},A={},ORDER=[],LOG=[],RUN={id:null,end:null},sel=null,view='all',lastTouched=null,connected=false,kScale=1,nowId=null;
 var STATE_TXT={idle:'Waiting',running:'Running',done:'Done',failed:'Failed',waiting:'Needs you'};
 var ICON={
@@ -241,7 +251,7 @@ function buildWorld(){
 }
 function fit(){
  if(!FLOW)return;var sc=document.getElementById('scroller'),sz=document.getElementById('sizer'),w=document.getElementById('world'),fw=FLOW.size.w,fh=FLOW.size.h;
- var k=Math.max(0.62,Math.min(1,(sc.clientWidth-16)/fw));kScale=k;w.style.transform='scale('+k+')';sz.style.width=(fw*k)+'px';sz.style.height=(fh*k)+'px';
+ var k=Math.max(EMBED?0.5:0.62,Math.min(1,(sc.clientWidth-16)/fw));kScale=k;w.style.transform='scale('+k+')';sz.style.width=(fw*k)+'px';sz.style.height=(fh*k)+'px';
 }
 function modelText(a){if(!a)return 'no agent yet';if(!a.model&&!a.effort)return 'model not in log yet';return (shortModel(a.model)||'model ?')+' · '+(a.effort||'effort ?');}
 function edgeCls(d){var sa=nodeState(d[0]),sb=nodeState(d[1]);if(sa!=='done')return 'idle';if(sb==='running'||sb==='waiting')return 'active';return sb==='idle'?'idle':'done';}
@@ -325,7 +335,7 @@ function renderLog(){
 // --- wiring ---
 var pending=false;function later(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;render();});}
 function connect(){
- var es=new EventSource('/events');
+ var es=new EventSource('events');
  es.onmessage=function(m){try{onEvent(JSON.parse(m.data));}catch(e){}later();};
  es.onerror=function(){connected=false;later();};
  es.onopen=function(){connected=true;later();};
@@ -334,12 +344,15 @@ document.getElementById('detail').addEventListener('click',function(e){if(e.targ
 document.getElementById('tk').addEventListener('change',function(e){view=e.target.value;render();});
 setInterval(function(){var nt=document.getElementById('nowTime'),a=nowId&&latest(nowId);if(nt&&a&&a.status==='running')nt.textContent=dur(a);},1000);
 window.addEventListener('resize',fit);
+// In embed mode, tell the host page our height so its iframe needs no inner scroll bar. Only a number is sent.
+if(EMBED&&window.parent!==window&&window.ResizeObserver){var lastH=0;new ResizeObserver(function(){var h=Math.ceil(document.querySelector('.page').getBoundingClientRect().height);if(h!==lastH){lastH=h;window.parent.postMessage({type:'afb-height',height:h},'*');}}).observe(document.querySelector('.page'));}
 (function(){var th=document.getElementById('theme'),r=document.documentElement;
  function apply(v){if(v==='light'||v==='dark')r.setAttribute('data-theme',v);else r.removeAttribute('data-theme');}
+ if(EMBED)return;
  try{var sv=localStorage.getItem('afb-theme');if(sv==='light'||sv==='dark'){th.value=sv;apply(sv);}}catch(e){}
  th.addEventListener('change',function(){apply(th.value);try{localStorage.setItem('afb-theme',th.value);}catch(e){}});
 })();
-fetch('/flow.json').then(function(r){return r.json();}).then(function(f){FLOW=f;f.nodes.forEach(function(n){N[n.id]=n;});buildWorld();fit();render();connect();})
+fetch('flow.json').then(function(r){return r.json();}).then(function(f){FLOW=f;f.nodes.forEach(function(n){N[n.id]=n;});buildWorld();fit();render();connect();})
  .catch(function(){document.getElementById('detail').innerHTML='<p class="empty">Could not load /flow.json from the board server.</p>';});
 })();
 </script>
