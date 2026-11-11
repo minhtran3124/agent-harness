@@ -8,7 +8,7 @@
 # keeps a pid, a url and a log file per project under ${TMPDIR:-/tmp}. A board already running for this project is
 # reused. If the port is held by something else, or by the board of another project, a free port is used.
 # It opens a browser only when a desktop is there (macOS, or a display and no SSH session); otherwise it prints the
-# URL. --stop ends the board of this project. The board is advisory: this script always exits 0 and prints one line.
+# URL. --stop ends the board of this project. The board is advisory: this script always exits 0. Its first line starts with "board:" and says what happened.
 #
 # Verifies: a board for this project answers on the printed URL (checked with its /state.json) when it prints a URL.
 # Does not verify: that a browser opened, that the board outlives the Claude Code session, or that the project
@@ -16,17 +16,19 @@
 
 here=${BASH_SOURCE[0]%/*}
 [ "$here" = "${BASH_SOURCE[0]}" ] && here=.
-board="$here/../../../board/board.js"
+board=$(cd "$here/../../../board" 2>/dev/null && pwd)/board.js
 
 port=4317 open=1 stop=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --port) port=${2:-4317}; shift ;;
+    --port) port=${2:-4317}; [ $# -gt 1 ] && shift ;;
     --no-open) open=0 ;;
     --stop) stop=1 ;;
   esac
   shift
 done
+
+case "$port" in ""|*[!0-9]*) port=4317 ;; esac
 
 if ! command -v node >/dev/null 2>&1; then
   echo 'board: skipped, node not found'
@@ -60,6 +62,8 @@ if [ "$stop" -eq 1 ]; then
     kill "$pid" 2>/dev/null
     rm -f "$pidf" "$urlf"
     echo 'board: stopped'
+  elif [ -z "$pid" ] && [ -s "$urlf" ]; then
+    echo "board: running at $(cat "$urlf"), but not started by this script; stop it yourself"
   else
     rm -f "$pidf" "$urlf"
     echo 'board: not running'
@@ -101,10 +105,10 @@ echo "board: $url"
 
 [ "$open" -eq 1 ] || exit 0
 opener=''
-if [ "$(uname 2>/dev/null)" = Darwin ]; then
-  opener=open
-elif [ -n "${SSH_CONNECTION:-}" ]; then
+if [ -n "${SSH_CONNECTION:-}" ]; then
   echo "board: remote session; on your own machine run: ssh -L ${url##*:}:127.0.0.1:${url##*:} <this host>, then open $url"
+elif [ "$(uname 2>/dev/null)" = Darwin ]; then
+  opener=open
 elif [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
   if command -v wslview >/dev/null 2>&1; then opener=wslview
   elif command -v xdg-open >/dev/null 2>&1; then opener=xdg-open; fi
@@ -116,5 +120,4 @@ if [ -n "$opener" ] && command -v "$opener" >/dev/null 2>&1; then
 elif [ -n "$opener" ]; then
   echo "board: no browser opener found; open $url yourself"
 fi
-echo "board: stop it with: bash $here/board-start.sh --stop (from the same directory)"
 exit 0

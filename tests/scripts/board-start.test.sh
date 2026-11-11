@@ -101,6 +101,10 @@ if [ "$(uname)" != "Darwin" ]; then
   run_in "$work/proj1" --stop >/dev/null
 fi
 
+# 7b. A relative path to the script works (the documented --stop command is relative).
+out=$( cd "$work/proj1" && env TMPDIR="$work/tmp" bash "$(realpath --relative-to="$work/proj1" "$start" 2>/dev/null || echo "$start")" --stop 2>&1 ); rc=$?
+[ "$rc" -eq 0 ] && ! echo "$out" | grep -qi 'skipped' && ok "a relative script path works (no 'skipped')" || bad "a relative script path works" "rc=$rc out=$out"
+
 # 8. No node on PATH: a one-line note and exit 0 (the board never blocks a run).
 out=$( cd "$work/proj1" && env TMPDIR="$work/tmp" PATH="$work/empty" /bin/bash "$start" --port "$port" 2>&1 ); rc=$?
 [ "$rc" -eq 0 ] && echo "$out" | grep -qi 'node' && ok "no node: exits 0 with a note that names node" || bad "no node: exits 0 with a note that names node" "rc=$rc out=$out"
