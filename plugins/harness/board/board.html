@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Agent Flow Board</title>
+<link rel="icon" href="data:,">
 <style>
 /* Same look as the Agent Flow Prototype; the data now comes from the board.js event stream, not a simulation.
    No web fonts: the page must work offline on 127.0.0.1. */
@@ -187,7 +188,7 @@ function onEvent(e){
  if(e.kind==='hello'){connected=true;return;}
  if(e.kind==='run'){A={};ORDER=[];LOG=[];RUN={id:e.run_id,end:null};sel=null;lastTouched=null;fillTickets();return;}
  if(e.kind==='run_end'){RUN.end=e;
-  ORDER.forEach(function(k){if(A[k].status==='running'){A[k].status='failed';A[k].summary='Stopped: the run ended ('+e.status+') before this agent returned.';}});
+  ORDER.forEach(function(k){if(A[k].status==='running'){A[k].status='failed';A[k].stopped=true;A[k].summary='Stopped: the run ended ('+e.status+') before this agent returned.';}});
   LOG.unshift({ts:null,who:'Run',msg:'Run '+e.status+(e.pr?' · '+e.pr:''),state:e.status==='completed'?'done':'failed'});
   (e.logs||[]).slice().reverse().forEach(function(l){LOG.unshift({ts:null,who:'log',msg:l,state:'idle'});});
   return;}
@@ -248,10 +249,12 @@ function checkPhase(){
  if(!c)return ['—','idle'];
  if(ad&&ad.status==='running')return ['Advice','warn'];
  if(f&&f.status==='running')return ['Fixing','warn'];
+ if(f&&f.stopped)return ['Stopped','bad'];
  if(c.status==='running'||(rr&&rr.status==='running'))return ['Checking',''];
  var last=rr&&ms(rr.first)>=ms(c.first)?rr:c;
  if(last.status==='done')return ['Passed','ok'];
  if(last.status==='waiting')return ['Not run','warn'];
+ if(last.stopped)return ['Stopped','bad'];
  if(last.status==='failed')return r>=MAX_ROUNDS?['Blocked','bad']:['Fixing','warn'];
  return ['—','idle'];
 }
@@ -262,9 +265,9 @@ function render(){
   if(el.getAttribute('data-s')!==s){el.setAttribute('data-s',s);el.querySelector('.ico').innerHTML=ICON[s];cap.setAttribute('data-s',s);}
   var mm=el.querySelector('.mdl');mm.textContent=modelText(a);mm.className='mdl'+(a&&a.model?'':' none');
   el.classList.toggle('sel',sel===n.id);
-  var t=STATE_TXT[s],d=a?dur(a):'',cnt=agentsOf(n.id).length;
+  var t=(s==='idle'&&RUN.end)?'Not run':STATE_TXT[s],d=a?dur(a):'',cnt=agentsOf(n.id).length;
   if(s==='done'&&d)t+=' in '+d;else if(s==='failed'&&d)t+=' after '+d;
-  if(cnt>1)t+=' · '+cnt+' runs';
+  if(cnt>1)t+=' · '+cnt+' agents';
   cap.textContent=t;
  });
  FLOW.edges.forEach(function(d,i){document.getElementById('e'+i).setAttribute('class','edge '+edgeCls(d));});

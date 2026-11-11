@@ -3,6 +3,10 @@
 A live view of one `ship.js` (autopilot) run: which agent runs now, with which model and effort, what each
 step returned, and where the run waits for you. One Node file, no dependencies, no build.
 
+![The board on a finished real run](../../../docs/images/board/board-completed-light.png)
+
+More shots of real runs (dark theme, a killed run) are in `docs/images/board/`.
+
 ```
 node plugins/harness/board/board.js                    # newest run of the project in the current directory
 node plugins/harness/board/board.js --project ~/code/app
@@ -44,7 +48,8 @@ contents from the transcripts.
   "No ship.js run found" or no model; `tests/board/board.test.js` pins the format the board expects.
 - A check box shows its first result. When a fix round then passes, the Re-check box turns green and the
   summary's Check phase says Passed; the first check stays red, on purpose, so the failure stays visible.
-- A box shows the latest agent of its stage; the caption counts earlier ones (`2 runs`).
+- A box shows the latest agent of its stage; the caption counts all agents of the box (`2 agents`; the UAT / QA check box also holds `fetch owner request`).
+- After the run ends, a box that never ran says `Not run`, and a check stopped by the end of the run makes the Check phase `Stopped`.
 - The setup agent (`check plugin and tools`) has no box; it shows only in the event log.
 - A killed run has no PR link on the board: Claude Code writes `result: null` in its summary, so the PR
   number is not in any file the board reads.
