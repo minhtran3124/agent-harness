@@ -3,9 +3,8 @@
 Persistent documentation of non-obvious patterns, bug fixes, and architectural decisions.
 
 - **Written by:** `compound` after sessions with non-trivial learnings
-- **Read by:** `brainstorming` (decision track only), `xia2` (all tracks via INDEX-first lookup),
-  and `compound`'s related-docs lookup; the `session-knowledge.sh` SessionStart hook
-  loads `critical-patterns.md` and an `INDEX.md` pointer
+- **Read by:** `xia2` (research stage, depth L), `brainstorming` (design stage, depth L),
+  `compound`'s related-docs lookup, and the CLAUDE.md instruction to read `critical-patterns.md` when planning
 
 ## Structure
 
