@@ -652,3 +652,42 @@ def test_date_absent_uses_today(tmp_path):
     adr, inp = setup(tmp_path, [dec(title="Undated")])
     assert run(adr, inp).returncode == 0
     assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()
+
+
+# --- deferred edge cases (#591) ------------------------------------------------------------------
+
+def test_rerun_repairs_a_failed_mark_superseded(tmp_path):
+    import re
+    adr, inp = setup(tmp_path, [dec(decision="a", context="same ctx")], existing=())
+    run(adr, inp)
+    assert feed(adr, inp, dec(decision="b", context="same ctx")).returncode == 0
+    old = adr / "0001-use-a-queue.md"
+    text = old.read_text().replace("status: superseded", "status: accepted")
+    old.write_text(re.sub(r"^superseded_by:.*\n", "", text, flags=re.M))   # the failed mark
+    r = feed(adr, inp, dec(decision="b", context="same ctx"))
+    assert r.returncode == 0, r.stderr
+    assert "status: superseded" in old.read_text() and "superseded_by: 0002" in old.read_text()
+    assert md_files(adr) == ["0001-use-a-queue.md", "0002-use-a-queue.md"]
+    before = snapshot(adr)
+    assert json.loads(feed(adr, inp, dec(decision="b", context="same ctx")).stdout) == []
+    assert snapshot(adr) == before
+
+
+def test_same_slug_different_context_is_a_separate_decision(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="a", context="about queues")], existing=())
+    run(adr, inp)
+    r = feed(adr, inp, dec(decision="something else", context="a different problem"))
+    assert r.returncode == 0, r.stderr
+    assert len(md_files(adr)) == 2
+    assert "superseded" not in (adr / "0001-use-a-queue.md").read_text()
+    assert "Supersedes" not in (adr / "0002-use-a-queue.md").read_text()
+
+
+def test_broken_template_fails_early_with_nothing_to_write(tmp_path):
+    adr, inp = setup(tmp_path, [dec(adr=False)], existing=())
+    (adr / "TEMPLATE.md").write_bytes(b"\xff\xfe\x00 {title}\n")
+    r = run(adr, inp)
+    assert r.returncode == 2 and "write_adrs" in r.stderr
+    (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text() + "\nOwner: {owner}\n")
+    r = run(adr, inp)
+    assert r.returncode == 2 and "{owner}" in r.stderr
