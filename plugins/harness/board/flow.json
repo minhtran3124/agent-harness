@@ -1,0 +1,32 @@
+{
+  "name": "harness ship.js",
+  "note": "Nodes match the stage part of a ship.js agent label ('#321 QA check fix r2 · title' -> 'QA check fix'), case-insensitive, first match wins. A stage that matches no node still shows in the event log.",
+  "size": { "w": 1448, "h": 536 },
+  "lanes": [
+    { "label": "TICKET", "x": 16, "y": 24, "w": 1416, "h": 158 },
+    { "label": "REVIEW · CHECK · FINISH", "x": 16, "y": 206, "w": 1416, "h": 306 }
+  ],
+  "nodes": [
+    { "id": "intent",  "t": "Intent & plan",    "a": "intent, design, plan",   "x": 40,   "y": 70,  "match": ["^intent$", "^research$", "^design$", "^plan$", "^advisor plan-review$", "^write specs/ early$"] },
+    { "id": "qaw",     "t": "Blind tests",      "a": "qa-writer",              "x": 240,  "y": 70,  "match": ["^qa$", "^acceptance-test check$"] },
+    { "id": "impl",    "t": "Implement",        "a": "implementer",            "x": 440,  "y": 70,  "match": ["^implement$"] },
+    { "id": "verify",  "t": "Verify",           "a": "run the change",         "x": 640,  "y": 70,  "match": ["^verify", "^record GIF$", "^post verify comment$", "^attach evidence$"] },
+    { "id": "sec",     "t": "Security gate",    "a": "security-reviewer",      "x": 840,  "y": 70,  "match": ["^security gate$"] },
+    { "id": "pr",      "t": "Ticket PR",        "a": "finish",                 "x": 1040, "y": 70,  "match": ["^finish$", "^PR body$"] },
+    { "id": "gate",    "t": "Gate & merge",     "a": "CI, review, merge into feat/", "x": 1240, "y": 70, "match": ["^gate ", "^CI checks$", "^merge ticket branches$", "^merge failed"] },
+    { "id": "review",  "t": "Code review",      "a": "review + fix rounds",    "x": 40,   "y": 250, "match": ["^code-review", "^fix$"] },
+    { "id": "irev",    "t": "Intent review",    "a": "intent-reviewer",        "x": 240,  "y": 250, "match": ["^intent review$", "^intent fix$"] },
+    { "id": "adv",     "t": "Advisor",          "a": "before the last round",  "x": 880,  "y": 380, "match": ["^advisor (uat|qa-verify)-fix$"], "cond": true },
+    { "id": "fix",     "t": "Fix round",        "a": "fix agent (max 3)",      "x": 440,  "y": 380, "match": ["^(UAT|QA check) fix$", "^fix commit check$"], "cond": true },
+    { "id": "rerun",   "t": "Re-check",         "a": "fresh worktree",         "x": 660,  "y": 380, "match": ["^(UAT|QA check) rerun$"], "cond": true },
+    { "id": "check",   "t": "UAT / QA check",   "a": "uat / qa-verifier",      "x": 440,  "y": 250, "match": ["^UAT$", "^QA check$", "^fetch owner request$"] },
+    { "id": "test",    "t": "Test suite",       "a": "full suite once",        "x": 840,  "y": 250, "match": ["^test$"] },
+    { "id": "adr",     "t": "Decisions",        "a": "ADRs, specs, artifact",  "x": 1040, "y": 250, "match": ["^write ADRs$", "^write specs/ flow files$", "^update run artifact$"] },
+    { "id": "final",   "t": "Final PR",         "a": "a human merges",         "x": 1240, "y": 250, "match": ["^open final PR$", "^CI snapshot$"] }
+  ],
+  "edges": [
+    ["intent", "qaw"], ["qaw", "impl"], ["impl", "verify"], ["verify", "sec"], ["sec", "pr"], ["pr", "gate"],
+    ["gate", "review", "down"], ["review", "irev"], ["irev", "check"], ["check", "test"], ["test", "adr"], ["adr", "final"],
+    ["check", "fix", "vdown"], ["fix", "rerun"], ["rerun", "test", "join"], ["rerun", "fix", "loop"], ["rerun", "adv"], ["adv", "fix", "bus"]
+  ]
+}
