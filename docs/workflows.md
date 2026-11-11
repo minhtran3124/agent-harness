@@ -74,7 +74,12 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
    more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
 6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
-   FE+BE tickets (docs tickets and local mode skip it with a log line). The agent gets the issue body and the
+   FE+BE tickets (local mode skips it with a log line). A `docs` ticket (docs, config, CLI, scripts, plugin
+   files) has no app: at depth S it is skipped (`skipped: docs ticket at depth S`); at depth M and L the plan-blind
+   `qa-verifier` agent (Sonnet 5.5, `medium`) gets the same stripped body and owner block, runs commands and reads
+   the delivered files, and returns one row per AC (`PASS`, `FAIL` or `not-checkable`, which never fails the
+   ticket). It uses the same fix round, rerun and decisions as UAT; its not-run decision is titled
+   `QA check not run for #<n>`, and its sign-off line reads `QA check`. The agent gets the issue body and the
    owner-confirmed block with every `Verify:` row stripped in code, and the config path verify used; it never
    sees the plan or the diff. 3 to 8 scenarios, each naming an AC id, `negative`, `extra` or
    `not-browser-checkable`. An AC failure gets one fix round and one rerun in a fresh worktree; a second
