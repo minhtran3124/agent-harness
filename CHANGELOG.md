@@ -7,6 +7,10 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.12.1] — 2026-11-11
+
+- feat(board): relative URLs and an embed mode for a host page (PR #639)
+
 ## [5.12.0] — 2026-11-11
 
 - Add per-stage reporting and depth M plan handling (PR #616)
