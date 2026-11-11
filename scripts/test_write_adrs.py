@@ -554,7 +554,9 @@ def test_running_the_same_input_twice_writes_nothing_the_second_time(tmp_path):
     assert snapshot(adr) == before
 
 
-def test_changed_decision_supersedes_every_live_match(tmp_path):
+def test_changed_decision_supersedes_only_the_context_match(tmp_path):
+    # #591 case 3: a same-slug ADR with another context is a different decision and stays live,
+    # even when a second ADR matches the context.
     adr, inp = setup(tmp_path, [dec(title="T1", context="X", decision="a")], existing=())
     run(adr, inp)
     feed(adr, inp, dec(title="T2", context="Y", decision="a"))
@@ -562,10 +564,12 @@ def test_changed_decision_supersedes_every_live_match(tmp_path):
     r = feed(adr, inp, dec(title="T1", context="Y", decision="b"))   # slug hits 0001, context hits 0002
     assert r.returncode == 0, r.stderr
     new = (adr / "0003-t1.md").read_text()
-    assert "Supersedes ADR 0001, 0002." in new
-    for n, name in (("0001", "0001-t1.md"), ("0002", "0002-t2.md")):
-        old = (adr / name).read_text()
-        assert "status: superseded" in old and "superseded_by: 0003" in old, n
+    assert "Supersedes ADR 0002." in new
+    old = (adr / "0002-t2.md").read_text()
+    assert "status: superseded" in old and "superseded_by: 0003" in old
+    kept = (adr / "0001-t1.md").read_text()
+    assert "superseded_by" not in kept and "status: superseded" not in kept
+
 
 
 def test_two_changed_decisions_mark_their_own_old_adrs(tmp_path):

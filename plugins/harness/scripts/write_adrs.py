@@ -177,7 +177,7 @@ def existing_keys(adr_dir: Path) -> list:
 
 
 def recorded_match(d: dict, keys: list):
-    """Match against the live (not superseded) ADRs of the same numeric ticket with the same title slug or context (a slug hit with a different context counts only beside a context hit).
+    """Match against the live (not superseded) ADRs of the same numeric ticket with the same title slug or context (a slug hit with a different context never counts).
 
     Returns None (no match), (number, True) when a live match has the same decision text, or
     ([numbers], False) with every live matching number when the decision text changed. A changed
@@ -191,10 +191,10 @@ def recorded_match(d: dict, keys: list):
     dec = " ".join(as_text(d["decision"]).lower().split())
     live = [k for k in keys if k[1] == ticket and not k[5]]
     ctx_hits = {k[0] for k in live if ctx and k[3] == ctx}
-    # A slug-only hit whose context differs is another decision under the same title, unless another
-    # live ADR matches the context (then they are one problem and the slug hit joins it).
+    # A slug hit whose context differs is another decision under the same title (#591 case 3), even
+    # when another live ADR matches the context: only that context match is the same decision.
     hits = [(n, dtext) for n, _, s, c, dtext, _ in live
-            if n in ctx_hits or (s == slug and (ctx_hits or not ctx or not c or c == ctx))]
+            if n in ctx_hits or (s == slug and (not ctx or not c or c == ctx))]
     if not ticket.isdigit():
         # A placeholder ticket (a /compound run) skips only an identical decision: it never supersedes.
         return next(((n, True) for n, dtext in hits if dtext == dec), None)
