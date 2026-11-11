@@ -7,6 +7,12 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+## [5.12.0] — 2026-11-11
+
+- Add per-stage reporting and depth M plan handling (PR #616)
+- feat(ship): QA check for docs tickets, 3-round fix loop, pilot report (PR #628)
+- feat(board): autopilot starts the run board; board fixes from the live run (PR #637)
+
 ## [5.11.4] — 2026-11-09
 
 - docs: fix stale counts and invocation wording across harness docs (PR #615)
