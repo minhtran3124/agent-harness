@@ -13,9 +13,28 @@ node plugins/harness/board/board.js --project ~/code/app
 node plugins/harness/board/board.js --run wf_596bd115-74c
 ```
 
-Then open `http://127.0.0.1:4317`. Start the board before or during `/harness:autopilot`; it switches to a
+Then open `http://127.0.0.1:4317`. `/harness:autopilot` starts the board for you, and opens it in a browser when a desktop is there (see below). Otherwise start the board before or during the run; it switches to a
 newer run of the same project by itself (`--no-follow` keeps the first one). It works for any project
 that runs `ship.js`, because it only needs the project path.
+
+## Autopilot starts it
+
+Unless you pass `--no-board`, `/harness:autopilot` runs `plugins/harness/skills/autopilot/scripts/board-start.sh` just
+before it launches the workflow. The script:
+
+- works for the directory where Claude Code was started (the board derives the project from it);
+- starts `board.js` in the background and prints the URL. It reuses a board that already runs for this project. If port
+  4317 is taken by a non-board server or by the board of another project, it uses a free port;
+- opens the page in your browser only when a desktop is there: macOS, or Linux with a display and no SSH session. In an
+  SSH session it prints an `ssh -L` line. Without a display it prints the URL;
+- keeps a pid, url and log file per project under `${TMPDIR:-/tmp}` (`harness-board-<project>.*`);
+- never blocks a run: with no `node` or a start error it prints one line and exits 0.
+
+The board keeps running after the run ends. Stop it with `bash plugins/harness/skills/autopilot/scripts/board-start.sh --stop`
+from the same directory. It runs from the plugin's own copy, so after a plugin upgrade an old board keeps running
+until you stop it. Verifies: a board for this project answers on the printed URL. Does not verify: that a browser opened,
+that the board outlives the Claude Code session, or that the directory is the one Claude Code writes its runs under (if
+the board shows "No ship.js run found" during a run, start it with `--project <path>` by hand).
 
 ## Where the data comes from
 
