@@ -1353,6 +1353,8 @@ async function stageUat(delivered) {
     takeDecisions(t.n, W, res)
     rec.scenarios = res.scenarios || []
     rec.sha = res.head_sha || ''
+    const startSha = res.head_sha || ''   // fallback base for the acceptance-test guard when no fix reports its base
+    const accept = specs[t.n] && specs[t.n].qa
     // Fix loop for UAT and the qa-verifier. Verifies: the loop stops after MAX_QA_FIX_ROUNDS fix rounds, after a fix that
     // landed nothing, or after a check that could not run. Does not verify: that a fix is right beyond the ACs the check
     // can see; the fix commits are not reviewed again (the full suite still runs after this phase).
@@ -1365,12 +1367,13 @@ async function stageUat(delivered) {
       const rows = failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the check summary) ' + (res.summary || '')
       const tried = fixes.map((f, i) => `Round ${i + 1} tried: ${f.summary}`).join('\n')
       let advice = ''
-      if (k === MAX_QA_FIX_ROUNDS) {
-        try { advice = await askAdvisor(t, `${W}-fix`, 'Two fix rounds did not make these acceptance criteria pass. What should the last fix do differently?', `Failing rows:\n${rows}\n${tried}`) } catch (e) { log(`${NAME} #${t.n}: advisor failed (${e && e.message}); continuing without it`) }
+      if (k === MAX_QA_FIX_ROUNDS && k > 1) {
+        try { advice = await askAdvisor(t, `${W}-fix`, `${k - 1} fix round${k === 2 ? '' : 's'} did not make these acceptance criteria pass. What should the last fix do differently?`, `Failing rows:\n${rows}\n${tried}`) } catch (e) { log(`${NAME} #${t.n}: advisor failed (${e && e.message}); continuing without it`) }
       }
       const text = `${qa ? 'The QA check of the delivered result' : 'UAT on the running app'} found acceptance criteria of ticket #${t.n} that fail:\n${rows}\n` +
         (tried ? `Earlier fix rounds (their code is already in your checkout):\n${tried}\n` : '') +
         `Fix the code so the owner's request holds. ${qa ? 'For a docs, config or script change, edit the file the AC names.' : 'Console errors are report-only: do not fix them unless a failing AC needs it.'}` +
+        (accept ? `\nNever edit the acceptance tests under ${accept.dir}/.` : '') +
         (advice ? `\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}` : '')
       let fix = null
       try { fix = await fixAgent(lbl(`#${t.n} ${NAME} fix${sfx}`, t.title), text, '', 'UAT', `${W}-${t.n}${key}`, RUN_CTX, false, { docs: qa }) }
@@ -1394,7 +1397,7 @@ async function stageUat(delivered) {
       res = again
     }
     // A fix must not touch the blind acceptance tests, even when the check then passes.
-    const sp = specs[t.n] && specs[t.n].qa, firstBase = (fixes.find(f => f.base) || {}).base
+    const sp = accept, firstBase = (fixes[0] && fixes[0].base) || startSha
     const badFix = fixes.length && sp && firstBase
       ? await fixCommitGuard(t, firstBase, sp) : []
     if (badFix.length) {
