@@ -37,6 +37,7 @@ const TICKET_VERBS = {
   'acceptance-test check': 'acceptance-test check', 'security gate': 'security gate',
   'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
   'UAT fix': 'uat-fix', 'UAT rerun': 'uat-rerun', 'UAT': 'uat',
+  'qa-verify fix': 'qa-verify-fix', 'qa-verify rerun': 'qa-verify-rerun',
 }
 function legacyLabel(l) {
   if (l == null) return l
@@ -89,7 +90,8 @@ function defaults(c, st) {
   if (l.startsWith('acceptance-test check:')) return { commits: [{ sha: 'qa1', subject: `Add acceptance tests for #${n}` }] }
   if (l.startsWith('security gate:')) return { why_risky: 'touches secrets', risk_note: 'NOTE', findings: [], followups: [] }
   if (/^uat(-rerun)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
-  if (l.startsWith('uat-fix:')) return ok({ fix_status: 'fixed', base_sha: 'ubase', commit: 'ucommit' })
+  if (/^qa-verify(-rerun)?:/.test(l)) return ok({ passed_ac: true, head_sha: 'qvsha', scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'exit 0', still: '' }], non_ac_failures: [], console_errors: 0 })
+  if (l.startsWith('uat-fix:') || l.startsWith('qa-verify-fix:')) return ok({ fix_status: 'fixed', base_sha: 'ubase', commit: 'ucommit' })
   if (l.startsWith('gif:')) return ok({ gif: '' })
   if (l.startsWith('attach:')) return ok()
   if (l.startsWith('finish:')) return ok({ pr: args0.local ? 0 : 100 + Number(n), url: `https://x/pull/${100 + Number(n)}` })
@@ -1531,8 +1533,8 @@ test('s6: a failing or blocked early write changes nothing', async () => {
 const uatRes = (passed, scenarios, extra) => ok({ passed_ac: passed, scenarios, non_ac_failures: [], console_errors: 0, ...extra })
 const sc = (id, covers, kind, status) => ({ id, covers, kind, status, assertion: `A-${id}`, still: '' })
 
-test('u1: a docs ticket gets no UAT agent', async () => {
-  const { calls, logs } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined))
+test('u1: a docs ticket at depth S gets no UAT agent', async () => {
+  const { calls, logs } = await run({ tickets: [T(1, 1, [], { depth: 'S' })] }, c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined))
   assert.strictEqual(named(calls, /^uat/).length, 0, labelsOf(calls).join())
   assert(logs.some(l => l.includes('UAT #1 skipped: docs')), logs.join('\n'))
   const local = await run({ local: true }, null)
@@ -1713,6 +1715,59 @@ test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash
     assert(!p.includes('\\n'), `${re} prompt has a literal backslash-n`)
   }
   assert(named(calls, /^uat:1$/)[0].prompt.includes('<<<\n'))
+})
+
+// ---- qa-verifier: plan-blind check of a `docs` ticket (#618) ----------------------------------
+const docsVerify = c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined)
+const qvDocs = (extra, fn) => run({ tickets: [T(1, 1, [], { depth: 'M', ...extra })] }, c => { const v = docsVerify(c); return v !== undefined ? v : (fn ? fn(c) : undefined) })
+
+test('qv1: a docs ticket at depth M gets exactly one qa-verify agent call in phase UAT', async () => {
+  const { calls } = await qvDocs()
+  const q = named(calls, /^qa-verify:1$/)
+  assert.strictEqual(q.length, 1, labelsOf(calls).join())
+  assert.strictEqual(q[0].opts.agentType, 'harness:qa-verifier')
+  assert.strictEqual(q[0].opts.phase, 'UAT')
+  assert.strictEqual(named(calls, /^uat/).length, 0, 'the browser UAT agent does not run on a docs ticket')
+})
+
+test('qv2: a docs ticket at depth S gets no qa-verify call and the log says why', async () => {
+  const { calls, logs } = await run({ tickets: [T(1, 1, [], { depth: 'S' })] }, docsVerify)
+  assert.strictEqual(named(calls, /^qa-verify/).length, 0, labelsOf(calls).join())
+  assert(logs.some(l => l.includes('skipped: docs ticket at depth S')), logs.join('\n'))
+})
+
+test('qv3: the qa-verify prompt holds the stripped body and owner block, never the plan, diff or Verify text', async () => {
+  const { calls } = await qvDocs({ confirmed: 'Owner said X.\nVerify: OWNER-SECRET\n  continues here' }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nAC one\n\nVerify: SECRET-V start the app\n  then click SECRET-V2\n\nTail text' }
+    if (c.label === 'plan:1') return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
+  })
+  const q = named(calls, /^qa-verify:1$/)[0]
+  assert(q, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-V2', 'OWNER-SECRET', 'PLAN-MD', 'continues here', 'gh issue view 1']) assert(!q.prompt.includes(bad), `qa-verify prompt leaks ${bad}`)
+  assert(q.prompt.includes('Do the thing.') && q.prompt.includes('Tail text') && q.prompt.includes('Owner said X.'), q.prompt)
+  assert(!q.prompt.includes('Config:'), 'a docs ticket has no app, so no config path')
+})
+
+test('qv4: a FAIL AC row gives one fix call, then one rerun in a different worktree', async () => {
+  const { calls, result } = await qvDocs({}, c => (c.label === 'qa-verify:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')], { head_sha: 'a' }) : undefined))
+  assert.deepStrictEqual(labelsOf(calls).filter(l => /^qa-verify/.test(l)), ['qa-verify:1', 'qa-verify-fix:1', 'qa-verify-rerun:1'])
+  const first = named(calls, /^qa-verify:1$/)[0], again = named(calls, /^qa-verify-rerun:1$/)[0]
+  assert(first.prompt.includes('/.ship-repo/ms/qa-verify-1') && again.prompt.includes('/.ship-repo/ms/qa-verify-rerun-1'), first.prompt.slice(0, 200))
+  assert(!again.prompt.includes('worktree add --detach /.ship-repo/ms/qa-verify-1 '), 'the rerun uses its own worktree')
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('qv5: a blocked qa-verify run gives a needs_review decision and the ticket stays done', async () => {
+  const { calls, result } = await qvDocs({}, c => (c.label === 'qa-verify:1' ? ok({ status: 'blocked', blocked_reason: 'no command can show AC1', passed_ac: false, scenarios: [] }) : undefined))
+  assert.strictEqual(named(calls, /^qa-verify-(fix|rerun)/).length, 0)
+  assert.strictEqual(result.tickets[0].status, 'done')
+  assert(result.decisions.some(d => d.title === 'QA check not run for #1' && d.needs_review === true && d.adr === false), JSON.stringify(result.decisions))
+})
+
+test('qv6: an FE ticket still gets the UAT agent and never qa-verify', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'verify:1' ? vres(true, 'FE') : undefined))
+  assert.strictEqual(named(calls, /^uat:1$/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(named(calls, /^qa-verify/).length, 0)
 })
 
 test('agent labels say what the agent does and fit the pane', async () => {
