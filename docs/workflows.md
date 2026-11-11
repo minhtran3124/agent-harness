@@ -123,6 +123,15 @@ Stage agents run the skill by path with `Mode: auto`, never ask, and return `dec
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
 Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L; depth M has no plan stage, because the implement agent writes the plan. It also picks Opus for the implement stage at depth L unless the profile names `implement`. Depth L is the difficulty signal, so this rule fits "the orchestrator chooses the model per task difficulty". Every stage, `implement` and `fix` included, can be set through `args.profile.stages`; the design and plan rule at depth L cannot be overridden.
 
+## Watching a run live
+
+`node plugins/harness/board/board.js` starts a local board at `http://127.0.0.1:4317`. It shows the newest
+`ship.js` run of the current project as a node diagram, live. `--project <path>` picks another project,
+`--run <run id | run dir>` one run, `--port` another port. It reads only what Claude Code writes for a
+Workflow run (the run's `journal.jsonl`, each agent's transcript for model, effort and times, and the run
+summary at the end), so it adds no hook and changes nothing in `ship.js`. `plugins/harness/board/README.md`
+has the details and the limits.
+
 ## Local mode
 
 `local: true` pushes nothing and opens no PR: branches stay local and the PR body is written to
