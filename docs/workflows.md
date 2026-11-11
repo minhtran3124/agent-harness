@@ -82,9 +82,13 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
    `QA check not run for #<n>`, and its sign-off line reads `QA check`. The agent gets the issue body and the
    owner-confirmed block with every `Verify:` row stripped in code, and the config path verify used; it never
    sees the plan or the diff. 3 to 8 scenarios, each naming an AC id, `negative`, `extra` or
-   `not-browser-checkable`. An AC failure gets one fix round and one rerun in a fresh worktree; a second
-   failure marks the ticket blocked with reason `UAT AC failed` (code stays, the PR still opens, `Refs`
-   instead of `Closes`). A negative or extra failure, or a run that could not happen (no config, app will
+   `not-browser-checkable`. An AC failure gets up to 3 fix rounds (`MAX_QA_FIX_ROUNDS`), each followed by a
+   rerun, every fix and rerun in its own fresh worktree. Before round 3 the advisor is asked once; its advice goes to
+   the fix agent only. The loop stops at once when a fix lands no commit or a rerun cannot run. After the loop, a fix
+   commit that touches the blind acceptance tests blocks the ticket. A check that still fails after 3 rounds marks the
+   ticket blocked with reason `UAT AC failed` (`QA check AC failed` for a `docs` ticket; code stays, the PR still
+   opens, `Refs` instead of `Closes`). The sign-off line prints the head SHA of the last check (7 characters) and the
+   number of fix rounds. A negative or extra failure, or a run that could not happen (no config, app will
    not start), becomes a `needs_review` decision and the ticket stays done. The PR body gets a
    `## UAT sign-off` checklist that nothing enforces.
 7. Testing: the full suite once, at the end.
