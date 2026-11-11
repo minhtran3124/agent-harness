@@ -554,7 +554,9 @@ def test_running_the_same_input_twice_writes_nothing_the_second_time(tmp_path):
     assert snapshot(adr) == before
 
 
-def test_changed_decision_supersedes_every_live_match(tmp_path):
+def test_changed_decision_supersedes_only_the_context_match(tmp_path):
+    # #591 case 3: a same-slug ADR with another context is a different decision and stays live,
+    # even when a second ADR matches the context.
     adr, inp = setup(tmp_path, [dec(title="T1", context="X", decision="a")], existing=())
     run(adr, inp)
     feed(adr, inp, dec(title="T2", context="Y", decision="a"))
@@ -562,10 +564,12 @@ def test_changed_decision_supersedes_every_live_match(tmp_path):
     r = feed(adr, inp, dec(title="T1", context="Y", decision="b"))   # slug hits 0001, context hits 0002
     assert r.returncode == 0, r.stderr
     new = (adr / "0003-t1.md").read_text()
-    assert "Supersedes ADR 0001, 0002." in new
-    for n, name in (("0001", "0001-t1.md"), ("0002", "0002-t2.md")):
-        old = (adr / name).read_text()
-        assert "status: superseded" in old and "superseded_by: 0003" in old, n
+    assert "Supersedes ADR 0002." in new
+    old = (adr / "0002-t2.md").read_text()
+    assert "status: superseded" in old and "superseded_by: 0003" in old
+    kept = (adr / "0001-t1.md").read_text()
+    assert "superseded_by" not in kept and "status: superseded" not in kept
+
 
 
 def test_two_changed_decisions_mark_their_own_old_adrs(tmp_path):
@@ -579,7 +583,7 @@ def test_two_changed_decisions_mark_their_own_old_adrs(tmp_path):
 
 def test_old_adr_without_a_status_line_is_still_marked_superseded(tmp_path):
     adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
-    (adr / "0001-use-a-queue.md").write_text(adr_text(status=""))
+    (adr / "0001-use-a-queue.md").write_text(adr_text(status="", context="context of Use a queue"))
     assert feed(adr, inp, dec(decision="b")).returncode == 0
     fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
     assert "status: superseded" in fm and "superseded_by: 0002" in fm
@@ -587,7 +591,7 @@ def test_old_adr_without_a_status_line_is_still_marked_superseded(tmp_path):
 
 def test_stale_superseded_by_on_a_live_adr_is_replaced(tmp_path):
     adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
-    (adr / "0001-use-a-queue.md").write_text(adr_text(extra_fm="superseded_by: 0009\n"))
+    (adr / "0001-use-a-queue.md").write_text(adr_text(extra_fm="superseded_by: 0009\n", context="context of Use a queue"))
     assert feed(adr, inp, dec(decision="b")).returncode == 0
     fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
     assert fm.count("superseded_by:") == 1 and "superseded_by: 0002" in fm and "status: superseded" in fm
@@ -595,7 +599,7 @@ def test_stale_superseded_by_on_a_live_adr_is_replaced(tmp_path):
 
 def test_crlf_old_adr_is_marked_and_keeps_its_line_endings(tmp_path):
     adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
-    (adr / "0001-use-a-queue.md").write_bytes(adr_text(nl="\r\n").encode())
+    (adr / "0001-use-a-queue.md").write_bytes(adr_text(nl="\r\n", context="context of Use a queue").encode())
     assert feed(adr, inp, dec(decision="b")).returncode == 0
     raw = (adr / "0001-use-a-queue.md").read_bytes().decode()
     assert "status: superseded\r\n" in raw and "superseded_by: 0002\r\n" in raw
@@ -652,3 +656,42 @@ def test_date_absent_uses_today(tmp_path):
     adr, inp = setup(tmp_path, [dec(title="Undated")])
     assert run(adr, inp).returncode == 0
     assert f"date: {datetime.date.today().isoformat()}\n" in (adr / "0002-undated.md").read_text()
+
+
+# --- deferred edge cases (#591) ------------------------------------------------------------------
+
+def test_rerun_repairs_a_failed_mark_superseded(tmp_path):
+    import re
+    adr, inp = setup(tmp_path, [dec(decision="a", context="same ctx")], existing=())
+    run(adr, inp)
+    assert feed(adr, inp, dec(decision="b", context="same ctx")).returncode == 0
+    old = adr / "0001-use-a-queue.md"
+    text = old.read_text().replace("status: superseded", "status: accepted")
+    old.write_text(re.sub(r"^superseded_by:.*\n", "", text, flags=re.M))   # the failed mark
+    r = feed(adr, inp, dec(decision="b", context="same ctx"))
+    assert r.returncode == 0, r.stderr
+    assert "status: superseded" in old.read_text() and "superseded_by: 0002" in old.read_text()
+    assert md_files(adr) == ["0001-use-a-queue.md", "0002-use-a-queue.md"]
+    before = snapshot(adr)
+    assert json.loads(feed(adr, inp, dec(decision="b", context="same ctx")).stdout) == []
+    assert snapshot(adr) == before
+
+
+def test_same_slug_different_context_is_a_separate_decision(tmp_path):
+    adr, inp = setup(tmp_path, [dec(decision="a", context="about queues")], existing=())
+    run(adr, inp)
+    r = feed(adr, inp, dec(decision="something else", context="a different problem"))
+    assert r.returncode == 0, r.stderr
+    assert len(md_files(adr)) == 2
+    assert "superseded" not in (adr / "0001-use-a-queue.md").read_text()
+    assert "Supersedes" not in (adr / "0002-use-a-queue.md").read_text()
+
+
+def test_broken_template_fails_early_with_nothing_to_write(tmp_path):
+    adr, inp = setup(tmp_path, [dec(adr=False)], existing=())
+    (adr / "TEMPLATE.md").write_bytes(b"\xff\xfe\x00 {title}\n")
+    r = run(adr, inp)
+    assert r.returncode == 2 and "write_adrs" in r.stderr
+    (adr / "TEMPLATE.md").write_text(TEMPLATE.read_text() + "\nOwner: {owner}\n")
+    r = run(adr, inp)
+    assert r.returncode == 2 and "{owner}" in r.stderr

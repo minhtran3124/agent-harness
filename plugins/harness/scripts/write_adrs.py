@@ -177,7 +177,7 @@ def existing_keys(adr_dir: Path) -> list:
 
 
 def recorded_match(d: dict, keys: list):
-    """Match against the live (not superseded) ADRs of the same numeric ticket with the same title slug or context.
+    """Match against the live (not superseded) ADRs of the same numeric ticket with the same title slug or context (a slug hit with a different context never counts).
 
     Returns None (no match), (number, True) when a live match has the same decision text, or
     ([numbers], False) with every live matching number when the decision text changed. A changed
@@ -189,8 +189,12 @@ def recorded_match(d: dict, keys: list):
         return None   # autopilot run-level decisions repeat across runs
     slug, ctx = slugify(d["title"]), _context_key(d)
     dec = " ".join(as_text(d["decision"]).lower().split())
-    hits = [(n, dtext) for n, t, s, c, dtext, sup in keys
-            if t == ticket and not sup and (s == slug or (ctx and c == ctx))]
+    live = [k for k in keys if k[1] == ticket and not k[5]]
+    ctx_hits = {k[0] for k in live if ctx and k[3] == ctx}
+    # A slug hit whose context differs is another decision under the same title (#591 case 3), even
+    # when another live ADR matches the context: only that context match is the same decision.
+    hits = [(n, dtext) for n, _, s, c, dtext, _ in live
+            if n in ctx_hits or (s == slug and (not ctx or not c or c == ctx))]
     if not ticket.isdigit():
         # A placeholder ticket (a /compound run) skips only an identical decision: it never supersedes.
         return next(((n, True) for n, dtext in hits if dtext == dec), None)
@@ -198,6 +202,25 @@ def recorded_match(d: dict, keys: list):
         if not dtext or dtext == dec:
             return n, True
     return ([n for n, _ in hits], False) if hits else None
+
+
+def unfinished_supersedes(adr_dir: Path, number: str, keys: list) -> dict:
+    """Old ADR numbers the recorded ADR says it supersedes that are still live (a failed mark-superseded).
+
+    Returns {old number: number}. A re-run repairs them, so the old ADR ends superseded.
+    """
+    live = {k[0] for k in keys if not k[5]}
+    out = {}
+    for p in adr_dir.glob(f"{number}-*.md"):
+        try:
+            cm = re.search(r"^## Context\n(.*?)(?=^## |\Z)", p.read_text(), re.M | re.S)
+        except (OSError, UnicodeError):
+            continue
+        m = re.match(r"\A\s*Supersedes ADR ([\d, ]+)\.", cm.group(1)) if cm else None
+        for old in (re.findall(r"\d+", m.group(1)) if m else []):
+            if old in live and old != number:
+                out[old] = number
+    return out
 
 
 def recorded_number(d: dict, keys: list):
@@ -419,7 +442,10 @@ def load_template(adr_dir: Path) -> str:
     """The repo's own template wins; the built-in default is the last resort."""
     path = adr_dir / "TEMPLATE.md"
     if path.is_file():
-        return path.read_text()
+        try:
+            return path.read_text()
+        except (OSError, UnicodeError) as e:
+            raise BadInput(f"cannot read {path}: {e}")
     return DEFAULT_TEMPLATE
 
 
@@ -450,10 +476,11 @@ def main() -> int:
         except (OSError, json.JSONDecodeError) as e:
             raise BadInput(f"cannot read input: {e}")
         adr_dir = Path(args.adr_dir)
-        template = load_template(adr_dir)
+        template = prepare_template(load_template(adr_dir))   # a broken template fails before any work
         merged = dedupe(validate(data))
         keys = existing_keys(adr_dir)
         recorded = {}
+        repair = {}   # old number -> new number, for a supersede a failed mark left unfinished
         kept = []
         for d in merged:
             if not needs_adr(d):
@@ -461,6 +488,7 @@ def main() -> int:
             m = recorded_match(d, keys)
             if m and m[1]:
                 recorded[id(d)] = m[0]
+                repair.update(unfinished_supersedes(adr_dir, m[0], keys))
             elif m:
                 kept.append({**d, "context": f"Supersedes ADR {', '.join(m[0])}.\n\n{as_text(d['context'])}",
                              "_supersedes": m[0]})
@@ -472,6 +500,9 @@ def main() -> int:
             for old in it.get("_supersedes", []):
                 path, text = plan_supersede(adr_dir, old, it["number"])
                 marks.setdefault(path, text)
+        for old_n, new_n in repair.items():
+            path, text = plan_supersede(adr_dir, old_n, new_n)
+            marks.setdefault(path, text)
         if not args.dry_run:
             adr_dir.mkdir(parents=True, exist_ok=True)
             for it in items:
