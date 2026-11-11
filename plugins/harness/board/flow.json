@@ -19,7 +19,7 @@
     { "id": "adv",     "t": "Advisor",          "a": "before the last round",  "x": 880,  "y": 380, "match": ["^advisor (uat|qa-verify)-fix$"], "cond": true },
     { "id": "fix",     "t": "Fix round",        "a": "fix agent (max 3)",      "x": 440,  "y": 380, "match": ["^(UAT|QA check) fix$", "^fix commit check$"], "cond": true },
     { "id": "rerun",   "t": "Re-check",         "a": "fresh worktree",         "x": 660,  "y": 380, "match": ["^(UAT|QA check) rerun$"], "cond": true },
-    { "id": "check",   "t": "UAT / QA check",   "a": "uat / qa-verifier",      "x": 440,  "y": 250, "match": ["^UAT$", "^QA check$", "^fetch owner request$"] },
+    { "id": "check",   "t": "UAT / QA check",   "a": "uat / qa-verifier",      "x": 440,  "y": 250, "match": ["^UAT$", "^QA check$"] },
     { "id": "test",    "t": "Test suite",       "a": "full suite once",        "x": 840,  "y": 250, "match": ["^test$"] },
     { "id": "adr",     "t": "Decisions",        "a": "ADRs, specs, artifact",  "x": 1040, "y": 250, "match": ["^write ADRs$", "^write specs/ flow files$", "^update run artifact$"] },
     { "id": "final",   "t": "Final PR",         "a": "a human merges",         "x": 1240, "y": 250, "match": ["^open final PR$", "^CI snapshot$"] }

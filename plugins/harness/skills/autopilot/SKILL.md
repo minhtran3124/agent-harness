@@ -2,8 +2,8 @@
 name: autopilot
 description: "Use when starting a hands-off run. Triages one ticket or a milestone, asks the owner every open question once, then launches the ship workflow."
 disable-model-invocation: true
-argument-hint: "<milestone | #n [#m ...] | free text> [base=<branch>] [--no-ask]"
-allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(git check-ignore *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/load_profile.py *)
+argument-hint: "<milestone | #n [#m ...] | free text> [base=<branch>] [--no-ask] [--no-board]"
+allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(git check-ignore *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/load_profile.py *), Bash(bash ${CLAUDE_SKILL_DIR}/scripts/board-start.sh*)
 ---
 
 # Autopilot
@@ -38,10 +38,10 @@ skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the
    confirmed decisions (short). State the base branch, the integration branch `feat/<slug>`,
    single or multi, the model plan from the profile and that nothing is merged. This is
    the owner's last question.
-8. **Launch.** Call Workflow with `name: "harness:autopilot-run"` and `args` as a real
-   object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
-   `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With
-   `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Give the owner
+8. **Launch.** Unless `--no-board`, first run `bash ${CLAUDE_SKILL_DIR}/scripts/board-start.sh` (no `cd`) and tell the
+   owner the URL it prints (`references/board.md`). Call Workflow with `name: "harness:autopilot-run"` and `args` as a real
+   object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`, which also names the source of
+   `testCmd`, `lintCmd` and `fullTestCmd`). Give the owner
    the run ID; `/workflows` shows progress. Wait for completion. Answer
    "done yet?" from the phase and agent counts. On completion report as
    `references/launch-args.md` says.

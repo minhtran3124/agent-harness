@@ -72,7 +72,7 @@ test('qb2: every agent label ship.js builds lands on the right box, or on none b
     'intent review': 'irev', 'intent fix': 'irev', 'UAT': 'check', 'QA check': 'check', 'UAT fix': 'fix', 'QA check fix': 'fix',
     'UAT rerun': 'rerun', 'QA check rerun': 'rerun', 'advisor uat-fix': 'adv', 'advisor qa-verify-fix': 'adv', 'test': 'test',
     'write ADRs': 'adr', 'write specs/ flow files': 'adr', 'open final PR': 'final', 'CI snapshot': 'final',
-    'check plugin and tools': null, 'set up integration branch': null,
+    'check plugin and tools': null, 'set up integration branch': null, 'fetch owner request': null,
   };
   for (const [stage, node] of Object.entries(want)) assert.strictEqual(B.nodeFor(FLOW, stage), node, `stage "${stage}"`);
   // Drift guard: the fixed labels in ship.js must still be ones this map knows.
@@ -194,7 +194,21 @@ test('qb10: flow.json is consistent and the page has no external resources', () 
   assert.throws(() => B.parseArgs(['--port', '70000']), /--port/);
 });
 
-test('qb11: the page works under a path prefix and has an embed mode', () => {
+test('qb11: --idle-exit stops the server once no run is going, and not while one runs', async () => {
+  const base = tmp();
+  makeRun(base, 'wf_live', [{ type: 'started', key: 'k', agentId: 'a1', label: '#1 implement · t', phase: 'Tickets' }]);
+  const live = await B.start({ port: 0, projectDir: base, follow: true, pollMs: 30, idleExit: 0.002 });
+  let closed = false; live.server.on('close', () => { closed = true; });
+  await sleep(400);
+  assert.ok(!closed, 'a running run keeps the board up');
+  fs.mkdirSync(path.join(base, 'sess1', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(base, 'sess1', 'workflows', 'wf_live.json'), JSON.stringify({ status: 'completed', durationMs: 1, result: null }));
+  for (let i = 0; i < 40 && !closed; i++) await sleep(50);
+  assert.ok(closed, 'the board stops after the idle time once the run ended');
+  assert.throws(() => B.parseArgs(['--idle-exit', 'x']), /--idle-exit/);
+});
+
+test('qb12: the page works under a path prefix and has an embed mode', () => {
   const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'board.html'), 'utf8');
   // A proxy can serve the board at /board/<project>/: every URL the page loads is relative.
   assert.ok(!/(fetch|EventSource)\(\s*['"]\//.test(html), 'the page requests an absolute path');

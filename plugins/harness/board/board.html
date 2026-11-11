@@ -186,6 +186,8 @@ var ICON={
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function ms(ts){var t=Date.parse(ts);return isNaN(t)?null:t;}
 function dur(a){var s=ms(a.first),e=a.status==='running'?Date.now():ms(a.last);if(s==null||e==null)return '';var x=Math.max(0,Math.round((e-s)/1000));return Math.floor(x/60)+':'+('0'+x%60).slice(-2);}
+// A started row read before the agent's transcript exists has no time yet: take it from the agent later.
+function logTs(l){var a=l.id&&A[l.id];return l.ts||(a?(l.kind==='started'?a.first:a.last):null);}
 function clock(ts){var t=ms(ts);if(t==null)return '';var d=new Date(t);return d.toTimeString().slice(0,8);}
 function shortModel(m){if(!m)return '';return m.replace(/^claude-/,'').replace(/-(\d+)-(\d+)$/,' $1.$2').replace(/^./,function(c){return c.toUpperCase();});}
 
@@ -210,7 +212,7 @@ function onEvent(e){
  if(a.node){lastTouched=a.node;pop(a.node);}
  var who=a.node&&N[a.node]?N[a.node].t:a.stage;
  var msg=e.kind==='started'?'Started: '+a.label:(STATE_TXT[a.status]+(a.checks?' · '+a.checks.passed+' of '+a.checks.total+' rows pass'+(a.checks.not_checkable?', '+a.checks.not_checkable+' not-checkable':''):'')+(a.summary?' · '+a.summary:''));
- LOG.unshift({ts:e.ts,who:(a.ticket?'#'+a.ticket+' ':'')+who,msg:msg,state:a.status});
+ LOG.unshift({ts:e.ts,id:a.id,kind:e.kind,who:(a.ticket?'#'+a.ticket+' ':'')+who,msg:msg,state:a.status});
  if(LOG.length>300)LOG.pop();
 }
 function fillTickets(){
@@ -327,7 +329,7 @@ function renderDetail(){
   '<div class="lrow"><h2>Needs you ('+by('waiting').length+')</h2><div class="chips r2">'+ch(by('waiting'),'warn')+'</div></div>';
 }
 function renderLog(){
- document.getElementById('log').innerHTML=LOG.map(function(l){return '<li><time>'+esc(clock(l.ts))+'</time><span class="dot '+esc(l.state)+'"></span><span><span class="who">'+esc(l.who)+'</span> · '+esc(l.msg)+'</span></li>';}).join('')||'<li><time></time><span class="dot"></span><span>No events yet.</span></li>';
+ document.getElementById('log').innerHTML=LOG.map(function(l){return '<li><time>'+esc(clock(logTs(l)))+'</time><span class="dot '+esc(l.state)+'"></span><span><span class="who">'+esc(l.who)+'</span> · '+esc(l.msg)+'</span></li>';}).join('')||'<li><time></time><span class="dot"></span><span>No events yet.</span></li>';
 }
 
 // --- wiring ---
