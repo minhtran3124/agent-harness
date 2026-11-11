@@ -18,9 +18,9 @@ export const meta = {
 // ---------------------------------------------------------------------------
 const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
   verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku',
-  qa: 'sonnet', security: 'opus', finish: 'sonnet' }
+  qa: 'sonnet', qaVerify: 'sonnet', security: 'opus', finish: 'sonnet' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
-  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', security: 'high', finish: 'medium' }
+  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', qaVerify: 'medium', security: 'high', finish: 'medium' }
 // args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage, any stage.
 const PROFILE_MODELS = ['haiku', 'sonnet', 'opus']
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
@@ -127,13 +127,14 @@ const VERIFY_SCHEMA = stageSchema({
 }, ['passed', 'kind'])
 // UAT: status blocked means the run did not happen (no config, app will not start, no credentials); it is never an AC failure.
 const UAT_SCHEMA = stageSchema({
-  passed_ac: { type: 'boolean', description: 'true only when every browser-checkable AC scenario passed' },
+  passed_ac: { type: 'boolean', description: 'true only when no AC scenario (kind ac) failed and every one that could be checked passed; a not-checkable row neither passes nor fails' },
   scenarios: { type: 'array', items: { type: 'object',
-    properties: { id: STR, covers: STR, kind: { type: 'string', enum: ['ac', 'negative', 'extra', 'not-browser-checkable'] },
+    properties: { id: STR, covers: STR, kind: { type: 'string', enum: ['ac', 'negative', 'extra', 'not-browser-checkable', 'not-checkable'] },
       status: { type: 'string', enum: ['PASS', 'FAIL', 'SKIPPED'] }, assertion: STR, still: STR },
     required: ['id', 'covers', 'kind', 'status'] } },
   non_ac_failures: { type: 'array', items: { type: 'object', properties: { id: STR, detail: STR }, required: ['id', 'detail'] } },
   console_errors: NUM,
+  head_sha: { type: 'string', description: 'qa-verifier only: the output of git rev-parse HEAD in its worktree' },
 }, ['passed_ac', 'scenarios'])
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
@@ -1274,8 +1275,18 @@ function stripVerify(text) {
 
 // One plan-blind UAT agent. No head(): that tells the agent to run gh issue view and would hand it the Verify row.
 // The prompt holds the stripped request, the stripped owner block and the config path. No plan, diff or Verify row.
-function uatAgent(label, wtName, t, body, owner, configPath) {
+function uatAgent(label, wtName, t, body, owner, configPath, qa = false) {
   const w = newWt(wtName, null, finalRef)
+  if (qa) {
+    // A ticket with no app: the plan-blind qa-verifier agent runs commands and reads delivered files. No config path, no browser.
+    const qprompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
+      `Stage: qa-verify. Read ${pluginDir}/agents/qa-verifier.md and act as that role, only after your worktree exists. Never ask anyone. ` +
+      `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep any output local and uncommitted; fix nothing. Work in ${w.dir}.\n\n` +
+      `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
+      (owner ? `Owner-confirmed decisions (the owner's own words):\n<<<\n${owner}\n>>>\n\n` : '') +
+      `Return passed_ac, scenarios (id, covers, kind, status, assertion), non_ac_failures and head_sha. Use kind not-checkable with status SKIPPED for an AC no command or file can show. If the run could not happen, return status blocked with blocked_reason.`
+    return call(qprompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.qaVerify, effort: EFFORT.qaVerify, agentType: 'harness:qa-verifier' }, `${pluginDir}/agents/qa-verifier.md`)
+  }
   const prompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
     `Stage: uat. Read ${pluginDir}/skills/uat/SKILL.md and follow it with Mode: auto, only after your worktree exists. Never ask anyone. ` +
     `The recipe file is ${pluginDir}/skills/verify/references/run-app.md. ` +
@@ -1287,8 +1298,8 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
-async function runUat(label, wtName, t, body, owner, configPath) {
-  try { return await uatAgent(label, wtName, t, body, owner, configPath) }
+async function runUat(label, wtName, t, body, owner, configPath, qa = false) {
+  try { return await uatAgent(label, wtName, t, body, owner, configPath, qa) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
@@ -1296,11 +1307,12 @@ async function runUat(label, wtName, t, body, owner, configPath) {
 const uatOk = res => res.passed_ac === true &&
   !(res.scenarios || []).some(s => s.kind === 'ac' && s.status === 'FAIL')
 
-const uatNotRun = (n, reason) => addDecision(n, 'uat', {
-  title: `UAT not run for #${n}`, context: `The UAT stage could not check the running app: ${reason}`,
-  decision: 'Continue without UAT; the ticket stays done and the PR body says UAT did not run.',
+const uatNotRun = (n, reason, qa = false) => addDecision(n, 'uat', {
+  title: `${qa ? 'QA check' : 'UAT'} not run for #${n}`, context: `The ${qa ? 'QA check' : 'UAT stage'} could not check ${qa ? 'the delivered files and commands' : 'the running app'}: ${reason}`,
+  decision: `Continue without the ${qa ? 'QA check' : 'UAT'}; the ticket stays done and the PR body says it did not run.`,
   why: 'A missing config, a start failure or an agent failure is not an acceptance failure, so no code fix is attempted.',
-  consequences: 'The running app was not checked against the original request.', how_to_reverse: `Run /harness:uat ${n} by hand.`,
+  consequences: qa ? 'The delivered result was not checked against the original request.' : 'The running app was not checked against the original request.',
+  how_to_reverse: qa ? `Check the acceptance criteria of #${n} by hand.` : `Run /harness:uat ${n} by hand.`,
   needs_review: true, adr: false,
 })
 
@@ -1312,38 +1324,40 @@ async function stageUat(delivered) {
     const t = tickets.find(x => x.n === r.n)
     const kind = r.verify && r.verify.kind
     if (!kind) { log(`UAT #${t.n} skipped: no verify result`); continue }
-    if (kind === 'docs') { log(`UAT #${t.n} skipped: docs ticket`); continue }
+    const qa = kind === 'docs'   // no app to run: the plan-blind qa-verifier checks it, at depth M and L
+    if (qa && t.depth === 'S') { log(`UAT #${t.n} skipped: docs ticket at depth S`); continue }
     const cached = requestCache.get(t.n)
-    if (!cached || !cached.fetched) { uatNotRun(t.n, 'the issue body could not be read'); records[t.n] = { status: 'not run', reason: 'issue body unreadable', scenarios: [] }; continue }
+    if (!cached || !cached.fetched) { uatNotRun(t.n, 'the issue body could not be read', qa); records[t.n] = { status: 'not run', reason: 'issue body unreadable', scenarios: [], qa }; continue }
     const body = stripVerify(cached.body), owner = stripVerify(t.confirmed ? t.confirmed.trim() : '')
     log(`UAT #${t.n}: stripped ${body.count} line(s) from the body and ${owner.count} from the owner block`)
     const configPath = (r.verify && r.verify.configPath) || `${repoDir}/verify.config.json`
-    const rec = { status: 'passed', reason: '', scenarios: [], fixed: false }
+    const rec = { status: 'passed', reason: '', scenarios: [], fixed: false, qa }
+    const W = qa ? 'qa-verify' : 'uat', NAME = qa ? 'QA check' : 'UAT'
     records[t.n] = rec
-    let res = await runUat(lbl(`#${t.n} UAT`, t.title), `uat-${t.n}`, t, body.text, owner.text, configPath)
+    let res = await runUat(lbl(`#${t.n} ${qa ? 'QA check' : 'UAT'}`, t.title), `${W}-${t.n}`, t, body.text, owner.text, configPath, qa)
     if (!res || res.status === 'blocked') {
-      const why = (res && (res.blocked_reason || res.summary)) || 'the UAT agent returned nothing'
-      uatNotRun(t.n, why); rec.status = 'not run'; rec.reason = why
+      const why = (res && (res.blocked_reason || res.summary)) || `the ${NAME} agent returned nothing`
+      uatNotRun(t.n, why, qa); rec.status = 'not run'; rec.reason = why
       continue
     }
-    takeDecisions(t.n, 'uat', res)
+    takeDecisions(t.n, W, res)
     rec.scenarios = res.scenarios || []
     if (!uatOk(res)) {
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
-      const fix = await fixAgent(lbl(`#${t.n} UAT fix`, t.title),
-        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. Console errors are report-only: do not fix them unless a failing AC needs it.`,
-        '', 'UAT', `uat-${t.n}`)
-      takeDecisions(t.n, 'uat-fix', fix)
+      const fix = await fixAgent(lbl(`#${t.n} ${qa ? 'QA check' : 'UAT'} fix`, t.title),
+        `${qa ? 'The QA check of the delivered result' : 'UAT on the running app'} found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. ${qa ? 'For a docs, config or script change, edit the file the AC names; add a test only where one can fail without the fix.' : 'Console errors are report-only: do not fix them unless a failing AC needs it.'}`,
+        '', 'UAT', `${W}-${t.n}`)
+      takeDecisions(t.n, `${W}-fix`, fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
       // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, t.title), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
-      if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
+      const again = rec.fixed ? await runUat(lbl(`#${t.n} ${qa ? 'QA check' : 'UAT'} rerun`, t.title), `${W}-rerun-${t.n}`, t, body.text, owner.text, configPath, qa) : res   // own worktree: it must see the fix
+      if (!rec.fixed) log(`${NAME} #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
-        const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
-        uatNotRun(t.n, `rerun: ${why}`); rec.status = 'not run'; rec.reason = `rerun: ${why}`
+        const why = (again && (again.blocked_reason || again.summary)) || `the ${NAME} rerun agent returned nothing`
+        uatNotRun(t.n, `rerun: ${why}`, qa); rec.status = 'not run'; rec.reason = `rerun: ${why}`
         continue
       }
-      takeDecisions(t.n, 'uat-rerun', again)
+      takeDecisions(t.n, `${W}-rerun`, again)
       rec.scenarios = again.scenarios || rec.scenarios
       res = again
     }
@@ -1479,10 +1493,10 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   if (uatRows.length) {
     L.push('', '## UAT sign-off', '', 'A human ticks these. Nothing enforces or waits on them.')
     for (const [n, u] of uatRows) {
-      L.push(`- ${ref(Number(n))} UAT: ${u.status}${u.fixed ? ' (one fix round ran, not re-reviewed)' : ''}${u.reason ? ` (${u.reason})` : ''}`)
+      L.push(`- ${ref(Number(n))} ${u.qa ? 'QA check' : 'UAT'}: ${u.status}${u.fixed ? ' (one fix round ran, not re-reviewed)' : ''}${u.reason ? ` (${u.reason})` : ''}`)
       for (const s of u.scenarios) L.push(`  - [ ] ${s.id} ${s.covers} (${s.kind}): ${s.status}${s.assertion ? `: ${s.assertion}` : ''}`)
     }
-    L.push('- [ ] Copy reads right', '- [ ] Layout looks right', '- [ ] The flow feels right')
+    if (uatRows.some(([, u]) => !u.qa)) L.push('- [ ] Copy reads right', '- [ ] Layout looks right', '- [ ] The flow feels right')
   }
   L.push('', '## Final verification', '', `Passed ${suite.passed}, failed ${suite.failed}, skipped ${suite.skipped}.${suite.note ? ` ${suite.note}.` : ''}`)
   L.push('', '{{DECISIONS}}', '', PR_FOOTER)

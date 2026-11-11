@@ -37,7 +37,7 @@ const TICKET_VERBS = {
   'acceptance-test check': 'acceptance-test check', 'security gate': 'security gate',
   'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
   'UAT fix': 'uat-fix', 'UAT rerun': 'uat-rerun', 'UAT': 'uat',
-  'qa-verify fix': 'qa-verify-fix', 'qa-verify rerun': 'qa-verify-rerun',
+  'QA check fix': 'qa-verify-fix', 'QA check rerun': 'qa-verify-rerun', 'QA check': 'qa-verify',
 }
 function legacyLabel(l) {
   if (l == null) return l
