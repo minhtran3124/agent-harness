@@ -579,7 +579,7 @@ def test_two_changed_decisions_mark_their_own_old_adrs(tmp_path):
 
 def test_old_adr_without_a_status_line_is_still_marked_superseded(tmp_path):
     adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
-    (adr / "0001-use-a-queue.md").write_text(adr_text(status=""))
+    (adr / "0001-use-a-queue.md").write_text(adr_text(status="", context="context of Use a queue"))
     assert feed(adr, inp, dec(decision="b")).returncode == 0
     fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
     assert "status: superseded" in fm and "superseded_by: 0002" in fm
@@ -587,7 +587,7 @@ def test_old_adr_without_a_status_line_is_still_marked_superseded(tmp_path):
 
 def test_stale_superseded_by_on_a_live_adr_is_replaced(tmp_path):
     adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
-    (adr / "0001-use-a-queue.md").write_text(adr_text(extra_fm="superseded_by: 0009\n"))
+    (adr / "0001-use-a-queue.md").write_text(adr_text(extra_fm="superseded_by: 0009\n", context="context of Use a queue"))
     assert feed(adr, inp, dec(decision="b")).returncode == 0
     fm = frontmatter((adr / "0001-use-a-queue.md").read_text())
     assert fm.count("superseded_by:") == 1 and "superseded_by: 0002" in fm and "status: superseded" in fm
@@ -595,7 +595,7 @@ def test_stale_superseded_by_on_a_live_adr_is_replaced(tmp_path):
 
 def test_crlf_old_adr_is_marked_and_keeps_its_line_endings(tmp_path):
     adr, inp = setup(tmp_path, [dec(decision="b")], existing=())
-    (adr / "0001-use-a-queue.md").write_bytes(adr_text(nl="\r\n").encode())
+    (adr / "0001-use-a-queue.md").write_bytes(adr_text(nl="\r\n", context="context of Use a queue").encode())
     assert feed(adr, inp, dec(decision="b")).returncode == 0
     raw = (adr / "0001-use-a-queue.md").read_bytes().decode()
     assert "status: superseded\r\n" in raw and "superseded_by: 0002\r\n" in raw
