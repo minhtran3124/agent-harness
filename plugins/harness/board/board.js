@@ -253,17 +253,19 @@ class RunTail {
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
-  const a = { project: process.cwd(), run: null, port: 4317, follow: true };
+  const a = { project: process.cwd(), run: null, port: 4317, follow: true, idleExit: 0 };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === '--project') { a.project = v; i++; }
     else if (k === '--run') { a.run = v; i++; }
     else if (k === '--port') { a.port = Number(v); i++; }
     else if (k === '--no-follow') a.follow = false;
+    else if (k === '--idle-exit') { a.idleExit = Number(v); i++; }
     else if (k === '-h' || k === '--help') a.help = true;
     else throw new Error(`unknown argument: ${k}`);
   }
   if (!Number.isInteger(a.port) || a.port < 0 || a.port > 65535) throw new Error('--port must be 0..65535');
+  if (!(a.idleExit >= 0)) throw new Error('--idle-exit must be a number of minutes, 0 or more');
   return a;
 }
 
@@ -290,15 +292,20 @@ function start(opts) {
   if (opts.run) open(resolveRun(opts.run, opts.root));
   else { const r = pickNewest(); if (r) open(r); }
 
+  // idleExit (minutes): stop once no run has been going for that long (the run ended, or none started).
+  const idleMs = (opts.idleExit || 0) * 60000;
+  let lastBusy = Date.now(), server = null;
   const timer = setInterval(() => {
     if (!opts.run && opts.follow) {
       const r = pickNewest();
       if (r && (!tail || r.id !== tail.run.id)) open(r);      // a newer run started: switch to it
     }
     if (tail) tail.tick();
+    if (tail && !tail.ended) lastBusy = Date.now();
+    else if (idleMs && server && Date.now() - lastBusy >= idleMs) server.close();
   }, opts.pollMs || POLL_MS);
 
-  const server = http.createServer((req, res) => {
+  server = http.createServer((req, res) => {
     const url = (req.url || '/').split('?')[0];
     if (url === '/' || url === '/index.html') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
@@ -323,7 +330,7 @@ function start(opts) {
     res.writeHead(404); res.end('not found');
   });
   const ping = setInterval(() => { for (const res of clients) res.write(': ping\n\n'); }, 15000);
-  server.on('close', () => { clearInterval(timer); clearInterval(ping); for (const res of clients) res.end(); });
+  server.on('close', () => { clearInterval(timer); clearInterval(ping); for (const res of clients) res.end(); clients.clear(); });
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(opts.port, '127.0.0.1', () => resolve({ server, port: server.address().port, projDir }));
@@ -334,14 +341,16 @@ const USAGE = `usage: node board.js [--project <path>] [--run <run id | run dir>
   --project  the project whose newest ship.js run to show (default: the current directory)
   --run      one run: its id (wf_...) or its directory
   --port     port on 127.0.0.1 (default 4317; 0 picks a free one)
-  --no-follow  stay on the run shown at start; by default the board switches to a newer run of the project`;
+  --no-follow  stay on the run shown at start; by default the board switches to a newer run of the project
+  --idle-exit  stop after this many minutes with no run going (default 0: never)`;
 
 if (require.main === module) {
   let a;
   try { a = parseArgs(process.argv.slice(2)); } catch (e) { console.error(`board: ${e.message}\n${USAGE}`); process.exit(2); }
   if (a.help) { console.log(USAGE); process.exit(0); }
-  start(a).then(({ port, projDir }) => {
+  start(a).then(({ server, port, projDir }) => {
     console.log(`board: http://127.0.0.1:${port}  (runs of ${projDir})`);
+    server.on('close', () => { console.log('board: stopped (no run going)'); process.exit(0); });
   }).catch(e => { console.error(`board: ${e.message}`); process.exit(1); });
 }
 

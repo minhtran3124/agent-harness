@@ -19,6 +19,7 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 - `advisorModel` is the profile's `advisor`. `profile` is optional and holds the profile's `stages`
   (see `profile.md`). Leave it out when `stages` is empty.
 
+- Take `testCmd`, `lintCmd` and `fullTestCmd` from `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only.
 - `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
 - One ticket means single mode: no integration branch (ADR 0001, decision 5).
 - `noAsk: true` when `--no-ask` was given. `local` stays false unless the owner asks for a run

@@ -11,11 +11,31 @@ More shots of real runs (dark theme, a killed run) are in `docs/images/board/`.
 node plugins/harness/board/board.js                    # newest run of the project in the current directory
 node plugins/harness/board/board.js --project ~/code/app
 node plugins/harness/board/board.js --run wf_596bd115-74c
+node plugins/harness/board/board.js --idle-exit 30          # stop by itself 30 min after the run ends
 ```
 
-Then open `http://127.0.0.1:4317`. Start the board before or during `/harness:autopilot`; it switches to a
+Then open `http://127.0.0.1:4317`. `/harness:autopilot` starts the board for you, and opens it in a browser when a desktop is there (see below). Otherwise start the board before or during the run; it switches to a
 newer run of the same project by itself (`--no-follow` keeps the first one). It works for any project
 that runs `ship.js`, because it only needs the project path.
+
+## Autopilot starts it
+
+Unless you pass `--no-board`, `/harness:autopilot` runs `plugins/harness/skills/autopilot/scripts/board-start.sh` just
+before it launches the workflow. The script:
+
+- works for the directory where Claude Code was started (the board derives the project from it);
+- starts `board.js` in the background and prints the URL. It reuses a board that already runs for this project. If port
+  4317 is taken by a non-board server or by the board of another project, it uses a free port;
+- opens the page in your browser only when a desktop is there: macOS, or Linux with a display and no SSH session. In an
+  SSH session it prints an `ssh -L` line. Without a display it prints the URL;
+- keeps a pid, url and log file per project under `${TMPDIR:-/tmp}` (`harness-board-<project>.*`);
+- never blocks a run: with no `node` or a start error it prints one line and exits 0.
+
+The board keeps running after the run ends. Stop it with `bash plugins/harness/skills/autopilot/scripts/board-start.sh --stop`
+from the same directory. It runs from the plugin's own copy, so after a plugin upgrade an old board keeps running
+until you stop it. Verifies: a board for this project answers on the printed URL. Does not verify: that a browser opened,
+that the board outlives the Claude Code session, or that the directory is the one Claude Code writes its runs under (if
+the board shows "No ship.js run found" during a run, start it with `--project <path>` by hand).
 
 ## Where the data comes from
 
@@ -48,7 +68,10 @@ contents from the transcripts.
   "No ship.js run found" or no model; `tests/board/board.test.js` pins the format the board expects.
 - A check box shows its first result. When a fix round then passes, the Re-check box turns green and the
   summary's Check phase says Passed; the first check stays red, on purpose, so the failure stays visible.
-- A box shows the latest agent of its stage; the caption counts all agents of the box (`2 agents`; the UAT / QA check box also holds `fetch owner request`).
+- A box shows the latest agent of its stage; the caption counts all agents of the box (`2 agents`). The
+  `fetch owner request` step before a check has no box, so the check box shows the checker's model.
+- The Now card and the log show each agent's own summary as it wrote it. It can name a folder of your
+  project: look at a screenshot before you post it somewhere public.
 - After the run ends, a box that never ran says `Not run`, and a check stopped by the end of the run makes the Check phase `Stopped`.
 - The setup agent (`check plugin and tools`) has no box; it shows only in the event log.
 - A killed run has no PR link on the board: Claude Code writes `result: null` in its summary, so the PR
