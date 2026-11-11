@@ -130,8 +130,7 @@ Models and effort are constants at the top of the file. `stageModel(stage, depth
 `--run <run id | run dir>` one run, `--port` another port. It reads only what Claude Code writes for a
 Workflow run (the run's `journal.jsonl`, each agent's transcript for model, effort and times, and the run
 summary at the end), so it adds no hook and changes nothing in `ship.js`. `plugins/harness/board/README.md`
-has the details and the limits. `/harness:autopilot` starts it (or reuses a running one) and opens it in a browser just before
-the launch, unless the profile sets `"board": false`; it stops itself 30 minutes after the run ends.
+has the details and the limits.
 
 ## Local mode
 

@@ -11,6 +11,7 @@ More shots of real runs (dark theme, a killed run) are in `docs/images/board/`.
 node plugins/harness/board/board.js                    # newest run of the project in the current directory
 node plugins/harness/board/board.js --project ~/code/app
 node plugins/harness/board/board.js --run wf_596bd115-74c
+node plugins/harness/board/board.js --idle-exit 30          # stop by itself 30 min after the run ends
 ```
 
 Then open `http://127.0.0.1:4317`. Start the board before or during `/harness:autopilot`; it switches to a
@@ -56,19 +57,5 @@ contents from the transcripts.
 - The setup agent (`check plugin and tools`) has no box; it shows only in the event log.
 - A killed run has no PR link on the board: Claude Code writes `result: null` in its summary, so the PR
   number is not in any file the board reads.
-
-## Started by autopilot
-
-`/harness:autopilot` starts the board for you just before it launches the workflow, through
-`plugins/harness/skills/autopilot/scripts/open_board.js`:
-
-- It reuses a board that already runs for this project on port 4317. When another project's board holds
-  that port, it starts one on a free port.
-- It starts the board with `--idle-exit 30`: the board stops by itself 30 minutes after the run ends.
-- It opens the page in your browser on macOS, Windows, and Linux with a desktop (`DISPLAY` or
-  `WAYLAND_DISPLAY`). It opens nothing in CI or when `HARNESS_BOARD_NO_OPEN=1`. A headless `claude -p`
-  run on a desktop machine also opens the browser.
-- A board problem prints one line and never stops the run.
-- `"board": false` in `<repo>/.claude/autopilot-profile.json` turns it off.
 
 Tests: `bash tests/scripts/board.test.sh`.
