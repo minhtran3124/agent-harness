@@ -48,10 +48,27 @@ contents from the transcripts.
   "No ship.js run found" or no model; `tests/board/board.test.js` pins the format the board expects.
 - A check box shows its first result. When a fix round then passes, the Re-check box turns green and the
   summary's Check phase says Passed; the first check stays red, on purpose, so the failure stays visible.
-- A box shows the latest agent of its stage; the caption counts all agents of the box (`2 agents`; the UAT / QA check box also holds `fetch owner request`).
+- A box shows the latest agent of its stage; the caption counts all agents of the box (`2 agents`). The
+  `fetch owner request` step before a check has no box, so the check box shows the checker's model.
+- The Now card and the log show each agent's own summary as it wrote it. It can name a folder of your
+  project: look at a screenshot before you post it somewhere public.
 - After the run ends, a box that never ran says `Not run`, and a check stopped by the end of the run makes the Check phase `Stopped`.
 - The setup agent (`check plugin and tools`) has no box; it shows only in the event log.
 - A killed run has no PR link on the board: Claude Code writes `result: null` in its summary, so the PR
   number is not in any file the board reads.
+
+## Started by autopilot
+
+`/harness:autopilot` starts the board for you just before it launches the workflow, through
+`plugins/harness/skills/autopilot/scripts/open_board.js`:
+
+- It reuses a board that already runs for this project on port 4317. When another project's board holds
+  that port, it starts one on a free port.
+- It starts the board with `--idle-exit 30`: the board stops by itself 30 minutes after the run ends.
+- It opens the page in your browser on macOS, Windows, and Linux with a desktop (`DISPLAY` or
+  `WAYLAND_DISPLAY`). It opens nothing in CI or when `HARNESS_BOARD_NO_OPEN=1`. A headless `claude -p`
+  run on a desktop machine also opens the browser.
+- A board problem prints one line and never stops the run.
+- `"board": false` in `<repo>/.claude/autopilot-profile.json` turns it off.
 
 Tests: `bash tests/scripts/board.test.sh`.

@@ -3,5 +3,6 @@
   "researcher": "haiku",
   "intake": "sonnet",
   "advisor": "opus",
+  "board": true,
   "stages": {}
 }

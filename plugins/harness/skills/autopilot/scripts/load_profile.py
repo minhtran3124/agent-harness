@@ -48,6 +48,9 @@ def check(profile, source):
                     raise ValueError(f"{source}: stages.{stage}.model must be one of {sorted(STAGE_MODELS)}")
                 if "effort" in cfg and cfg["effort"] not in EFFORTS:
                     raise ValueError(f"{source}: stages.{stage}.effort must be one of {sorted(EFFORTS)}")
+        elif key == "board":
+            if not isinstance(value, bool):
+                raise ValueError(f"{source}: board must be true or false")
         elif key in ROLE_MODELS:
             if value not in ROLE_MODELS[key]:
                 raise ValueError(f"{source}: {key} must be one of {sorted(ROLE_MODELS[key])}")

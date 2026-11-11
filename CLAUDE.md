@@ -8,7 +8,7 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
 
 `bash scripts/check-shellcheck.sh` runs shellcheck over the harness shell scripts. Run it before the PR; CI runs the same script with `REQUIRE_SHELLCHECK=1`, which fails instead of skipping when shellcheck is missing.
 
-`node plugins/harness/board/board.js` shows the newest autopilot run of the current project live at `http://127.0.0.1:4317` (`plugins/harness/board/README.md`).
+`node plugins/harness/board/board.js` shows the newest autopilot run of the current project live at `http://127.0.0.1:4317` (`plugins/harness/board/README.md`); `/harness:autopilot` starts it and opens the browser by itself (profile `"board": false` turns it off).
 
 The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/marketplace.json`. To develop, run `claude --plugin-dir plugins/harness` from the repo root. The plugin's hooks and rule then load from there (the repo's `settings.json` wires no hooks), and its skills appear as `/harness:<name>`.
 

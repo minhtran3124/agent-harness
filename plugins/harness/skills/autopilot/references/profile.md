@@ -12,6 +12,7 @@ exit 2 it names the bad file and key.
   "researcher": "haiku",
   "intake": "sonnet",
   "advisor": "opus",
+  "board": true,
   "stages": {}
 }
 ```
@@ -22,6 +23,7 @@ exit 2 it names the bad file and key.
 | `researcher` | `haiku`, `sonnet`, `opus` | Step 2: `model` of the `researcher` call |
 | `intake` | `haiku`, `sonnet`, `opus` | Step 2: `model` of the intake agent |
 | `advisor` | `opus`, `fable` | Step 2 advisor call, and `advisorModel` in step 8 |
+| `board` | `true`, `false` | Step 8: start the run board and open it in a browser (`false`: skip) |
 | `stages` | `{ "<stage>": { "model": ..., "effort": ... } }` | Step 8: `profile: { stages }` |
 
 ## Orchestrator check

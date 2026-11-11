@@ -65,3 +65,17 @@ def test_bad_json_exits_2(tmp_path):
     override(tmp_path, "nope")
     r = run(tmp_path)
     assert r.returncode == 2 and "autopilot-profile.json" in r.stderr
+
+
+def test_board_defaults_on_and_can_be_turned_off(tmp_path):
+    assert json.loads(DEFAULT.read_text())["board"] is True
+    override(tmp_path, {"board": False})
+    r = run(tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout)["board"] is False
+
+
+def test_board_must_be_a_boolean(tmp_path):
+    override(tmp_path, {"board": "yes"})
+    r = run(tmp_path)
+    assert r.returncode == 2 and "board must be true or false" in r.stderr

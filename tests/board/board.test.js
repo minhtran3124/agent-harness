@@ -72,7 +72,7 @@ test('qb2: every agent label ship.js builds lands on the right box, or on none b
     'intent review': 'irev', 'intent fix': 'irev', 'UAT': 'check', 'QA check': 'check', 'UAT fix': 'fix', 'QA check fix': 'fix',
     'UAT rerun': 'rerun', 'QA check rerun': 'rerun', 'advisor uat-fix': 'adv', 'advisor qa-verify-fix': 'adv', 'test': 'test',
     'write ADRs': 'adr', 'write specs/ flow files': 'adr', 'open final PR': 'final', 'CI snapshot': 'final',
-    'check plugin and tools': null, 'set up integration branch': null,
+    'check plugin and tools': null, 'set up integration branch': null, 'fetch owner request': null,
   };
   for (const [stage, node] of Object.entries(want)) assert.strictEqual(B.nodeFor(FLOW, stage), node, `stage "${stage}"`);
   // Drift guard: the fixed labels in ship.js must still be ones this map knows.
@@ -192,6 +192,48 @@ test('qb10: flow.json is consistent and the page has no external resources', () 
   const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'board.html'), 'utf8');
   assert.ok(!/(src|href)=["']https?:/i.test(html) && !/@import|fonts\.googleapis/.test(html), 'the page loads something from the network');
   assert.throws(() => B.parseArgs(['--port', '70000']), /--port/);
+});
+
+test('qb11: --idle-exit stops the server once no run is going, and not while one runs', async () => {
+  const base = tmp();
+  makeRun(base, 'wf_live', [{ type: 'started', key: 'k', agentId: 'a1', label: '#1 implement · t', phase: 'Tickets' }]);
+  const live = await B.start({ port: 0, projectDir: base, follow: true, pollMs: 30, idleExit: 0.002 });
+  let closed = false; live.server.on('close', () => { closed = true; });
+  await sleep(400);
+  assert.ok(!closed, 'a running run keeps the board up');
+  fs.mkdirSync(path.join(base, 'sess1', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(base, 'sess1', 'workflows', 'wf_live.json'), JSON.stringify({ status: 'completed', durationMs: 1, result: null }));
+  for (let i = 0; i < 40 && !closed; i++) await sleep(50);
+  assert.ok(closed, 'the board stops after the idle time once the run ended');
+  assert.throws(() => B.parseArgs(['--idle-exit', 'x']), /--idle-exit/);
+});
+
+test('qb12: open_board reuses a running board of the project, starts one otherwise, never opens a browser without a desktop', async () => {
+  const OB = require(path.join(root, 'plugins', 'harness', 'skills', 'autopilot', 'scripts', 'open_board.js'));
+  assert.throws(() => OB.parseArgs(['--port', '0']), /--port/);
+  assert.throws(() => OB.parseArgs(['--what']), /unknown/);
+  assert.strictEqual(OB.canOpen({}, 'linux'), false);
+  assert.strictEqual(OB.canOpen({ DISPLAY: ':0' }, 'linux'), true);
+  assert.strictEqual(OB.canOpen({ DISPLAY: ':0', CI: 'true' }, 'linux'), false);
+  assert.strictEqual(OB.canOpen({ HARNESS_BOARD_NO_OPEN: '1' }, 'darwin'), false);
+  const proj = path.join(tmp(), 'proj');
+  const projDir = path.join(tmp(), B.projectKey(proj));
+  fs.mkdirSync(projDir, { recursive: true });
+  const { server, port } = await B.start({ port: 0, projectDir: projDir, pollMs: 50 });
+  const out = [], log = console.log;
+  console.log = m => out.push(String(m));
+  try {
+    assert.strictEqual(await OB.main(['--project', proj, '--port', String(port), '--no-open']), 0);
+    assert.ok(out.some(l => l.includes('already running for this project')), out.join('\n'));
+    out.length = 0;
+    // Another project's board holds the port: a new board starts on a free port and stops itself when idle.
+    assert.strictEqual(await OB.main(['--project', path.join(tmp(), 'other'), '--port', String(port), '--idle-exit', '0.005'], {}), 0);
+    const m = out.join('\n').match(/board: (http:\/\/127\.0\.0\.1:(\d+)) \(started/);
+    assert.ok(m && Number(m[2]) !== port, out.join('\n'));
+    assert.ok(out.some(l => l.includes('no desktop here')), 'no DISPLAY: no browser');
+    for (let i = 0; i < 40 && await OB.probe(Number(m[2]), 200); i++) await sleep(100);
+    assert.strictEqual(await OB.probe(Number(m[2]), 200), null, 'the started board stops itself when idle');
+  } finally { console.log = log; server.close(); }
 });
 
 (async () => {
