@@ -2,10 +2,10 @@
 
 Persistent documentation of non-obvious patterns, bug fixes, and architectural decisions.
 
-- **Written by:** `compound` after sessions with non-trivial learnings
-- **Read by:** `brainstorming` (decision track only), `xia2` (all tracks via INDEX-first lookup),
-  and `compound`'s related-docs lookup; the `session-knowledge.sh` SessionStart hook
-  loads `critical-patterns.md` and an `INDEX.md` pointer
+- **Written by:** `/compound` after sessions with non-trivial learnings
+- **Decisions:** ADRs in `docs/adr/` are the one store for decisions; this folder keeps lessons.
+- **Read by:** `xia2` (research stage, depth L), `brainstorming` (design stage, depth L),
+  `compound`'s related-docs lookup, and the CLAUDE.md instruction to read `critical-patterns.md` when planning
 
 ## Structure
 
@@ -38,13 +38,26 @@ problem_type: bug | knowledge | failure
 module: <area of codebase>
 tags: [<keyword>, <keyword>]
 severity: critical | standard
-applicable_when: <one sentence: when a future agent should apply this>
+applicable_when: <required; one sentence: when a future agent should apply this>
 affects: [<file-path>, <file-path>]
 supersedes: <slug-of-older-entry>   # optional
 confidence: high | medium | low
 confirmed_at: YYYY-MM-DD
 ---
 ```
+
+`applicable_when` is required in every solution file. `INDEX.md`, `critical-patterns.md` and
+`README.md` are exempt.
+
+## Checks
+
+Run both from the root of the harness repo. Each exits 0 when clean. A project that uses the harness has only the first script, in its plugin directory.
+
+- `python3 plugins/harness/scripts/rebuild_solution_index.py --check` verifies that `INDEX.md` matches
+  the solution files and that no solution file lacks `applicable_when`.
+- `python3 scripts/check_frontmatter_contract.py` (harness repo only) verifies that every skill and agent has frontmatter
+  with a non-empty `name` and `description`, that `name` matches the file or directory, and that the
+  description has a trigger cue ("use" or "when").
 
 ## Body Sections (by `problem_type`)
 

@@ -37,6 +37,8 @@ const TICKET_VERBS = {
   'acceptance-test check': 'acceptance-test check', 'security gate': 'security gate',
   'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
   'UAT fix': 'uat-fix', 'UAT rerun': 'uat-rerun', 'UAT': 'uat',
+  'fix commit check': 'uat-fix-guard',
+  'QA check fix': 'qa-verify-fix', 'QA check rerun': 'qa-verify-rerun', 'QA check': 'qa-verify',
 }
 function legacyLabel(l) {
   if (l == null) return l
@@ -64,6 +66,8 @@ function legacyLabel(l) {
   if ((m = head.match(/^fix r(\d+)$/))) return `fix:r${m[1]}:all`
   if ((m = head.match(/^#(\d+) advisor (.+)$/))) return `advisor:${m[2]}:${m[1]}`
   if ((m = head.match(/^#(\d+) (.+?)( retry)?$/))) {
+    const rr = m[2].match(/^(UAT fix|UAT rerun|QA check fix|QA check rerun) r(\d+)$/)
+    if (rr) return `${TICKET_VERBS[rr[1]]}-r${rr[2]}:${m[1]}`
     const verb = TICKET_VERBS[m[2]]
     if (verb) return `${verb}:${m[1]}`
     return `${m[2]}:${m[1]}${m[3] ? ':retry' : ''}`
@@ -88,8 +92,10 @@ function defaults(c, st) {
   if (l.startsWith('qa:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
   if (l.startsWith('acceptance-test check:')) return { commits: [{ sha: 'qa1', subject: `Add acceptance tests for #${n}` }] }
   if (l.startsWith('security gate:')) return { why_risky: 'touches secrets', risk_note: 'NOTE', findings: [], followups: [] }
-  if (/^uat(-rerun)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
-  if (l.startsWith('uat-fix:')) return ok({ fix_status: 'fixed', base_sha: 'ubase', commit: 'ucommit' })
+  if (/^uat(-rerun(-r\d+)?)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
+  if (l.startsWith('uat-fix-guard:')) return { commits: [] }
+  if (/^qa-verify(-rerun(-r\d+)?)?:/.test(l)) return ok({ passed_ac: true, head_sha: 'qvsha', scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'exit 0', still: '' }], non_ac_failures: [], console_errors: 0 })
+  if (/^(uat|qa-verify)-fix(-r\d+)?:/.test(l)) return ok({ fix_status: 'fixed', base_sha: 'ubase', commit: 'ucommit' })
   if (l.startsWith('gif:')) return ok({ gif: '' })
   if (l.startsWith('attach:')) return ok()
   if (l.startsWith('finish:')) return ok({ pr: args0.local ? 0 : 100 + Number(n), url: `https://x/pull/${100 + Number(n)}` })
@@ -1531,8 +1537,8 @@ test('s6: a failing or blocked early write changes nothing', async () => {
 const uatRes = (passed, scenarios, extra) => ok({ passed_ac: passed, scenarios, non_ac_failures: [], console_errors: 0, ...extra })
 const sc = (id, covers, kind, status) => ({ id, covers, kind, status, assertion: `A-${id}`, still: '' })
 
-test('u1: a docs ticket gets no UAT agent', async () => {
-  const { calls, logs } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined))
+test('u1: a docs ticket at depth S gets no UAT agent', async () => {
+  const { calls, logs } = await run({ tickets: [T(1, 1, [], { depth: 'S' })] }, c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined))
   assert.strictEqual(named(calls, /^uat/).length, 0, labelsOf(calls).join())
   assert(logs.some(l => l.includes('UAT #1 skipped: docs')), logs.join('\n'))
   const local = await run({ local: true }, null)
@@ -1618,14 +1624,14 @@ test('u5b: a skipped or failed UAT fix starts no rerun and the AC failure stands
 })
 
 test('u5c: a FAIL row fails the run even when passed_ac is true', async () => {
-  const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
-  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+  const { calls, result } = await run({}, c => (/^uat(-rerun(-r\d+)?)?:1$/.test(c.label) ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  assert.strictEqual(named(calls, /^uat-fix/).length, 3)
   assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
 })
 
 test('u5e: a missing passed_ac is not a pass', async () => {
-  const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(undefined, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
-  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+  const { calls, result } = await run({}, c => (/^uat(-rerun(-r\d+)?)?:1$/.test(c.label) ? uatRes(undefined, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
+  assert.strictEqual(named(calls, /^uat-fix/).length, 3)
   assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
 })
 
@@ -1645,10 +1651,10 @@ test('u5d: console errors alone do not fail a run whose ACs all pass', async () 
 
 test('u5: a second AC failure marks the ticket blocked with reason UAT AC failed; the PR still opens', async () => {
   const { calls, result } = await run({}, c => {
-    if (/^uat(-rerun)?:1$/.test(c.label)) return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
+    if (/^uat(-rerun(-r\d+)?)?:1$/.test(c.label)) return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
   })
-  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
-  assert.strictEqual(named(calls, /^uat-rerun:/).length, 1)
+  assert.strictEqual(named(calls, /^uat-fix/).length, 3)
+  assert.strictEqual(named(calls, /^uat-rerun/).length, 3)
   assert.strictEqual(result.tickets[0].status, 'blocked')
   assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
   assert.strictEqual(result.final.pr, 101)
@@ -1713,6 +1719,150 @@ test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash
     assert(!p.includes('\\n'), `${re} prompt has a literal backslash-n`)
   }
   assert(named(calls, /^uat:1$/)[0].prompt.includes('<<<\n'))
+})
+
+// ---- qa-verifier: plan-blind check of a `docs` ticket (#618) ----------------------------------
+const docsVerify = c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined)
+const qvDocs = (extra, fn) => run({ tickets: [T(1, 1, [], { depth: 'M', ...extra })] }, c => { const v = docsVerify(c); return v !== undefined ? v : (fn ? fn(c) : undefined) })
+
+test('qv1: a docs ticket at depth M gets exactly one qa-verify agent call in phase UAT', async () => {
+  const { calls } = await qvDocs()
+  const q = named(calls, /^qa-verify:1$/)
+  assert.strictEqual(q.length, 1, labelsOf(calls).join())
+  assert.strictEqual(q[0].opts.agentType, 'harness:qa-verifier')
+  assert.strictEqual(q[0].opts.phase, 'UAT')
+  assert.strictEqual(named(calls, /^uat/).length, 0, 'the browser UAT agent does not run on a docs ticket')
+})
+
+test('qv2: a docs ticket at depth S gets no qa-verify call and the log says why', async () => {
+  const { calls, logs } = await run({ tickets: [T(1, 1, [], { depth: 'S' })] }, docsVerify)
+  assert.strictEqual(named(calls, /^qa-verify/).length, 0, labelsOf(calls).join())
+  assert(logs.some(l => l.includes('skipped: docs ticket at depth S')), logs.join('\n'))
+})
+
+test('qv3: the qa-verify prompt holds the stripped body and owner block, never the plan, diff or Verify text', async () => {
+  const { calls } = await qvDocs({ confirmed: 'Owner said X.\nVerify: OWNER-SECRET\n  continues here' }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nAC one\n\nVerify: SECRET-V start the app\n  then click SECRET-V2\n\nTail text' }
+    if (c.label === 'plan:1') return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
+  })
+  const q = named(calls, /^qa-verify:1$/)[0]
+  assert(q, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-V2', 'OWNER-SECRET', 'PLAN-MD', 'continues here', 'gh issue view 1']) assert(!q.prompt.includes(bad), `qa-verify prompt leaks ${bad}`)
+  assert(q.prompt.includes('Do the thing.') && q.prompt.includes('Tail text') && q.prompt.includes('Owner said X.'), q.prompt)
+  assert(!q.prompt.includes('Config:'), 'a docs ticket has no app, so no config path')
+})
+
+test('qv4: a FAIL AC row gives one fix call, then one rerun in a different worktree', async () => {
+  const { calls, result } = await qvDocs({}, c => (c.label === 'qa-verify:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')], { head_sha: 'a' }) : undefined))
+  assert.deepStrictEqual(labelsOf(calls).filter(l => /^qa-verify/.test(l)), ['qa-verify:1', 'qa-verify-fix:1', 'qa-verify-rerun:1'])
+  const first = named(calls, /^qa-verify:1$/)[0], again = named(calls, /^qa-verify-rerun:1$/)[0]
+  assert(first.prompt.includes('/.ship-repo/ms/qa-verify-1') && again.prompt.includes('/.ship-repo/ms/qa-verify-rerun-1'), first.prompt.slice(0, 200))
+  assert(!again.prompt.includes('worktree add --detach /.ship-repo/ms/qa-verify-1 '), 'the rerun uses its own worktree')
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('qv5: a blocked qa-verify run gives a needs_review decision and the ticket stays done', async () => {
+  const { calls, result } = await qvDocs({}, c => (c.label === 'qa-verify:1' ? ok({ status: 'blocked', blocked_reason: 'no command can show AC1', passed_ac: false, scenarios: [] }) : undefined))
+  assert.strictEqual(named(calls, /^qa-verify-(fix|rerun)/).length, 0)
+  assert.strictEqual(result.tickets[0].status, 'done')
+  assert(result.decisions.some(d => d.title === 'QA check not run for #1' && d.needs_review === true && d.adr === false), JSON.stringify(result.decisions))
+})
+
+test('qv6: an FE ticket still gets the UAT agent and never qa-verify', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'verify:1' ? vres(true, 'FE') : undefined))
+  assert.strictEqual(named(calls, /^uat:1$/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(named(calls, /^qa-verify/).length, 0)
+})
+
+// ---- up to 3 fix rounds after a failed UAT or QA check (#619) ----------------------------------
+const failRow = [sc('S1', 'AC1', 'ac', 'FAIL')]
+const failing = (...labels) => c => (labels.includes(c.label) ? uatRes(false, failRow) : undefined)
+const uatLabels = calls => labelsOf(calls).filter(l => !l.includes('guard') && /^(uat|qa-verify)(-|:)|^advisor:(uat|qa-verify)-fix/.test(l))
+
+test('fr1: fail, fix, pass gives 1 fix call, 1 rerun, status passed and a round count of 1', async () => {
+  const { calls, result } = await run({}, failing('uat:1'))
+  assert.deepStrictEqual(uatLabels(calls), ['uat:1', 'uat-fix:1', 'uat-rerun:1'])
+  assert.strictEqual(result.tickets[0].status, 'done')
+  assert(adrBody(calls).includes('UAT: passed') && adrBody(calls).includes('(1 fix round(s) ran, not re-reviewed)'), adrBody(calls))
+})
+
+test('fr2: a check that passes on the third rerun gives 3 fixes, 3 reruns and one advisor call before fix 3', async () => {
+  const { calls, result } = await run({}, failing('uat:1', 'uat-rerun:1', 'uat-rerun-r2:1'))
+  assert.deepStrictEqual(uatLabels(calls), ['uat:1', 'uat-fix:1', 'uat-rerun:1', 'uat-fix-r2:1', 'uat-rerun-r2:1', 'advisor:uat-fix:1', 'uat-fix-r3:1', 'uat-rerun-r3:1'])
+  assert.strictEqual(named(calls, /^advisor:/).length, 1)
+  assert(named(calls, /^uat-fix-r3:1$/)[0].prompt.includes('## Advisor advice') && named(calls, /^uat-fix-r3:1$/)[0].prompt.includes('ADVICE-TEXT'))
+  assert(!named(calls, /^uat-fix-r2:1$/)[0].prompt.includes('## Advisor advice'), 'only round 3 gets advice')
+  assert(!named(calls, /^uat-rerun-r3:1$/)[0].prompt.includes('ADVICE-TEXT'), 'the check stays plan-blind: advice goes to the fix agent only')
+  assert.strictEqual(result.tickets[0].status, 'done')
+  assert(adrBody(calls).includes('(3 fix round(s) ran, not re-reviewed)'), adrBody(calls))
+})
+
+test('fr3: a check that fails four times gives 3 fixes and no fourth, and blocks the ticket', async () => {
+  const { calls, result } = await run({}, failing('uat:1', 'uat-rerun:1', 'uat-rerun-r2:1', 'uat-rerun-r3:1'))
+  assert.strictEqual(named(calls, /^uat-fix/).length, 3)
+  assert.strictEqual(named(calls, /^uat-fix-r4/).length, 0)
+  assert.strictEqual(named(calls, /^uat-rerun/).length, 3)
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+  assert(result.decisions.some(d => JSON.stringify(d).includes('still failed after 3 fix rounds')), JSON.stringify(result.decisions))
+})
+
+test('fr4: a fix that returns skipped or failed stops the loop: no rerun and no further round', async () => {
+  for (const fix_status of ['skipped', 'failed']) {
+    const { calls, result } = await run({}, c => (c.label === 'uat-fix-r2:1' ? ok({ fix_status }) : failing('uat:1', 'uat-rerun:1')(c)))
+    assert.deepStrictEqual(uatLabels(calls), ['uat:1', 'uat-fix:1', 'uat-rerun:1', 'uat-fix-r2:1'], fix_status)
+    assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+  }
+})
+
+test('fr5: a rerun that returns blocked gives status not run and stops the loop', async () => {
+  const { calls, result } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, failRow) : c.label === 'uat-rerun:1' ? ok({ status: 'blocked', blocked_reason: 'app would not start', passed_ac: false, scenarios: [] }) : undefined))
+  assert.deepStrictEqual(uatLabels(calls), ['uat:1', 'uat-fix:1', 'uat-rerun:1'])
+  assert.strictEqual(result.tickets[0].status, 'done')
+  assert(result.decisions.some(d => d.title === 'UAT not run for #1' && d.needs_review === true))
+  assert(adrBody(calls).includes('UAT: not run'), adrBody(calls))
+})
+
+test('fr6: each fix round and each rerun has its own worktree name', async () => {
+  const { calls } = await run({}, failing('uat:1', 'uat-rerun:1', 'uat-rerun-r2:1'))
+  const wt = c => (c.prompt.match(/\/\.ship-repo\/ms\/[\w-]+/) || [])[0]
+  const names = named(calls, /^uat-(fix|rerun)/).map(wt)
+  assert.strictEqual(names.length, 6)
+  assert.strictEqual(new Set(names).size, 6, names.join())
+  assert(names.every(Boolean), names.join())
+})
+
+test('fr7: the same loop runs for a qa-verifier ticket, and a failed one is blocked as QA check AC failed', async () => {
+  const q = failing('qa-verify:1', 'qa-verify-rerun:1', 'qa-verify-rerun-r2:1')
+  const { calls, result } = await qvDocs({}, q)
+  assert.deepStrictEqual(uatLabels(calls), ['qa-verify:1', 'qa-verify-fix:1', 'qa-verify-rerun:1', 'qa-verify-fix-r2:1', 'qa-verify-rerun-r2:1', 'advisor:qa-verify-fix:1', 'qa-verify-fix-r3:1', 'qa-verify-rerun-r3:1'])
+  assert.strictEqual(result.tickets[0].status, 'done')
+  const fix = named(calls, /^qa-verify-fix:1$/)[0].prompt
+  assert(!fix.includes('include a test that fails without the fix'), 'a docs fix is not told to add a failing test it cannot add')
+  assert(fix.includes('check script or a test where one is possible'), fix)
+  const bad = await qvDocs({}, failing('qa-verify:1', 'qa-verify-rerun:1', 'qa-verify-rerun-r2:1', 'qa-verify-rerun-r3:1'))
+  assert.strictEqual(bad.result.tickets[0].status, 'blocked')
+  assert.strictEqual(bad.result.tickets[0].reason, 'QA check AC failed')
+  assert(bad.result.decisions.some(d => JSON.stringify(d).includes('still failed after 3 fix rounds')))
+})
+
+test('fr8: the record holds the head_sha of the last check and the PR body prints 7 characters of it', async () => {
+  const { calls } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, failRow, { head_sha: 'aaaaaaa1111' }) : c.label === 'uat-rerun:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')], { head_sha: 'abcdef1234567' }) : undefined))
+  const b = adrBody(calls)
+  assert(b.includes('UAT: passed at abcdef1') && !b.includes('abcdef12') && !b.includes('aaaaaaa'), b)
+  assert(!b.includes('checked on an older commit'), 'no suite fix ran')
+  const late = await run({}, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : c.label === 'uat:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')], { head_sha: 'abcdef1234567' }) : undefined))
+  assert(adrBody(late.calls).includes('(checked on an older commit; the suite fix came after)'), adrBody(late.calls))
+})
+
+test('fr9: after the last fix round, a fix commit that touches the acceptance folder blocks the ticket', async () => {
+  const guard = c => (c.label === 'uat-fix-guard:1' ? { commits: [{ sha: 'x1', subject: 'tweak the acceptance test' }] } : failing('uat:1')(c))
+  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, guard)
+  assert.strictEqual(named(calls, /^uat-fix-guard:1$/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert(/acceptance/.test(result.tickets[0].reason), result.tickets[0].reason)
+  const none = await run({}, failing('uat:1'))
+  assert.strictEqual(named(none.calls, /^uat-fix-guard/).length, 0, 'a ticket with no blind tests has nothing to guard')
 })
 
 test('agent labels say what the agent does and fit the pane', async () => {

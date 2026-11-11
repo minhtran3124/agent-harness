@@ -74,12 +74,21 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
    more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
 6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
-   FE+BE tickets (docs tickets and local mode skip it with a log line). The agent gets the issue body and the
+   FE+BE tickets (local mode skips it with a log line). A `docs` ticket (docs, config, CLI, scripts, plugin
+   files) has no app: at depth S it is skipped (`skipped: docs ticket at depth S`); at depth M and L the plan-blind
+   `qa-verifier` agent (Sonnet 5.5, `medium`) gets the same stripped body and owner block, runs commands and reads
+   the delivered files, and returns one row per AC (`PASS`, `FAIL` or `not-checkable`, which never fails the
+   ticket). It uses the same fix round, rerun and decisions as UAT; its not-run decision is titled
+   `QA check not run for #<n>`, and its sign-off line reads `QA check`. The agent gets the issue body and the
    owner-confirmed block with every `Verify:` row stripped in code, and the config path verify used; it never
    sees the plan or the diff. 3 to 8 scenarios, each naming an AC id, `negative`, `extra` or
-   `not-browser-checkable`. An AC failure gets one fix round and one rerun in a fresh worktree; a second
-   failure marks the ticket blocked with reason `UAT AC failed` (code stays, the PR still opens, `Refs`
-   instead of `Closes`). A negative or extra failure, or a run that could not happen (no config, app will
+   `not-browser-checkable`. An AC failure gets up to 3 fix rounds (`MAX_QA_FIX_ROUNDS`), each followed by a
+   rerun, every fix and rerun in its own fresh worktree. Before round 3 the advisor is asked once; its advice goes to
+   the fix agent only. The loop stops at once when a fix lands no commit or a rerun cannot run. After the loop, a fix
+   commit that touches the blind acceptance tests blocks the ticket. A check that still fails after 3 rounds marks the
+   ticket blocked with reason `UAT AC failed` (`QA check AC failed` for a `docs` ticket; code stays, the PR still
+   opens, `Refs` instead of `Closes`). The sign-off line prints the head SHA of the last check (7 characters) and the
+   number of fix rounds. A negative or extra failure, or a run that could not happen (no config, app will
    not start), becomes a `needs_review` decision and the ticket stays done. The PR body gets a
    `## UAT sign-off` checklist that nothing enforces.
 7. Testing: the full suite once, at the end.
@@ -113,6 +122,15 @@ review; it is left out when both are empty. `{{DECISIONS}}` stays after Final ve
 Stage agents run the skill by path with `Mode: auto`, never ask, and return `decisions[]`. Workflow
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
 Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L; depth M has no plan stage, because the implement agent writes the plan. It also picks Opus for the implement stage at depth L unless the profile names `implement`. Depth L is the difficulty signal, so this rule fits "the orchestrator chooses the model per task difficulty". Every stage, `implement` and `fix` included, can be set through `args.profile.stages`; the design and plan rule at depth L cannot be overridden.
+
+## Watching a run live
+
+`node plugins/harness/board/board.js` starts a local board at `http://127.0.0.1:4317`. It shows the newest
+`ship.js` run of the current project as a node diagram, live. `--project <path>` picks another project,
+`--run <run id | run dir>` one run, `--port` another port. It reads only what Claude Code writes for a
+Workflow run (the run's `journal.jsonl`, each agent's transcript for model, effort and times, and the run
+summary at the end), so it adds no hook and changes nothing in `ship.js`. `plugins/harness/board/README.md`
+has the details and the limits.
 
 ## Local mode
 

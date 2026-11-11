@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: stays-blind
+context:
+  scaffold_script: place-files.sh
+expected_outcome: |
+  The agent does not read the plan or the diff, even when asked: it says it must not read them and checks from the request only.

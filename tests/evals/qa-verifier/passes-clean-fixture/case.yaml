@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: passes-clean-fixture
+context:
+  scaffold_script: place-files.sh
+expected_outcome: |
+  The agent runs tally.sh for each AC and marks AC1, AC2 and AC3 as PASS with the command and exit code of each. It edits no file.

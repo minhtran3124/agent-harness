@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Flow Board</title>
+<link rel="icon" href="data:,">
+<style>
+/* Same look as the Agent Flow Prototype; the data now comes from the board.js event stream, not a simulation.
+   No web fonts: the page must work offline on 127.0.0.1. */
+:root{
+  --bg:#dde1e9; --canvas:#d0d5df; --grid:#aab3c3; --card:#f0f2f6; --ink:#0b101a; --muted:#3f485c; --fw:500; --fw2:600; --fill-run:#d3e0ff; --fill-now:#e1e9ff; --run-ico:#b0c6ff;
+  --line:#7a8498; --hair:#bcc3d0; --idle:#737d92; --run:#1d4fd8; --ok:#117244; --bad:#b01f2c; --warn:#85530a;
+  --run-bg:#cddbff; --ok-bg:#c6ebd8; --bad-bg:#f7d0d5; --warn-bg:#f6dfae; --shadow:0 1px 2px rgba(20,28,45,.08);
+  --font-ui:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-head:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10131a; --canvas:#141922; --grid:#283040; --card:#1d2330; --ink:#e7eaf2; --muted:#9aa4b6;
+  --line:#323b4d; --hair:#323b4d; --fw:400; --fw2:500; --fill-run:var(--card); --fill-now:var(--card); --run-ico:var(--run-bg); --idle:#6b7587; --run:#6f9dff; --ok:#3ecf8e; --bad:#ff6f78; --warn:#f2b24b;
+  --run-bg:#1b2a4d; --ok-bg:#16322a; --bad-bg:#3b1e24; --warn-bg:#3a2e16; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10131a; --canvas:#141922; --grid:#283040; --card:#1d2330; --ink:#e7eaf2; --muted:#9aa4b6;
+  --line:#323b4d; --hair:#323b4d; --fw:400; --fw2:500; --fill-run:var(--card); --fill-now:var(--card); --run-ico:var(--run-bg); --idle:#6b7587; --run:#6f9dff; --ok:#3ecf8e; --bad:#ff6f78; --warn:#f2b24b;
+  --run-bg:#1b2a4d; --ok-bg:#16322a; --bad-bg:#3b1e24; --warn-bg:#3a2e16; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
+body{margin:0;font-weight:var(--fw);background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.45}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.page{max-width:1280px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:flex-end}
+h1{font:600 22px/1.2 var(--font-head);margin:0}
+.sub{margin:4px 0 0;color:var(--muted);font-size:13px;max-width:60ch}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctrl label{color:var(--muted);font-size:12px;font-weight:var(--fw2)}
+button,select{font:500 13px var(--font-ui);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;box-shadow:var(--shadow)}
+button:focus-visible,select:focus-visible,.node:focus-visible{outline:2px solid var(--run);outline-offset:2px}
+.summary{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.kv{display:flex;gap:6px;align-items:baseline;min-width:0}
+.k{color:var(--muted);font-size:12px;font-weight:var(--fw2)}
+.v{font:500 13px var(--font-mono);overflow-wrap:anywhere}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--font-ui);padding:3px 10px;border-radius:99px;background:var(--run-bg);color:var(--run)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.idle{background:var(--canvas);color:var(--muted)}
+.conn{margin-left:auto;font:500 11px var(--font-mono);color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:2px 8px}
+.canvasTop{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 16px;padding:12px 16px 0}
+.legendRow{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--muted);font-weight:var(--fw2)}
+.legendRow span{display:flex;align-items:center;gap:7px}
+.legendRow u{width:10px;height:10px;border-radius:50%;display:inline-block}
+.canvasHead,.panel h2{margin:0;font:600 12px var(--font-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.canvasCard{border:1.5px solid color-mix(in srgb,var(--ink) 28%,var(--line));border-radius:12px;background-color:var(--canvas);background-image:radial-gradient(var(--grid) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
+.scroller{overflow-x:auto;padding:8px}
+.sizer{position:relative}
+.world{position:absolute;left:0;top:0;transform-origin:0 0}
+.lane{position:absolute;border:1.5px dashed color-mix(in srgb,var(--line) 70%,transparent);border-radius:14px;background:color-mix(in srgb,var(--card) 35%,transparent)}
+.laneLabel{position:absolute;font:600 11px var(--font-mono);letter-spacing:.08em;color:var(--muted)}
+svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.edge{fill:none;stroke:var(--idle);stroke-width:2;opacity:.8;transition:stroke .3s,opacity .3s;marker-end:url(#m-idle)}
+.edge.done{stroke:var(--ok);opacity:.5;marker-end:url(#m-done)}
+.edge.active{stroke:var(--run);opacity:1;stroke-width:3.2;stroke-dasharray:7 6;animation:flow .7s linear infinite;marker-end:url(#m-active)}
+@keyframes flow{to{stroke-dashoffset:-13}}
+.node{position:absolute;width:176px;height:76px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 10px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .3s,background .3s,transform .2s;text-align:left;color:var(--ink);font:inherit}
+.node:hover{transform:translateY(-1px)}
+.node.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--run) 25%,transparent)}
+.node[data-s="running"]{border-color:var(--run);border-width:2px;background:var(--fill-run);z-index:2}
+.node[data-s="done"]{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+.node[data-s="done"]:not(:hover):not(.sel){opacity:.72}
+.node[data-s="failed"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad-bg) 55%,var(--card))}
+.node[data-s="waiting"]{border-color:var(--warn);background:color-mix(in srgb,var(--warn-bg) 55%,var(--card))}
+.row{display:flex;align-items:center;gap:9px;min-width:0}
+.mdl{font:500 10.5px var(--font-mono);color:var(--muted);background:var(--canvas);border-radius:6px;padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:flex-start;max-width:100%}
+.mdl.none{opacity:.7;font-style:italic}
+[data-s="running"] .mdl{background:var(--run-ico);color:var(--run)}
+.ico{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--canvas);color:var(--idle);transition:background .3s,color .3s}
+.ico.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+[data-s="running"] .ico{background:var(--run-ico);color:var(--run)} [data-s="done"] .ico{background:var(--ok-bg);color:var(--ok)}
+[data-s="failed"] .ico{background:var(--bad-bg);color:var(--bad)} [data-s="waiting"] .ico{background:var(--warn-bg);color:var(--warn)}
+.ico svg{width:18px;height:18px}
+.spin{width:18px;height:18px;border:2.5px solid color-mix(in srgb,var(--run) 25%,transparent);border-top-color:var(--run);border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.txt{min-width:0;display:flex;flex-direction:column}
+.txt b{font:600 13px/1.2 var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txt i{font:400 11px/1.3 var(--font-ui);font-style:normal;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap{position:absolute;width:176px;text-align:center;font:500 11px var(--font-mono);color:var(--muted);font-weight:var(--fw2)}
+.cap[data-s="running"]{color:var(--run)} .cap[data-s="done"]{color:var(--ok)} .cap[data-s="failed"]{color:var(--bad)} .cap[data-s="waiting"]{color:var(--warn)}
+.nowgrid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:14px}
+@media (max-width:820px){.nowgrid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.now{border-width:1.5px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;transition:border-color .3s,background .3s}
+.now[data-s="running"]{border-color:var(--run);background:var(--fill-now)} .now[data-s="waiting"]{border-color:var(--warn)} .now[data-s="failed"]{border-color:var(--bad)} .now[data-s="done"]{border-color:var(--ok)}
+.nowtop{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-height:30px}
+.link{margin-left:auto;font:500 12px var(--font-ui);padding:3px 10px}
+.nowrow{display:flex;align-items:center;gap:14px;min-width:0}
+.nowico{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--canvas);color:var(--idle)}
+.nowico svg{width:24px;height:24px} .nowico .spin{width:24px;height:24px;animation:none;border-color:var(--run)}
+.now[data-s="running"] .nowico{background:var(--run-ico);color:var(--run)} .now[data-s="done"] .nowico{background:var(--ok-bg);color:var(--ok)} .now[data-s="failed"] .nowico{background:var(--bad-bg);color:var(--bad)} .now[data-s="waiting"] .nowico{background:var(--warn-bg);color:var(--warn)}
+.nowtx{display:flex;flex-direction:column;min-width:0;flex:1}
+.nowtx strong{font:600 20px/1.2 var(--font-head)}
+.nowtx span{color:var(--muted);font:400 13px var(--font-mono);overflow-wrap:anywhere}
+.nowtime{font:500 26px var(--font-mono);font-variant-numeric:tabular-nums}
+.msg{margin:12px 0 0;font-size:14px;min-height:42px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.bar{height:6px;border-radius:99px;background:var(--canvas);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .4s}
+.note{color:var(--muted);font-size:12px;max-width:100ch;margin:8px 0 0}
+.lrow{display:grid;grid-template-columns:128px minmax(0,1fr);gap:10px;align-items:start;margin-bottom:10px}
+.lrow:last-child{margin-bottom:0}
+.lrow h2{padding-top:4px;font-size:11px}
+.chips{display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;overflow-y:auto}
+.chips.r1{max-height:26px}.chips.r2{max-height:58px}.chips.r3{max-height:122px}
+.chip{font:500 12px var(--font-ui);border-radius:99px;padding:2px 10px;background:var(--canvas);color:var(--muted)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.none{background:transparent;border:1px dashed var(--line)}
+.log{list-style:none;margin:0;padding:0;height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.log li{display:grid;grid-template-columns:64px 8px minmax(0,1fr);gap:8px;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--hair);font-size:13px}
+.log time{font:400 12px var(--font-mono);color:var(--muted)}
+.log .dot{width:8px;height:8px;border-radius:50%;background:var(--idle);align-self:center}
+.log .dot.running{background:var(--run)} .log .dot.done{background:var(--ok)} .log .dot.failed{background:var(--bad)} .log .dot.waiting{background:var(--warn)}
+.log .who{font:500 12px var(--font-mono);color:var(--muted)}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Agent Flow Board</h1>
+      <p class="sub">Live view of one ship.js run, read from the run's journal on this machine. Click a box to pin it; click Back to live to return.</p>
+    </div>
+    <div class="ctrl">
+      <label for="tk">Ticket</label><select id="tk"><option value="all">All tickets</option></select>
+      <label for="theme">Theme</label>
+      <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+    </div>
+  </header>
+
+  <section class="summary" aria-label="Run summary">
+    <span class="pill idle" id="overall">Waiting for a run</span>
+    <span class="kv"><span class="k">Run</span><span class="v" id="runid">—</span></span>
+    <span class="kv"><span class="k">Agents</span><span class="v" id="agents">0</span></span>
+    <span class="kv"><span class="k">Check phase</span><span class="pill idle" id="uatstate">—</span></span>
+    <span class="kv"><span class="k">Fix round</span><span class="v" id="round">0 / 3</span></span>
+    <span class="kv" id="prkv" hidden><span class="k">PR</span><span class="v" id="pr"></span></span>
+    <span class="conn" id="conn">connecting…</span>
+  </section>
+
+  <section class="nowgrid">
+    <article class="panel now" id="detail" aria-live="polite"></article>
+    <article class="panel" id="lists"></article>
+  </section>
+
+  <section class="canvasCard">
+    <div class="canvasTop"><h2 class="canvasHead">Workflow</h2><div class="legendRow" aria-label="Status colors"><span><u style="background:var(--idle)"></u>Waiting</span><span><u style="background:var(--run)"></u>Running</span><span><u style="background:var(--ok)"></u>Done</span><span><u style="background:var(--bad)"></u>Failed</span><span><u style="background:var(--warn)"></u>Needs you</span></div></div>
+    <div class="scroller" id="scroller"><div class="sizer" id="sizer"><div class="world" id="world"></div></div></div>
+  </section>
+
+  <section><article class="panel"><h2 style="margin-bottom:10px">Event log</h2><ul class="log" id="log" aria-live="polite"></ul></article></section>
+
+  <p class="note">Source: journal.jsonl and agent transcripts of the run, under ~/.claude/projects. Model and effort come from each agent's transcript. Steps that match no box appear only in the log. The run's log() lines appear when the run ends.</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+var W=176,H=76,MAX_ROUNDS=3;
+var FLOW=null,N={},A={},ORDER=[],LOG=[],RUN={id:null,end:null},sel=null,view='all',lastTouched=null,connected=false,kScale=1,nowId=null;
+var STATE_TXT={idle:'Waiting',running:'Running',done:'Done',failed:'Failed',waiting:'Needs you'};
+var ICON={
+ idle:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3.5"/></svg>',
+ done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ failed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ waiting:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 6v8M12 18.2v.1"/></svg>',
+ running:'<div class="spin"></div>'
+};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function ms(ts){var t=Date.parse(ts);return isNaN(t)?null:t;}
+function dur(a){var s=ms(a.first),e=a.status==='running'?Date.now():ms(a.last);if(s==null||e==null)return '';var x=Math.max(0,Math.round((e-s)/1000));return Math.floor(x/60)+':'+('0'+x%60).slice(-2);}
+function clock(ts){var t=ms(ts);if(t==null)return '';var d=new Date(t);return d.toTimeString().slice(0,8);}
+function shortModel(m){if(!m)return '';return m.replace(/^claude-/,'').replace(/-(\d+)-(\d+)$/,' $1.$2').replace(/^./,function(c){return c.toUpperCase();});}
+
+// --- reducing events ---
+function inView(a){return view==='all'||a.ticket==null||a.ticket===view;}
+function agentsOf(id){return ORDER.map(function(k){return A[k];}).filter(function(a){return a.node===id&&inView(a);});}
+function nodeState(id){var l=agentsOf(id);return l.length?l[l.length-1].status:'idle';}
+function latest(id){var l=agentsOf(id);return l.length?l[l.length-1]:null;}
+function onEvent(e){
+ if(e.kind==='hello'){connected=true;return;}
+ if(e.kind==='run'){A={};ORDER=[];LOG=[];RUN={id:e.run_id,end:null};sel=null;lastTouched=null;fillTickets();return;}
+ if(e.kind==='run_end'){RUN.end=e;
+  ORDER.forEach(function(k){if(A[k].status==='running'){A[k].status='failed';A[k].stopped=true;A[k].summary='Stopped: the run ended ('+e.status+') before this agent returned.';}});
+  LOG.unshift({ts:null,who:'Run',msg:'Run '+e.status+(e.pr?' · '+e.pr:''),state:e.status==='completed'?'done':'failed'});
+  (e.logs||[]).slice().reverse().forEach(function(l){LOG.unshift({ts:null,who:'log',msg:l,state:'idle'});});
+  return;}
+ var a=A[e.agent_id];
+ if(e.kind==='agent_facts'){if(!a)return;a.first=e.first||a.first;a.last=e.last||a.last;a.model=e.model||a.model;a.effort=e.effort||a.effort;return;}
+ if(!a){a=A[e.agent_id]={id:e.agent_id,node:e.node,ticket:e.ticket,stage:e.stage,round:e.round,label:e.label,status:'running',first:null,last:null,model:null,effort:null,summary:''};ORDER.push(e.agent_id);fillTickets();}
+ if(e.kind==='started'){a.status='running';a.first=e.ts||a.first;}
+ if(e.kind==='result'){a.status=e.status;a.last=e.ts||a.last;a.summary=e.summary||'';if(e.checks)a.checks=e.checks;if(e.head_sha)a.sha=e.head_sha;if(e.passed_ac!=null)a.passed=e.passed_ac;}
+ if(a.node){lastTouched=a.node;pop(a.node);}
+ var who=a.node&&N[a.node]?N[a.node].t:a.stage;
+ var msg=e.kind==='started'?'Started: '+a.label:(STATE_TXT[a.status]+(a.checks?' · '+a.checks.passed+' of '+a.checks.total+' rows pass'+(a.checks.not_checkable?', '+a.checks.not_checkable+' not-checkable':''):'')+(a.summary?' · '+a.summary:''));
+ LOG.unshift({ts:e.ts,who:(a.ticket?'#'+a.ticket+' ':'')+who,msg:msg,state:a.status});
+ if(LOG.length>300)LOG.pop();
+}
+function fillTickets(){
+ var s=document.getElementById('tk'),seen={},opts='<option value="all">All tickets</option>';
+ ORDER.forEach(function(k){var t=A[k].ticket;if(t&&!seen[t]){seen[t]=1;opts+='<option value="'+esc(t)+'">#'+esc(t)+'</option>';}});
+ if(s.innerHTML!==opts){s.innerHTML=opts;s.value=(view==='all'||seen[view])?view:'all';view=s.value;}
+}
+function pop(id){var el=document.querySelector('.node[data-id="'+id+'"] .ico');if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
+
+// --- drawing ---
+function pathFor(def){
+ var a=N[def[0]],b=N[def[1]],k=def[2],ax,ay,bx,by;
+ if(k==='down'){ax=a.x+W/2;ay=a.y+H+24;bx=b.x+W/2;by=b.y;return 'M'+ax+','+ay+' V196 H'+bx+' V'+(by-4);}
+ if(k==='vdown')return 'M'+(a.x+30)+','+(a.y+H)+' V'+(b.y-4);
+ if(k==='join')return 'M'+(a.x+W/2)+','+a.y+' V'+(b.y+H/2)+' H'+(b.x-4);
+ if(k==='loop')return 'M'+(a.x+W/2)+','+(a.y+H+24)+' V'+(a.y+H+50)+' H'+(b.x+W/2-20)+' V'+(b.y+H+24);
+ if(k==='bus')return 'M'+(a.x+W/2)+','+(a.y+H+24)+' V'+(a.y+H+50)+' H'+(b.x+W/2+20)+' V'+(b.y+H+24);
+ ax=a.x+W;ay=a.y+H/2;bx=b.x-4;by=b.y+H/2;var dx=Math.max(30,(bx-ax)/2);
+ return 'M'+ax+','+ay+' C'+(ax+dx)+','+ay+' '+(bx-dx)+','+by+' '+bx+','+by;
+}
+function buildWorld(){
+ var w=document.getElementById('world'),sz=FLOW.size,h='';
+ w.style.width=sz.w+'px';w.style.height=sz.h+'px';
+ FLOW.lanes.forEach(function(l){h+='<div class="lane" style="left:'+l.x+'px;top:'+l.y+'px;width:'+l.w+'px;height:'+l.h+'px"></div><div class="laneLabel" style="left:'+(l.x+18)+'px;top:'+(l.y+10)+'px">'+esc(l.label)+'</div>';});
+ h+='<svg class="edges" viewBox="0 0 '+sz.w+' '+sz.h+'" aria-hidden="true"><defs>';
+ [['idle','var(--idle)'],['done','var(--ok)'],['active','var(--run)']].forEach(function(m){h+='<marker id="m-'+m[0]+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M1,1 L9,5 L1,9 z" fill="'+m[1]+'"/></marker>';});
+ h+='</defs>';
+ FLOW.edges.forEach(function(e,i){h+='<path class="edge" id="e'+i+'" d="'+pathFor(e)+'"/>';});
+ h+='</svg>';
+ FLOW.nodes.forEach(function(n){
+  h+='<button type="button" class="node" data-id="'+n.id+'" data-s="idle" style="left:'+n.x+'px;top:'+n.y+'px" aria-label="'+esc(n.t)+'"><span class="row"><span class="ico">'+ICON.idle+'</span><span class="txt"><b>'+esc(n.t)+'</b><i>'+esc(n.a)+'</i></span></span><span class="mdl none">no agent yet</span></button>';
+  h+='<div class="cap" data-id="'+n.id+'" data-s="idle" style="left:'+n.x+'px;top:'+(n.y+H+6)+'px">Waiting</div>';
+ });
+ w.innerHTML=h;
+ w.querySelectorAll('.node').forEach(function(bn){bn.addEventListener('click',function(){var id=bn.getAttribute('data-id');sel=(sel===id)?null:id;render();});});
+}
+function fit(){
+ if(!FLOW)return;var sc=document.getElementById('scroller'),sz=document.getElementById('sizer'),w=document.getElementById('world'),fw=FLOW.size.w,fh=FLOW.size.h;
+ var k=Math.max(0.62,Math.min(1,(sc.clientWidth-16)/fw));kScale=k;w.style.transform='scale('+k+')';sz.style.width=(fw*k)+'px';sz.style.height=(fh*k)+'px';
+}
+function modelText(a){if(!a)return 'no agent yet';if(!a.model&&!a.effort)return 'model not in log yet';return (shortModel(a.model)||'model ?')+' · '+(a.effort||'effort ?');}
+function edgeCls(d){var sa=nodeState(d[0]),sb=nodeState(d[1]);if(sa!=='done')return 'idle';if(sb==='running'||sb==='waiting')return 'active';return sb==='idle'?'idle':'done';}
+function round(){var r=0;ORDER.forEach(function(k){var a=A[k];if(a.node==='fix'&&inView(a))r=Math.max(r,a.round||1);});return r;}
+function checkPhase(){
+ var c=latest('check'),rr=latest('rerun'),f=latest('fix'),ad=latest('adv'),r=round();
+ if(!c)return ['—','idle'];
+ if(ad&&ad.status==='running')return ['Advice','warn'];
+ if(f&&f.status==='running')return ['Fixing','warn'];
+ if(f&&f.stopped)return ['Stopped','bad'];
+ if(c.status==='running'||(rr&&rr.status==='running'))return ['Checking',''];
+ var last=rr&&ms(rr.first)>=ms(c.first)?rr:c;
+ if(last.status==='done')return ['Passed','ok'];
+ if(last.status==='waiting')return ['Not run','warn'];
+ if(last.stopped)return ['Stopped','bad'];
+ if(last.status==='failed')return r>=MAX_ROUNDS?['Blocked','bad']:['Fixing','warn'];
+ return ['—','idle'];
+}
+function render(){
+ if(!FLOW)return;
+ FLOW.nodes.forEach(function(n){
+  var s=nodeState(n.id),a=latest(n.id),el=document.querySelector('.node[data-id="'+n.id+'"]'),cap=document.querySelector('.cap[data-id="'+n.id+'"]');
+  if(el.getAttribute('data-s')!==s){el.setAttribute('data-s',s);el.querySelector('.ico').innerHTML=ICON[s];cap.setAttribute('data-s',s);}
+  var mm=el.querySelector('.mdl');mm.textContent=modelText(a);mm.className='mdl'+(a&&a.model?'':' none');
+  el.classList.toggle('sel',sel===n.id);
+  var t=(s==='idle'&&RUN.end)?'Not run':STATE_TXT[s],d=a?dur(a):'',cnt=agentsOf(n.id).length;
+  if(s==='done'&&d)t+=' in '+d;else if(s==='failed'&&d)t+=' after '+d;
+  if(cnt>1)t+=' · '+cnt+' agents';
+  cap.textContent=t;
+ });
+ FLOW.edges.forEach(function(d,i){document.getElementById('e'+i).setAttribute('class','edge '+edgeCls(d));});
+ document.getElementById('round').textContent=round()+' / '+MAX_ROUNDS;
+ var u=checkPhase(),ue=document.getElementById('uatstate');ue.textContent=u[0];ue.className='pill '+u[1];
+ document.getElementById('runid').textContent=RUN.id||'—';
+ document.getElementById('agents').textContent=ORDER.length;
+ var o=document.getElementById('overall'),anyRun=ORDER.some(function(k){return A[k].status==='running';}),anyWait=ORDER.some(function(k){return A[k].status==='waiting';});
+ if(!RUN.id){o.textContent='Waiting for a run';o.className='pill idle';}
+ else if(RUN.end){o.textContent=RUN.end.status==='completed'?'Finished':'Ended: '+RUN.end.status;o.className='pill '+(RUN.end.status==='completed'?'ok':'bad');}
+ else if(anyWait){o.textContent='Needs you';o.className='pill warn';}
+ else if(anyRun){o.textContent='Running';o.className='pill';}
+ else {o.textContent='Between steps';o.className='pill idle';}
+ var pr=RUN.end&&RUN.end.pr;document.getElementById('prkv').hidden=!pr;document.getElementById('pr').textContent=pr||'';
+ var c=document.getElementById('conn');c.textContent=connected?'live · 127.0.0.1':'disconnected, retrying…';
+ renderDetail();renderLog();
+}
+function pickNow(){
+ if(sel)return {id:sel,pinned:true};
+ var best=null,bt=-1;FLOW.nodes.forEach(function(n){var a=latest(n.id);if(a&&a.status==='running'){var t=ms(a.first)||0;if(t>=bt){bt=t;best=n.id;}}});
+ if(best)return {id:best};
+ var w=null;FLOW.nodes.forEach(function(n){if(nodeState(n.id)==='waiting')w=n.id;});
+ if(w)return {id:w};
+ return {id:lastTouched};
+}
+function renderDetail(){
+ var p=pickNow(),id=p.id,el=document.getElementById('detail');nowId=id;
+ var main=FLOW.nodes.filter(function(n){return !n.cond;});
+ var finMain=main.filter(function(n){var s=nodeState(n.id);return s==='done'||s==='failed';});
+ if(!id){el.setAttribute('data-s','idle');el.innerHTML='<div class="nowtop"><h2>Now</h2></div><p class="msg">'+(RUN.id?'The run started; no agent has reached a box yet.':'No ship.js run found for this project yet. Start /harness:autopilot; the board picks up the newest run.')+'</p>';}
+ else{
+  var n=N[id],s=nodeState(id),a=latest(id),cls={running:'',done:'ok',failed:'bad',waiting:'warn',idle:'idle'}[s];
+  el.setAttribute('data-s',s);
+  var pct=Math.round(100*finMain.length/main.length);
+  var facts=a?(a.checks?a.checks.passed+' of '+a.checks.total+' rows pass'+(a.checks.not_checkable?' · '+a.checks.not_checkable+' not-checkable':'')+(a.sha?' · at '+a.sha.slice(0,7):''):''):'';
+  el.innerHTML='<div><div class="nowtop"><h2>'+(p.pinned?'Pinned step':'Now')+'</h2><span class="pill '+cls+'">'+STATE_TXT[s]+'</span>'+(p.pinned?'<button type="button" id="unpin" class="link">Back to live</button>':'')+'</div>'+
+   '<div class="nowrow"><div class="nowico">'+ICON[s]+'</div><div class="nowtx"><strong>'+esc(n.t)+(a&&a.ticket?' · #'+esc(a.ticket):'')+'</strong><span>'+esc(a?a.stage:n.a)+' · '+esc(modelText(a))+'</span></div><div class="nowtime" id="nowTime">'+(a?dur(a)||'0:00':'')+'</div></div>'+
+   '<p class="msg">'+esc(facts?facts+'. ':'')+esc(a?(a.summary||(a.status==='running'?a.label:'No summary')):'Not reached in this run.')+'</p></div>'+
+   '<div><div class="bar" aria-hidden="true"><i style="width:'+pct+'%"></i></div><p class="note">'+finMain.length+' of '+main.length+' main steps finished.</p></div>';
+ }
+ var ch=function(list,c){return list.map(function(n){return '<span class="chip '+(c||'')+'">'+esc(n.t)+'</span>';}).join('')||'<span class="chip none">none</span>';};
+ var by=function(st){return FLOW.nodes.filter(function(n){return nodeState(n.id)===st;});};
+ document.getElementById('lists').innerHTML=
+  '<div class="lrow"><h2>Running</h2><div class="chips r1">'+ch(by('running'))+'</div></div>'+
+  '<div class="lrow"><h2>Finished ('+by('done').length+')</h2><div class="chips r3">'+ch(by('done'),'ok')+'</div></div>'+
+  '<div class="lrow"><h2>Failed ('+by('failed').length+')</h2><div class="chips r1">'+ch(by('failed'),'bad')+'</div></div>'+
+  '<div class="lrow"><h2>Needs you ('+by('waiting').length+')</h2><div class="chips r2">'+ch(by('waiting'),'warn')+'</div></div>';
+}
+function renderLog(){
+ document.getElementById('log').innerHTML=LOG.map(function(l){return '<li><time>'+esc(clock(l.ts))+'</time><span class="dot '+esc(l.state)+'"></span><span><span class="who">'+esc(l.who)+'</span> · '+esc(l.msg)+'</span></li>';}).join('')||'<li><time></time><span class="dot"></span><span>No events yet.</span></li>';
+}
+
+// --- wiring ---
+var pending=false;function later(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;render();});}
+function connect(){
+ var es=new EventSource('/events');
+ es.onmessage=function(m){try{onEvent(JSON.parse(m.data));}catch(e){}later();};
+ es.onerror=function(){connected=false;later();};
+ es.onopen=function(){connected=true;later();};
+}
+document.getElementById('detail').addEventListener('click',function(e){if(e.target&&e.target.id==='unpin'){sel=null;render();}});
+document.getElementById('tk').addEventListener('change',function(e){view=e.target.value;render();});
+setInterval(function(){var nt=document.getElementById('nowTime'),a=nowId&&latest(nowId);if(nt&&a&&a.status==='running')nt.textContent=dur(a);},1000);
+window.addEventListener('resize',fit);
+(function(){var th=document.getElementById('theme'),r=document.documentElement;
+ function apply(v){if(v==='light'||v==='dark')r.setAttribute('data-theme',v);else r.removeAttribute('data-theme');}
+ try{var sv=localStorage.getItem('afb-theme');if(sv==='light'||sv==='dark'){th.value=sv;apply(sv);}}catch(e){}
+ th.addEventListener('change',function(){apply(th.value);try{localStorage.setItem('afb-theme',th.value);}catch(e){}});
+})();
+fetch('/flow.json').then(function(r){return r.json();}).then(function(f){FLOW=f;f.nodes.forEach(function(n){N[n.id]=n;});buildWorld();fit();render();connect();})
+ .catch(function(){document.getElementById('detail').innerHTML='<p class="empty">Could not load /flow.json from the board server.</p>';});
+})();
+</script>
+</body>
+</html>
