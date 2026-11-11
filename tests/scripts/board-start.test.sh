@@ -107,8 +107,8 @@ out=$( cd "$work/proj1" && env TMPDIR="$work/tmp" PATH="$work/empty" /bin/bash "
 
 # 9. No opener at all: the URL is printed, exit 0.
 mkdir -p "$work/min"
-for c in node curl nohup sleep cat mkdir dirname rm ps uname grep sed tr; do p=$(command -v "$c") && ln -sf "$p" "$work/min/$c"; done
-out=$( cd "$work/proj1" && env TMPDIR="$work/tmp" DISPLAY=:0 PATH="$work/min" bash "$start" --port "$port" 2>&1 ); rc=$?
+for c in node curl nohup sleep cat mkdir dirname rm ps uname grep sed tr head; do p=$(command -v "$c") && ln -sf "$p" "$work/min/$c"; done
+out=$( cd "$work/proj1" && env TMPDIR="$work/tmp" DISPLAY=:0 PATH="$work/min" /bin/bash "$start" --port "$port" 2>&1 ); rc=$?
 [ "$rc" -eq 0 ] && echo "$out" | grep -q "http://127.0.0.1:$port" && ok "no opener: exits 0 and prints the URL" || bad "no opener: exits 0 and prints the URL" "rc=$rc out=$out"
 run_in "$work/proj1" --stop >/dev/null
 
