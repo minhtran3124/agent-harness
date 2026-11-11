@@ -22,7 +22,7 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
   model in its frontmatter, because such an agent otherwise inherits the main session's model.
 - Coding: Sonnet 5.5 (`implementer` agent). Testing: Haiku 5.5
   (`test-runner`). Research and search: Haiku 5.5 (`researcher`). Intent review: Sonnet 5.5
-  (`intent-reviewer`).
+  (`intent-reviewer`). Checking a ticket with no app: Sonnet 5.5 (`qa-verifier`).
 - Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.1 only when the Opus advice did not
   unblock the work, for a high-stakes architecture decision, or when the owner asks.
 - The orchestrator chooses the model and the effort for each subagent and each workflow agent,
@@ -59,10 +59,11 @@ intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> security-reviewer   risky tickets: read-only gate before the PR (ship.js)
   -> /code-review, intent-review
   -> uat         plan-blind acceptance test on the running app (ship.js, FE/BE tickets)
+  -> qa-verifier plan-blind command and file check of a ticket with no app (ship.js, docs tickets at depth M and L)
   -> finishing-a-development-branch   push and open a PR; a human merges
 ```
 
-Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above live in `plugins/harness/skills/` and run as `/harness:<name>`; `qa-writer` and `security-reviewer` are agents in `plugins/harness/agents/`. `/harness:autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
+Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above live in `plugins/harness/skills/` and run as `/harness:<name>`; `qa-writer`, `qa-verifier` and `security-reviewer` are agents in `plugins/harness/agents/`. `/harness:autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
 
 ## Rules
 
