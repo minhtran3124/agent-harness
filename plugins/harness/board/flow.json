@@ -14,7 +14,7 @@
     { "id": "sec",     "t": "Security gate",    "a": "security-reviewer",      "x": 840,  "y": 70,  "match": ["^security gate$"] },
     { "id": "pr",      "t": "Ticket PR",        "a": "finish",                 "x": 1040, "y": 70,  "match": ["^finish$", "^PR body$"] },
     { "id": "gate",    "t": "Gate & merge",     "a": "CI, review, merge into feat/", "x": 1240, "y": 70, "match": ["^gate ", "^CI checks$", "^merge ticket branches$", "^merge failed"] },
-    { "id": "review",  "t": "Code review",      "a": "review + fix rounds",    "x": 40,   "y": 250, "match": ["^code-review", "^fix$"] },
+    { "id": "review",  "t": "Code review",      "a": "review + fix rounds",    "x": 40,   "y": 250, "match": ["^code-review", "^fix$", "^measure diff size$"] },
     { "id": "irev",    "t": "Intent review",    "a": "intent-reviewer",        "x": 240,  "y": 250, "match": ["^intent review$", "^intent fix$"] },
     { "id": "adv",     "t": "Advisor",          "a": "before the last round",  "x": 880,  "y": 380, "match": ["^advisor (uat|qa-verify)-fix$"], "cond": true },
     { "id": "fix",     "t": "Fix round",        "a": "fix agent (max 3)",      "x": 440,  "y": 380, "match": ["^(UAT|QA check) fix$", "^fix commit check$"], "cond": true },

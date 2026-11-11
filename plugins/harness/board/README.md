@@ -45,5 +45,8 @@ contents from the transcripts.
 - A check box shows its first result. When a fix round then passes, the Re-check box turns green and the
   summary's Check phase says Passed; the first check stays red, on purpose, so the failure stays visible.
 - A box shows the latest agent of its stage; the caption counts earlier ones (`2 runs`).
+- The setup agent (`check plugin and tools`) has no box; it shows only in the event log.
+- A killed run has no PR link on the board: Claude Code writes `result: null` in its summary, so the PR
+  number is not in any file the board reads.
 
 Tests: `bash tests/scripts/board.test.sh`.

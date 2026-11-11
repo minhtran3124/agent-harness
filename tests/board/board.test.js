@@ -68,7 +68,7 @@ test('qb2: every agent label ship.js builds lands on the right box, or on none b
   const want = {
     'intent': 'intent', 'design': 'intent', 'plan': 'intent', 'advisor plan-review': 'intent', 'qa': 'qaw',
     'implement': 'impl', 'verify': 'verify', 'verify-retry': 'verify', 'security gate': 'sec', 'finish': 'pr',
-    'gate code-review': 'gate', 'gate CI checks': 'gate', 'merge ticket branches': 'gate', 'code-review': 'review', 'fix': 'review',
+    'gate code-review': 'gate', 'gate CI checks': 'gate', 'merge ticket branches': 'gate', 'code-review': 'review', 'fix': 'review', 'measure diff size': 'review', 'gate measure diff size': 'gate',
     'intent review': 'irev', 'intent fix': 'irev', 'UAT': 'check', 'QA check': 'check', 'UAT fix': 'fix', 'QA check fix': 'fix',
     'UAT rerun': 'rerun', 'QA check rerun': 'rerun', 'advisor uat-fix': 'adv', 'advisor qa-verify-fix': 'adv', 'test': 'test',
     'write ADRs': 'adr', 'write specs/ flow files': 'adr', 'open final PR': 'final', 'CI snapshot': 'final',
