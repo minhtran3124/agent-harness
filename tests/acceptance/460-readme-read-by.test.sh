@@ -3,14 +3,11 @@
 # copy must name the real v5 read paths, not the removed session-knowledge hook.
 source "$(dirname "$0")/../lib.sh"
 
-BASE=f3d82a3c   # commit the ticket starts from
 DOC=docs/solutions/README.md
 TPL=plugins/harness/templates/structure/docs-solutions-README.md
 
 # bullet <file-content-on-stdin>: the "Read by" bullet, up to the next blank line
 bullet() { awk '/^- \*\*Read by:\*\*/{p=1} p&&/^[[:space:]]*$/{exit} p'; }
-# others <stdin>: every line except the "Read by" bullet
-others() { awk '/^- \*\*Read by:\*\*/{p=1} p&&/^[[:space:]]*$/{p=0} !p'; }
 
 t "AC1: no session-knowledge mention in README or templates"
 out=$(cd "$ROOT" && git grep -n session-knowledge -- "$DOC" plugins/harness/templates 2>&1)
@@ -32,12 +29,10 @@ t "AC3: Read by bullet is byte-identical in README and template"
 a=$(bullet < "$ROOT/$DOC"); b=$(bullet < "$ROOT/$TPL")
 [ -n "$a" ] && [ "$a" = "$b" ] && pass || fail "README: [$a] template: [$b]"
 
-for f in "$DOC" "$TPL"; do
-  t "AC3: $f has no changed lines outside the Read by bullet"
-  old=$(git -C "$ROOT" show "$BASE:$f" 2>/dev/null | others)
-  new=$(others < "$ROOT/$f")
-  [ -n "$old" ] && [ "$old" = "$new" ] && pass || fail "lines outside the bullet differ from $BASE"
-done
+# The owner chose (after the QA check of the pilot run found the two files differed) that the whole
+# files are byte-equal, not only the Read by bullet.
+t "AC3: docs/solutions/README.md and the scaffold copy are byte-identical"
+cmp -s "$ROOT/$DOC" "$ROOT/$TPL" && pass || fail "the two files differ"
 
 t "AC4: scripts/run-tests.sh ends with ALL GREEN"
 if [ -n "${HARNESS_ACCEPTANCE_NESTED:-}" ]; then skip "nested run"; else
