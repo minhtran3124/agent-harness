@@ -3,6 +3,10 @@
 A live view of one `ship.js` (autopilot) run: which agent runs now, with which model and effort, what each
 step returned, and where the run waits for you. One Node file, no dependencies, no build.
 
+![The board on a finished real run](../../../docs/images/board/board-completed-light.png)
+
+More shots of real runs (dark theme, a killed run) are in `docs/images/board/`.
+
 ```
 node plugins/harness/board/board.js                    # newest run of the project in the current directory
 node plugins/harness/board/board.js --project ~/code/app
