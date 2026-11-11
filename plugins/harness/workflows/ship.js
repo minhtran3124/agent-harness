@@ -1279,7 +1279,7 @@ function uatAgent(label, wtName, t, body, owner, configPath, qa = false) {
   const w = newWt(wtName, null, finalRef)
   if (qa) {
     // A ticket with no app: the plan-blind qa-verifier agent runs commands and reads delivered files. No config path, no browser.
-    const qprompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
+    const qprompt = `${w.setup}${RULES_LITE}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
       `Stage: qa-verify. Read ${pluginDir}/agents/qa-verifier.md and act as that role, only after your worktree exists. Never ask anyone. ` +
       `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep any output local and uncommitted; fix nothing. Work in ${w.dir}.\n\n` +
       `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
