@@ -14,6 +14,7 @@ Explore the options and converge on one design. Intake decides whether this skil
    parts that share no files or data, split it into separate designs.
 2. Settle purpose, constraints and success criteria. Look facts up yourself. Ask the owner only
    for decisions.
+   Do not ask how to implement or test. That belongs to steps 3 and 4.
 3. Present 2-3 viable approaches with trade-offs and a recommendation.
 4. Depth L: write the design to `specs/<slug>/design.md` (local scratch, gitignored) from
    `references/design-template.md`, and add one entry to `specs/<slug>/decision.md`. Also record
