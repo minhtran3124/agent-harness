@@ -22,7 +22,7 @@
     { "id": "check",   "t": "UAT / QA check",   "a": "uat / qa-verifier",      "x": 440,  "y": 250, "match": ["^UAT$", "^QA check$"] },
     { "id": "test",    "t": "Test suite",       "a": "full suite once",        "x": 840,  "y": 250, "match": ["^test$"] },
     { "id": "adr",     "t": "Decisions",        "a": "ADRs, specs, artifact",  "x": 1040, "y": 250, "match": ["^write ADRs$", "^write specs/ flow files$", "^update run artifact$"] },
-    { "id": "final",   "t": "Final PR",         "a": "a human merges",         "x": 1240, "y": 250, "match": ["^open final PR$", "^CI snapshot$"] }
+    { "id": "final",   "t": "Final PR",         "a": "auto or human merge",         "x": 1240, "y": 250, "match": ["^open final PR$", "^CI snapshot$", "^default branch$", "^merge final PR$"] }
   ],
   "edges": [
     ["intent", "qaw"], ["qaw", "impl"], ["impl", "verify"], ["verify", "sec"], ["sec", "pr"], ["pr", "gate"],

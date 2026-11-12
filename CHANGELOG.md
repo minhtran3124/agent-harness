@@ -7,6 +7,9 @@ file. Versions change only in the release PR (see `docs/releasing.md`); the bump
 
 ## [Unreleased]
 
+- A PR merge from a Claude session is allowed without the owner when its base is not protected (not main, master, develop, development, staging, production, release/* or the default branch). `merge-guard.sh` no longer denies bases such as `phase3-ui`.
+- The final PR of a `ship.js` run is merged by the run when its base is not protected and every gate passed (`Merge: auto`); otherwise it stays a human merge with the failed gate named. `final.merged` and `final.reason` record the result.
+
 ## [5.12.1] — 2026-11-11
 
 - feat(board): relative URLs and an embed mode for a host page (PR #639)

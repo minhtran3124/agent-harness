@@ -71,7 +71,7 @@ test('qb2: every agent label ship.js builds lands on the right box, or on none b
     'gate code-review': 'gate', 'gate CI checks': 'gate', 'merge ticket branches': 'gate', 'code-review': 'review', 'fix': 'review', 'measure diff size': 'review', 'gate measure diff size': 'gate',
     'intent review': 'irev', 'intent fix': 'irev', 'UAT': 'check', 'QA check': 'check', 'UAT fix': 'fix', 'QA check fix': 'fix',
     'UAT rerun': 'rerun', 'QA check rerun': 'rerun', 'advisor uat-fix': 'adv', 'advisor qa-verify-fix': 'adv', 'test': 'test',
-    'write ADRs': 'adr', 'write specs/ flow files': 'adr', 'open final PR': 'final', 'CI snapshot': 'final',
+    'write ADRs': 'adr', 'write specs/ flow files': 'adr', 'open final PR': 'final', 'CI snapshot': 'final', 'default branch': 'final', 'merge final PR': 'final',
     'check plugin and tools': null, 'set up integration branch': null, 'fetch owner request': null,
   };
   for (const [stage, node] of Object.entries(want)) assert.strictEqual(B.nodeFor(FLOW, stage), node, `stage "${stage}"`);

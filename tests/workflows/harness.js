@@ -31,7 +31,7 @@ const FIXED_LABELS = {
   'write specs/ flow files': 'specs', 'write specs/ early': 'specs-early', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
   'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
-  'CI snapshot': 'ci-snapshot', 'write ADRs': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
+  'CI snapshot': 'ci-snapshot', 'default branch': 'default-branch', 'merge final PR': 'final-merge', 'write ADRs': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
 }
 const TICKET_VERBS = {
   'acceptance-test check': 'acceptance-test check', 'security gate': 'security gate',
@@ -121,6 +121,8 @@ function defaults(c, st) {
   if (l === 'suite') return { passed: 10, failed: 0, skipped: 1, failing: [] }
   if (l === 'suite-fix') return ok()
   if (l === 'suite-rerun') return { passed: 2, failed: 0, skipped: 0, failing: [] }
+  if (l === 'default-branch') return { name: 'main' }
+  if (l === 'final-merge') return ok({ merged: true, reason: '' })
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
   if (l === 'specs' || l === 'specs-early') return ok()
@@ -633,9 +635,9 @@ test('g9: the finish prompt carries the pending merge block; a single-ticket PR 
   assert(g.includes('Merge: human') && !g.includes('Merge: auto'), g)
 })
 
-test('g10: the final PR body always says Merge: human and lists the five readiness rows; local mode shows CI as n/a', async () => {
+test('g10: the final PR body into a protected base says Merge: human and lists the five readiness rows; local mode shows CI as n/a', async () => {
   for (const local of [false, true]) {
-    const r = await gateFlow({ local }, null)
+    const r = await gateFlow({ local, base: 'main' }, null)
     const pre = named(r.calls, /^final-pr$/)[0].prompt
     assert(pre.includes('Merge: human') && pre.includes(local ? 'CI: n/a (local mode)' : '- [ ] CI: pending'), pre.slice(-1500))
     const adr = named(r.calls, /^adr$/)[0].prompt
@@ -646,6 +648,35 @@ test('g10: the final PR body always says Merge: human and lists the five readine
     assert(!adr.includes('--fill-count') && !adr.includes('count-filled'), 'ADR stage prompt has no fill-count step')
     if (local) assert(adr.includes('CI: n/a (local mode)'), adr)
     else assert(adr.includes('CI: 1 pass'), adr)
+  }
+})
+
+test('g11: an unprotected base with every gate passed: Merge: auto in the final body and one final merge call with the head', async () => {
+  const r = await gateFlow({ base: 'phase3-ui' }, c => (c.label === 'adr' ? ok({ adrs: [] }) : undefined))
+  const adr = named(r.calls, /^adr$/)[0].prompt
+  assert(adr.includes('Merge: auto') && !adr.includes('Merge: human'), adr.slice(-1500))
+  const fm = named(r.calls, /^final-merge$/)
+  assert.strictEqual(fm.length, 1, labelsOf(r.calls).join())
+  assert(fm[0].prompt.includes('gh pr merge 900 --repo o/r --merge --match-head-commit'), fm[0].prompt)
+  assert.strictEqual(r.result.final.merged, true)
+})
+
+test('g12: a protected base, the default branch, an unknown default or a failed gate keeps the final PR a human merge', async () => {
+  const cases = [
+    [{ base: 'main' }, undefined, 'protected'],
+    [{ base: 'release/1.0' }, undefined, 'protected'],
+    [{ base: 'trunk' }, c => (c.label === 'default-branch' ? { name: 'trunk' } : undefined), 'default branch'],
+    [{ base: 'phase3-ui' }, c => (c.label === 'default-branch' ? { name: '' } : undefined), 'could not be read'],
+    [{ base: 'phase3-ui' }, c => (c.label === 'suite' || c.label === 'suite-rerun' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined), 'gate suite'],
+    [{ base: 'phase3-ui', local: true }, undefined, 'local'],
+  ]
+  for (const [over, ov, why] of cases) {
+    const r = await gateFlow(over, ov)
+    assert.strictEqual(named(r.calls, /^final-merge$/).length, 0, why)
+    assert.strictEqual(r.result.final.merged, false, why)
+    assert(r.result.final.reason.includes(why), `${why}: ${r.result.final.reason}`)
+    const adr = named(r.calls, /^adr$/)[0].prompt
+    assert(adr.includes('Merge: human') && !adr.includes('Merge: auto'), why)
   }
 })
 

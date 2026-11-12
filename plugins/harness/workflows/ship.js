@@ -147,6 +147,8 @@ const MERGE_SCHEMA = stageSchema({
   failed: { type: 'array', items: { type: 'object', properties: { n: NUM, reason: STR }, required: ['n', 'reason'] } },
 }, ['merged', 'failed'])
 const FINAL_PR_SCHEMA = stageSchema({ pr: NUM, url: STR }, ['pr'])
+const FINAL_MERGE_SCHEMA = stageSchema({ merged: BOOL, reason: STR }, ['merged'])
+const DEFAULT_BRANCH_SCHEMA = stageSchema({ name: STR }, ['name'])
 // CI: the agent only reports the checks; the script judges them. bucket is the gh pr checks bucket (pass, fail, pending, skipping, cancel).
 const CI_SCHEMA = { type: 'object',
   properties: { checks: { type: 'array', items: { type: 'object', properties: { name: STR, bucket: STR }, required: ['name', 'bucket'] } }, headRefOid: STR, branchTip: STR, note: STR },
@@ -1060,6 +1062,47 @@ async function stageCiSnapshot(finalPr) {
   }
 }
 
+// Final PR merge policy (owner decision, replaces decision A): the final PR merges without the owner when its
+// base is not protected and every gate passed. Protected = main, master, develop, development, staging,
+// production, release/*, release-* and the repo default branch (same list as hooks/merge-guard.sh).
+const PROTECTED_BASE = /^(main|master|develop|development|staging|production|release\/.*|release-.*)$/
+let finalPolicy = { mode: 'human', why: `the PR targets ${base}; a human merges it` }   // read by buildBody
+
+async function stageDefaultBranch() {
+  if (LOCAL) return ''
+  try {
+    const res = await call(`${RULES_LITE}\n\nStage: read the default branch. Run once: gh repo view ${repo} --json defaultBranchRef -q .defaultBranchRef.name   Return it as name (empty when the command fails). Edit nothing. ${notCwd()}`,
+      { label: 'default branch', phase: 'Decisions', schema: DEFAULT_BRANCH_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    return (res && res.name || '').trim()
+  } catch (e) { return '' }
+}
+
+// Returns { mode, why }: 'auto' only when the base is not protected and no gate failed; else 'human' with the reason.
+function decideFinalMerge(defaultBranch, review, intent, suite) {
+  if (LOCAL) return { mode: 'human', why: 'local mode opens no PR' }
+  if (PROTECTED_BASE.test(base)) return { mode: 'human', why: `the PR targets ${base}, a protected branch; a human merges it` }
+  if (!defaultBranch) return { mode: 'human', why: `the default branch could not be read, so ${base} counts as protected` }
+  if (defaultBranch === base) return { mode: 'human', why: `the PR targets ${base}, the default branch; a human merges it` }
+  const bad = []
+  if (failures.length) bad.push(`failures (${failures.join('; ')})`)
+  if (review.status === 'not run' || review.notFixed.length || review.leftover.some(f => f.score >= FIX_THRESHOLD)) bad.push('review')
+  if (intent.verdict !== 'match') bad.push('intent')
+  if (suite.failed !== 0) bad.push('suite')
+  if (decisions.some(d => d.needs_review)) bad.push('open decisions')
+  return bad.length ? { mode: 'human', why: `gate ${bad.join(', ')} failed` } : { mode: 'auto', why: '' }
+}
+
+// The one final merge. The agent reads the head, then runs one merge command; the merge guard checks the base again.
+async function stageFinalMerge(finalPr) {
+  if (!(finalPr && finalPr.pr > 0)) return { merged: false, reason: 'no final PR number' }
+  const res = await call(`${RULES_LITE}\n\nStage: merge the final PR ${finalPr.pr} of ${repo} into ${base}. All gates passed. Run these as separate Bash calls, never joined with &&, ; or a subshell:\n` +
+    `1. gh pr view ${finalPr.pr} --repo ${repo} --json state,headRefOid   (if the state is already MERGED, return merged true)\n` +
+    `2. gh pr merge ${finalPr.pr} --repo ${repo} --merge --match-head-commit <headRefOid from step 1>   (one call; no --auto, no --admin)\n` +
+    `On any failure or a denial by the merge guard, change nothing else (no local merge, no push, no close) and return merged false with the reason: a human merges it. ${notCwd()}`,
+    { label: 'merge final PR', phase: 'Merge', schema: FINAL_MERGE_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
+  return res ? { merged: !!res.merged, reason: res.reason || '' } : { merged: false, reason: 'the merge agent returned nothing' }
+}
+
 function stageFinalPr(done, bodyTemplate) {
   const prompt = `${RULES_LITE}\n\nStage: open the final pull request ${integBranch} -> ${base} in ${repo}.\n` +
     (LOCAL
@@ -1484,13 +1527,13 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   const done = results.filter(r => r.status === 'done')
   const open = results.filter(r => r.status !== 'done')
   const L = []
-  // The final PR targets the base branch, so it is always a human merge (owner decision A). Values are pending until the final call.
+  // The final PR is 'human' unless finalPolicy says 'auto' (base not protected, every gate passed). Values are pending until the final call.
   const pend = review.level === 'pending' || intent.verdict === 'pending'
   const nrCount = decisions.filter(d => d.needs_review).length
   const uatRowsAll = Object.values(uat)
   const uatG = !uatRowsAll.length ? { ok: false, text: 'n/a' }
     : { ok: uatRowsAll.every(u => u.status === 'passed' || u.status === 'pass'), text: [...new Set(uatRowsAll.map(u => u.status))].join(', ') }
-  L.push('## Merge readiness', '', mergeBlock({ mode: 'human', why: `the PR targets ${base}; a human merges it`,
+  L.push('## Merge readiness', '', mergeBlock({ mode: pend ? 'human' : finalPolicy.mode, why: pend ? `the PR targets ${base}; a human merges it` : finalPolicy.why,
     ci: LOCAL ? { ok: false, text: 'n/a (local mode)' } : (ci || PENDING),
     review: pend ? PENDING : review.status === 'not run' ? { ok: false, text: `not run (${review.reason})` }
       : { ok: !review.notFixed.length && !review.leftover.some(f => f.score >= FIX_THRESHOLD), text: `${review.rounds} fix round(s), ${review.notFixed.length} not fixed, ${review.leftover.length} left` },
@@ -1688,11 +1731,23 @@ phase('Decisions')
 const artifact = await stageArtifact(ordered())
 out.artifact = artifact
 const ciSnap = await stageCiSnapshot(finalPr)
+const defaultBranch = await stageDefaultBranch()
+finalPolicy = decideFinalMerge(defaultBranch, review, intent, suite)
 const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat, ciSnap))
 takeDecisions('run', 'adr', adr)
 if (adr.status === 'blocked') failures.push(`ADR stage: ${adr.blocked_reason || adr.summary || 'blocked'}`)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))
 log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
+
+// Merge the final PR after the ADR commit, so the head the guard sees is the last one. Any other case stays a human merge.
+if (finalPolicy.mode === 'auto' && adr.status !== 'blocked' && !failures.length) {
+  phase('Merge')
+  const fm = await stageFinalMerge(finalPr)
+  out.final = { ...out.final, merged: fm.merged, reason: fm.reason || (fm.merged ? 'auto: base is not protected and every gate passed' : 'merge failed') }
+  log(`final PR merge: ${fm.merged ? 'merged' : `not merged (${fm.reason})`}`)
+} else {
+  out.final = { ...out.final, merged: false, reason: finalPolicy.mode === 'auto' ? 'a stage failed after the gates passed' : finalPolicy.why }
+}
 
 const specsRes = await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
 if (specsRes && !specsRes.ok) failures.push(`spec files: ${specsRes.reason}`)
