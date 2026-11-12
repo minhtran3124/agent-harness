@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) guard: a PR merge from a Claude session is allowed without a prompt only when the PR
-# base is a feat/* branch. A merge into main, master, develop, release/*, staging, production or the repo
-# default branch is allowed only as ONE plain `gh pr merge <n> --repo o/r` from the main session, and only
+# PreToolUse(Bash) guard: a PR merge from a Claude session is allowed without a prompt when the PR base is
+# not protected (feat/*, phase3-ui and any other branch that is not listed below). Protected bases are
+# main, master, develop, development, staging, production, release/*, release-* and the repo default
+# branch. A merge into a protected base is allowed only as ONE plain `gh pr merge <n> --repo o/r` from the main session, and only
 # after the owner answers a confirmation prompt (permissionDecision "ask"); the agent cannot answer it.
 # `ask` is honored in every permission mode (probed: default, auto, bypassPermissions); with no one to
 # answer (`claude -p`) Claude Code turns it into a denial. The hook itself denies in a mode it does not
 # know, in dontAsk, in a subagent (payload carries agent_id) and when permission_mode is missing.
-# Any other merge into another branch is a human merge.
+# A merge into a protected base in any other form (a subagent, a chain, --admin-less variants) is denied.
 # Unlike the other hooks, this one FAILS CLOSED: once it has seen a merge command, any doubt (no gh,
 # no jq, no PR number, no --repo, an unreadable base, a stalled gh) blocks the command (exit 2, reason
 # on stderr). A Bash call that is not a merge exits 0 at once, before any parsing.
 # Verifies: the PR base read live with `gh pr view --json baseRefName` for every PR number of every merge
-#   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is feat/* and is not the repo default branch.
+#   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is not protected (see above) and is not the repo default branch.
 #   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs, a merge
 #   that is not at command position, and `gh alias set|import` next to the word merge.
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
@@ -106,9 +107,11 @@ judge() {
       ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head$NOTE?"; return ;;
     feat/?*) ;;
     *)
+      # Any other base (for example phase3-ui) is not protected: it is allowed like feat/*, unless it is
+      # the repo default branch, which is protected and goes to the owner.
       default_of "$repo"
-      [ "$def" = "$base" ] || deny "$words (rule: only feat/* is merged without the owner, and only the base and default branches with the owner)."
-      [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
+      [ "$def" = "$base" ] || return 0
+      [ -n "$plain" ] || deny "$words, the default branch (only a plain single 'gh pr merge' can be put to the owner)."
       [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
       ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head$NOTE?"; return ;;
   esac

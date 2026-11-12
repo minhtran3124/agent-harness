@@ -15,8 +15,12 @@ sibling PRs into it, a merge agent after each group, one final PR into `base`.
 ## Merge policy
 
 The workflow merges only ticket PRs into the run's integration branch `feat/<slug>`, and only after a per-ticket gate.
-Every PR into `base`, `main` or the default branch is a human merge, and so is the final PR. A single-ticket run never
-merges: its PR is the final PR (`Merge: human`). Every PR the workflow opens carries a `Merge: auto|human` line and a
+Every PR into a protected base (`main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`,
+`release-*` or the default branch) is a human merge. The final PR is merged by the workflow when its base is not protected,
+the run is not local and every gate passed (review, intent `match`, full suite with no failure, no `needs_review`
+decision, no failure in the run). The script then runs one `gh pr merge <pr> --repo R --merge --match-head-commit <head>`
+after the ADR commit and records `final.merged` and `final.reason`. If a gate failed, the final PR stays `Merge: human` and
+the body names the gate. A single-ticket run follows the same rule for its PR (it is the final PR). Every PR the workflow opens carries a `Merge: auto|human` line and a
 readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between `<!-- merge-policy -->` markers.
 
 - **Gate stage** (`stageGate`, multi-ticket remote runs, after finish): a code-review of the ticket PR against `feat/<slug>`

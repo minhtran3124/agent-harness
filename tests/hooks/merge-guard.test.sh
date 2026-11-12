@@ -74,9 +74,15 @@ for b in main master develop staging production release/1 release-2; do
 done
 reset; setbase trunk; printf 'trunk\n' > "$D/default"
 t "base that is the default branch: ask"; g "$MA"; assert_ask "into trunk at $SHA"
-for b in v5.0.0 hotfix/x; do
-  reset; setbase "$b"; t "base $b (unknown name) is denied with the reason on stderr"; g "$M"; assert_rc_contains 2 "human merges"
+for b in v5.0.0 hotfix/x phase3-ui; do
+  reset; setbase "$b"; t "base $b (not protected) is allowed without ask or deny"; g "$M"
+  if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 done
+reset; setbase phase3-ui; t "base phase3-ui in a subagent is allowed"; AGENT=a1 g "$M"; assert_rc 0
+reset; setbase phase3-ui; touch "$D/deffail"; t "base phase3-ui with an unreadable default branch is denied"; g "$M"; assert_rc 2
+reset; setbase phase3-ui; printf 'phase3-ui\n' > "$D/default"
+t "base phase3-ui that is the default branch: ask"; g "$MA"; assert_ask "into phase3-ui at $SHA"
+reset; setbase main; t "base main in a subagent is still denied"; AGENT=a1 g "$MA"; assert_rc 2
 reset; setbase main
 for md in dontAsk plan bogus ""; do
   t "mode '$md': ask is not possible, denied"; MODE=$md g "$MA"; assert_rc_contains 2 "confirmation prompt"

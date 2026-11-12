@@ -21,13 +21,13 @@ against what was staged before that call. Stage in one call and commit in the ne
 
 ### `merge-guard.sh` (PreToolUse, Bash)
 
-Blocks a PR merge unless the PR base is a `feat/*` branch or the owner approves that one PR (see below). It acts on `gh pr merge` and `gh api .../pulls/<n>/merge`
+Lets a PR merge through when the PR base is not protected (`feat/*`, `phase3-ui` or any other branch that is not listed below). A merge into a protected base needs the owner to approve that one PR (see below). It acts on `gh pr merge` and `gh api .../pulls/<n>/merge`
 (at command position, after `&&`, `;`, `|`, `( )`, braces or env assignments; it uses the same segment splitter as
 `clean-worktrees.sh`, so text in a heredoc or quoted string that only mentions a merge is ignored). For every PR number
 in every merge segment it reads the live base with `gh pr view <n> --repo <r> --json baseRefName` and the repo default
-branch with `gh repo view`. It allows the merge only when the base matches `feat/*` and is not the default branch.
-`main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`, `release-*`, the default branch and any
-other name are denied. It exits 2 with the reason on stderr.
+branch with `gh repo view`. It allows the merge when the base is not protected and is not the default branch.
+Protected bases are `main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`, `release-*` and the
+default branch. A protected base is denied, unless it is the one owner-approved form below. It exits 2 with the reason on stderr.
 
 **Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r --match-head-commit <head sha>` (the flag must equal the head the hook reads, so a later push cannot ride the approval; no `--auto`,
 one PR, the only merge in the command, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
@@ -148,7 +148,7 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
-`/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still blocks every merge whose PR base is not `feat/*`. The root `settings.json` has no allow rules.
+`/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still stops every merge into a protected base. The root `settings.json` has no allow rules.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
 
 ## What is intentionally not enforced
