@@ -3,9 +3,9 @@
 A live view of one `ship.js` (autopilot) run: which agent runs now, with which model and effort, what each
 step returned, and where the run waits for you. One Node file, no dependencies, no build.
 
-![The board on a finished real run](../../../docs/images/board/board-completed-light.png)
+![The board on a finished fixture run](../../../docs/images/board/board-completed-light.png)
 
-More shots of real runs (dark theme, a killed run) are in `docs/images/board/`.
+The two `board-completed` shots come from a fixture run (the token limit 200k is an example, not a shipped value). More shots of real runs (a killed run, one ticket) are in `docs/images/board/`; they show the old box look.
 
 ```
 node plugins/harness/board/board.js                    # newest run of the project in the current directory
@@ -53,7 +53,7 @@ Claude Code writes these files for every Workflow run. The board reads them and 
 | File | What the board takes |
 |---|---|
 | `~/.claude/projects/<project>/<session>/subagents/workflows/<run id>/journal.jsonl` | one `started` and one `result` line per agent: label, phase, status, the agent's short summary, check rows |
-| `.../<run id>/agent-<id>.jsonl` | first and last timestamp, `message.model`, `effort` |
+| `.../<run id>/agent-<id>.jsonl` | first and last timestamp, `message.model`, `effort`, `message.usage` (token count) and the names of `tool_use` blocks |
 | `~/.claude/projects/<project>/<session>/workflows/<run id>.json` | written once at the end: run status, final PR, the `log()` lines |
 
 `<project>` is the project path with every character outside `A-Z a-z 0-9` replaced by `-`.
@@ -65,8 +65,24 @@ box. A stage that matches no box still shows in the event log. Edit `flow.json` 
 ## Privacy
 
 The server binds `127.0.0.1` only. It sends labels, phases, statuses, models, efforts, times, check row
-counts and the agent's own summary (cut to 200 characters). It never sends prompts, tool calls or file
-contents from the transcripts.
+counts and the agent's own summary (cut to 200 characters). Since the crew cards (ADR 0034) it also sends,
+per agent, `tokens` (a number), `tools` (tool names in first-use order, at most 40) and `tool` (the latest tool
+name). It never sends prompts, assistant text, tool inputs, tool outputs or file contents from the transcripts.
+
+## Crew cards
+
+Each box of the Workflow panel is a card: status icon (a spinner while running), title and role from `flow.json`,
+model chip, one activity line (`Using <tool>` while running, the agent's summary after), token text and bar,
+up to 4 tool icons then `+N`, and a status badge under the card. A tooltip shows the handoff: the summary of the
+previous agent of the same ticket.
+
+- **Tokens used** = `input_tokens + cache_creation_input_tokens + cache_read_input_tokens + output_tokens` of the
+  latest assistant message of the agent: the context size after its last turn, not a sum over all calls.
+- **Token limit** comes from `flow.json` `models` (model id to tokens). The table is empty: the owner gives the
+  values. A model with no entry shows `tokens n/a` and no bar.
+- **Round cap:** a Re-check that fails in fix round 3 shows `Needs you`; after the run ends, boxes that never ran show `Not run`.
+- Verifies: the cards, badges, arrows and fallbacks for the fixtures in `tests/board/board-ui.test.js`, in headless Chromium (`BOARD_PERF=1` adds a slow-CPU smoothness case).
+- Does not verify: that real transcripts carry `usage` and `tool_use` blocks (only fixtures were checked); a phone or narrow layout (below a scale of 0.6 the diagram scrolls sideways inside its panel); several tickets in parallel.
 
 ## Limits
 

@@ -55,7 +55,7 @@ button:focus-visible,select:focus-visible,.node:focus-visible{outline:2px solid 
 .legendRow u{width:10px;height:10px;border-radius:50%;display:inline-block}
 .canvasHead,.panel h2{margin:0;font:600 12px var(--font-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .canvasCard{border:1.5px solid color-mix(in srgb,var(--ink) 28%,var(--line));border-radius:12px;background-color:var(--canvas);background-image:radial-gradient(var(--grid) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
-.scroller{overflow-x:auto;padding:8px}
+.scroller{overflow-x:auto;padding:8px 16px}
 .sizer{position:relative}
 .world{position:absolute;left:0;top:0;transform-origin:0 0}
 .lane{position:absolute;border:1.5px dashed color-mix(in srgb,var(--line) 70%,transparent);border-radius:14px;background:color-mix(in srgb,var(--card) 35%,transparent)}
@@ -64,31 +64,44 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
 .edge{fill:none;stroke:var(--idle);stroke-width:2;opacity:.8;transition:stroke .3s,opacity .3s;marker-end:url(#m-idle)}
 .edge.done{stroke:var(--ok);opacity:.5;marker-end:url(#m-done)}
 .edge.active{stroke:var(--run);opacity:1;stroke-width:3.2;stroke-dasharray:7 6;animation:flow .7s linear infinite;marker-end:url(#m-active)}
+.edge.nohead,.edge.nohead.done,.edge.nohead.active{marker-end:none}
 @keyframes flow{to{stroke-dashoffset:-13}}
-.node{position:absolute;width:176px;height:76px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 10px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .3s,background .3s,transform .2s;text-align:left;color:var(--ink);font:inherit}
-.node:hover{transform:translateY(-1px)}
+.node{position:absolute;width:184px;height:130px;display:flex;flex-direction:column;gap:4px;padding:6px 10px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .3s,background .3s;text-align:left;color:var(--ink);font:inherit;overflow:hidden}
 .node.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--run) 25%,transparent)}
 .node[data-s="running"]{border-color:var(--run);border-width:2px;background:var(--fill-run);z-index:2}
 .node[data-s="done"]{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
-.node[data-s="done"]:not(:hover):not(.sel){opacity:.72}
+.node[data-s="done"]:not(:hover):not(.sel){opacity:.8}
 .node[data-s="failed"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad-bg) 55%,var(--card))}
 .node[data-s="waiting"]{border-color:var(--warn);background:color-mix(in srgb,var(--warn-bg) 55%,var(--card))}
-.row{display:flex;align-items:center;gap:9px;min-width:0}
-.mdl{font:500 10.5px var(--font-mono);color:var(--muted);background:var(--canvas);border-radius:6px;padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:flex-start;max-width:100%}
+.row{display:flex;align-items:center;gap:8px;min-width:0;height:28px;flex:none}
+.mdl{font:500 10.5px/16px var(--font-mono);height:16px;color:var(--muted);background:var(--canvas);border-radius:6px;padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:flex-start;max-width:100%;flex:none}
 .mdl.none{opacity:.7;font-style:italic}
 [data-s="running"] .mdl{background:var(--run-ico);color:var(--run)}
-.ico{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--canvas);color:var(--idle);transition:background .3s,color .3s}
+.ico{flex:none;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--canvas);color:var(--idle);transition:background .3s,color .3s}
 .ico.pop{animation:pop .35s ease-out}
 @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
 [data-s="running"] .ico{background:var(--run-ico);color:var(--run)} [data-s="done"] .ico{background:var(--ok-bg);color:var(--ok)}
 [data-s="failed"] .ico{background:var(--bad-bg);color:var(--bad)} [data-s="waiting"] .ico{background:var(--warn-bg);color:var(--warn)}
-.ico svg{width:18px;height:18px}
-.spin{width:18px;height:18px;border:2.5px solid color-mix(in srgb,var(--run) 25%,transparent);border-top-color:var(--run);border-radius:50%;animation:rot .8s linear infinite}
+.ico svg{width:16px;height:16px}
+.spin{width:16px;height:16px;border:2.5px solid color-mix(in srgb,var(--run) 25%,transparent);border-top-color:var(--run);border-radius:50%;animation:rot .8s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 .txt{min-width:0;display:flex;flex-direction:column}
 .txt b{font:600 13px/1.2 var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .txt i{font:400 11px/1.3 var(--font-ui);font-style:normal;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cap{position:absolute;width:176px;text-align:center;font:500 11px var(--font-mono);color:var(--muted);font-weight:var(--fw2)}
+.act{flex:none;height:14px;font:400 11px/14px var(--font-ui);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-s="running"] .act{color:var(--ink)}
+.tok{flex:none;height:22px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.tkt{font:500 10.5px/12px var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbar{height:5px;border-radius:99px;background:var(--canvas);overflow:hidden}
+.tbar i{display:block;height:100%;width:0;background:var(--ok);transition:width .4s}
+[data-s="running"] .tbar i{background-color:var(--run);background-image:repeating-linear-gradient(135deg,color-mix(in srgb,var(--card) 40%,transparent) 0 6px,transparent 6px 12px);background-size:17px 17px;animation:stripe .8s linear infinite}
+[data-s="failed"] .tbar i{background:var(--bad)} [data-s="waiting"] .tbar i{background:var(--warn)}
+@keyframes stripe{to{background-position:17px 0}}
+.tools{flex:none;height:18px;display:flex;align-items:center;gap:4px}
+.tool{width:18px;height:18px;border-radius:5px;background:var(--canvas);color:var(--muted);display:grid;place-items:center}
+.tool svg{width:12px;height:12px}
+.more{font:500 10.5px var(--font-mono);color:var(--muted)}
+.cap{position:absolute;width:184px;height:16px;text-align:center;font:500 11px/16px var(--font-mono);color:var(--muted);font-weight:var(--fw2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cap[data-s="running"]{color:var(--run)} .cap[data-s="done"]{color:var(--ok)} .cap[data-s="failed"]{color:var(--bad)} .cap[data-s="waiting"]{color:var(--warn)}
 .nowgrid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:14px}
 @media (max-width:820px){.nowgrid{grid-template-columns:minmax(0,1fr)}}
@@ -173,8 +186,8 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
 <script>
 (function(){
 'use strict';
-var W=176,H=76,MAX_ROUNDS=3,EMBED=document.documentElement.classList.contains('embed');
-var FLOW=null,N={},A={},ORDER=[],LOG=[],RUN={id:null,end:null},sel=null,view='all',lastTouched=null,connected=false,kScale=1,nowId=null;
+var W=184,H=130,MAX_ROUNDS=3,EMBED=document.documentElement.classList.contains('embed');
+var FLOW=null,N={},A={},ORDER=[],LOG=[],RUN={id:null,end:null},sel=null,view='all',lastTouched=null,connected=false,kScale=1,nowId=null,C={},E=[],HC={};
 var STATE_TXT={idle:'Waiting',running:'Running',done:'Done',failed:'Failed',waiting:'Needs you'};
 var ICON={
  idle:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3.5"/></svg>',
@@ -183,6 +196,17 @@ var ICON={
  waiting:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 6v8M12 18.2v.1"/></svg>',
  running:'<div class="spin"></div>'
 };
+// Tool icons: drawn here, one path set per tool family. A name with no icon gets the generic one.
+var TI=function(d){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';};
+var TOOL_SVG={
+ term:TI('<path d="M4 6l6 6-6 6M12 18h8"/>'),file:TI('<path d="M6 3h8l4 4v14H6zM14 3v4h4"/>'),pen:TI('<path d="M4 20l1-5L16 4l4 4L9 19zM14 6l4 4"/>'),
+ find:TI('<circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/>'),team:TI('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-4 3-6 6-6s6 2 6 6M15 15c3 0 6 1.5 6 5"/>'),
+ web:TI('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),gen:TI('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')
+};
+var TOOL_KIND={Bash:'term',Read:'file',Edit:'pen',Write:'pen',MultiEdit:'pen',NotebookEdit:'pen',Grep:'find',Glob:'find',Task:'team',Agent:'team',WebFetch:'web',WebSearch:'web'};
+function toolIcon(n){return '<span class="tool" title="'+esc(n)+'">'+TOOL_SVG[TOOL_KIND[n]||'gen']+'</span>';}
+// Write innerHTML only when the string changed: an unchanged section is never rebuilt.
+function setHTML(el,k,h){if(HC[k]!==h){HC[k]=h;el.innerHTML=h;}}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function ms(ts){var t=Date.parse(ts);return isNaN(t)?null:t;}
 function dur(a){var s=ms(a.first),e=a.status==='running'?Date.now():ms(a.last);if(s==null||e==null)return '';var x=Math.max(0,Math.round((e-s)/1000));return Math.floor(x/60)+':'+('0'+x%60).slice(-2);}
@@ -196,6 +220,9 @@ function inView(a){return view==='all'||a.ticket==null||a.ticket===view;}
 function agentsOf(id){return ORDER.map(function(k){return A[k];}).filter(function(a){return a.node===id&&inView(a);});}
 function nodeState(id){var l=agentsOf(id);return l.length?l[l.length-1].status:'idle';}
 function latest(id){var l=agentsOf(id);return l.length?l[l.length-1]:null;}
+// The state a card shows. It is the latest agent's state, except for one case: a Re-check that failed in round
+// MAX_ROUNDS has no fix round left, so the ticket waits for the owner ('waiting', shown as Needs you).
+function boxState(id){var s=nodeState(id);if(id==='rerun'&&s==='failed'){var a=latest(id);if(a&&!a.stopped&&(a.round||0)>=MAX_ROUNDS)return 'waiting';}return s;}
 function onEvent(e){
  if(e.kind==='hello'){connected=true;return;}
  if(e.kind==='run'){A={};ORDER=[];LOG=[];RUN={id:e.run_id,end:null};sel=null;lastTouched=null;fillTickets();return;}
@@ -205,11 +232,11 @@ function onEvent(e){
   (e.logs||[]).slice().reverse().forEach(function(l){LOG.unshift({ts:null,who:'log',msg:l,state:'idle'});});
   return;}
  var a=A[e.agent_id];
- if(e.kind==='agent_facts'){if(!a)return;a.first=e.first||a.first;a.last=e.last||a.last;a.model=e.model||a.model;a.effort=e.effort||a.effort;return;}
+ if(e.kind==='agent_facts'){if(!a)return;a.first=e.first||a.first;a.last=e.last||a.last;a.model=e.model||a.model;a.effort=e.effort||a.effort;if(e.tokens!=null)a.tokens=e.tokens;if(Array.isArray(e.tools))a.tools=e.tools;if(e.tool)a.tool=e.tool;return;}
  if(!a){a=A[e.agent_id]={id:e.agent_id,node:e.node,ticket:e.ticket,stage:e.stage,round:e.round,label:e.label,status:'running',first:null,last:null,model:null,effort:null,summary:''};ORDER.push(e.agent_id);fillTickets();}
  if(e.kind==='started'){a.status='running';a.first=e.ts||a.first;}
  if(e.kind==='result'){a.status=e.status;a.last=e.ts||a.last;a.summary=e.summary||'';if(e.checks)a.checks=e.checks;if(e.head_sha)a.sha=e.head_sha;if(e.passed_ac!=null)a.passed=e.passed_ac;}
- if(a.node){lastTouched=a.node;pop(a.node);}
+ if(a.node)lastTouched=a.node;
  var who=a.node&&N[a.node]?N[a.node].t:a.stage;
  var msg=e.kind==='started'?'Started: '+a.label:(STATE_TXT[a.status]+(a.checks?' · '+a.checks.passed+' of '+a.checks.total+' rows pass'+(a.checks.not_checkable?', '+a.checks.not_checkable+' not-checkable':''):'')+(a.summary?' · '+a.summary:''));
  LOG.unshift({ts:e.ts,id:a.id,kind:e.kind,who:(a.ticket?'#'+a.ticket+' ':'')+who,msg:msg,state:a.status});
@@ -220,16 +247,18 @@ function fillTickets(){
  ORDER.forEach(function(k){var t=A[k].ticket;if(t&&!seen[t]){seen[t]=1;opts+='<option value="'+esc(t)+'">#'+esc(t)+'</option>';}});
  if(s.innerHTML!==opts){s.innerHTML=opts;s.value=(view==='all'||seen[view])?view:'all';view=s.value;}
 }
-function pop(id){var el=document.querySelector('.node[data-id="'+id+'"] .ico');if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
 
 // --- drawing ---
+// Routes: 'n' (default) a curve from the right edge to the left edge; 'down' leaves below the source badge and
+// drops to the target; 'vdown' a short vertical; 'join' goes up onto another line (no arrowhead); 'loop' and 'bus' run
+// below the row and point up into the Fix round box.
 function pathFor(def){
  var a=N[def[0]],b=N[def[1]],k=def[2],ax,ay,bx,by;
- if(k==='down'){ax=a.x+W/2;ay=a.y+H+24;bx=b.x+W/2;by=b.y;return 'M'+ax+','+ay+' V196 H'+bx+' V'+(by-4);}
- if(k==='vdown')return 'M'+(a.x+30)+','+(a.y+H)+' V'+(b.y-4);
+ if(k==='down'){ax=a.x+W/2;ay=a.y+H+24;bx=b.x+W/2;by=b.y;return 'M'+ax+','+ay+' V244 H'+bx+' V'+(by-4);}
+ if(k==='vdown')return 'M'+(a.x+30)+','+(a.y+H+24)+' V'+(b.y-4);
  if(k==='join')return 'M'+(a.x+W/2)+','+a.y+' V'+(b.y+H/2)+' H'+(b.x-4);
- if(k==='loop')return 'M'+(a.x+W/2)+','+(a.y+H+24)+' V'+(a.y+H+50)+' H'+(b.x+W/2-20)+' V'+(b.y+H+24);
- if(k==='bus')return 'M'+(a.x+W/2)+','+(a.y+H+24)+' V'+(a.y+H+50)+' H'+(b.x+W/2+20)+' V'+(b.y+H+24);
+ if(k==='loop')return 'M'+(a.x+W/2)+','+(a.y+H+24)+' V'+(a.y+H+54)+' H'+(b.x+W/2-20)+' V'+(b.y+H+24);
+ if(k==='bus')return 'M'+(a.x+W/2)+','+(a.y+H+24)+' V'+(a.y+H+70)+' H'+(b.x+W/2+26)+' V'+(b.y+H+24);
  ax=a.x+W;ay=a.y+H/2;bx=b.x-4;by=b.y+H/2;var dx=Math.max(30,(bx-ax)/2);
  return 'M'+ax+','+ay+' C'+(ax+dx)+','+ay+' '+(bx-dx)+','+by+' '+bx+','+by;
 }
@@ -240,21 +269,37 @@ function buildWorld(){
  h+='<svg class="edges" viewBox="0 0 '+sz.w+' '+sz.h+'" aria-hidden="true"><defs>';
  [['idle','var(--idle)'],['done','var(--ok)'],['active','var(--run)']].forEach(function(m){h+='<marker id="m-'+m[0]+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M1,1 L9,5 L1,9 z" fill="'+m[1]+'"/></marker>';});
  h+='</defs>';
- FLOW.edges.forEach(function(e,i){h+='<path class="edge" id="e'+i+'" d="'+pathFor(e)+'"/>';});
+ FLOW.edges.forEach(function(e,i){var c='edge'+(e[2]==='join'?' nohead':'')+' idle';E[i]={cls:c};h+='<path class="'+c+'" id="e'+i+'" d="'+pathFor(e)+'"/>';});
  h+='</svg>';
  FLOW.nodes.forEach(function(n){
-  h+='<button type="button" class="node" data-id="'+n.id+'" data-s="idle" style="left:'+n.x+'px;top:'+n.y+'px" aria-label="'+esc(n.t)+'"><span class="row"><span class="ico">'+ICON.idle+'</span><span class="txt"><b>'+esc(n.t)+'</b><i>'+esc(n.a)+'</i></span></span><span class="mdl none">no agent yet</span></button>';
-  h+='<div class="cap" data-id="'+n.id+'" data-s="idle" style="left:'+n.x+'px;top:'+(n.y+H+6)+'px">Waiting</div>';
+  h+='<div class="node" role="button" tabindex="0" data-node="'+n.id+'" data-s="idle" style="left:'+n.x+'px;top:'+n.y+'px" aria-label="'+esc(n.t)+'"><span class="row"><span class="ico">'+ICON.idle+'</span><span class="txt"><b>'+esc(n.t)+'</b><i>'+esc(n.a)+'</i></span></span><span class="mdl none">no agent yet</span><span class="act"></span><span class="tok"><span class="tkt">tokens n/a</span></span><span class="tools"></span></div>';
+  h+='<div class="cap" data-node="'+n.id+'" data-s="idle" style="left:'+n.x+'px;top:'+(n.y+H+4)+'px">Waiting</div>';
  });
  w.innerHTML=h;
- w.querySelectorAll('.node').forEach(function(bn){bn.addEventListener('click',function(){var id=bn.getAttribute('data-id');sel=(sel===id)?null:id;render();});});
+ FLOW.nodes.forEach(function(n){
+  var el=w.querySelector('.node[data-node="'+n.id+'"]');
+  C[n.id]={el:el,cap:w.querySelector('.cap[data-node="'+n.id+'"]'),ico:el.querySelector('.ico'),mdl:el.querySelector('.mdl'),act:el.querySelector('.act'),tok:el.querySelector('.tok'),tkt:el.querySelector('.tkt'),tools:el.querySelector('.tools'),
+   s:'idle',mdlT:'no agent yet',mdlC:'mdl none',actT:'',tktT:'tokens n/a',bar:null,barEl:null,toolsK:'',title:'',sel:false,capT:'Waiting'};
+  var pick=function(){sel=(sel===n.id)?null:n.id;render();};
+  el.addEventListener('click',pick);
+  el.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pick();}});
+ });
 }
+// The diagram scale: min(1, (container width - 32) / world width), never below 0.6; below that the diagram
+// scrolls sideways inside its own container.
 function fit(){
  if(!FLOW)return;var sc=document.getElementById('scroller'),sz=document.getElementById('sizer'),w=document.getElementById('world'),fw=FLOW.size.w,fh=FLOW.size.h;
- var k=Math.max(EMBED?0.5:0.62,Math.min(1,(sc.clientWidth-16)/fw));kScale=k;w.style.transform='scale('+k+')';sz.style.width=(fw*k)+'px';sz.style.height=(fh*k)+'px';
+ var k=Math.max(0.6,Math.min(1,(sc.clientWidth-32)/fw));if(k===kScale&&w.style.transform)return;kScale=k;w.style.transform='scale('+k+')';sz.style.width=(fw*k)+'px';sz.style.height=(fh*k)+'px';
 }
 function modelText(a){if(!a)return 'no agent yet';if(!a.model&&!a.effort)return 'model not in log yet';return (shortModel(a.model)||'model ?')+' · '+(a.effort||'effort ?');}
-function edgeCls(d){var sa=nodeState(d[0]),sb=nodeState(d[1]);if(sa!=='done')return 'idle';if(sb==='running'||sb==='waiting')return 'active';return sb==='idle'?'idle':'done';}
+// An arrow is active while its target runs; done when its source is done and its target has started. The two
+// arrows into the Fix round box (loop, bus) are active only while that box runs a round that comes from them.
+function edgeCls(d){
+ var sa=boxState(d[0]),sb=boxState(d[1]),k=d[2];
+ if(k==='loop'||k==='bus'){var f=latest('fix');if(sb==='running'&&f&&(f.round||1)>=(k==='loop'?2:3))return 'active';}
+ else if(sb==='running')return 'active';
+ return sa==='done'&&sb!=='idle'?'done':'idle';
+}
 function round(){var r=0;ORDER.forEach(function(k){var a=A[k];if(a.node==='fix'&&inView(a))r=Math.max(r,a.round||1);});return r;}
 function checkPhase(){
  var c=latest('check'),rr=latest('rerun'),f=latest('fix'),ad=latest('adv'),r=round();
@@ -270,27 +315,55 @@ function checkPhase(){
  if(last.status==='failed')return r>=MAX_ROUNDS?['Blocked','bad']:['Fixing','warn'];
  return ['—','idle'];
 }
+// --- cards: every value is cached; the DOM is written only when a value changed ---
+function subjectOf(a){var l=a&&a.label||'',i=l.indexOf(' · ');return (i>=0?l.slice(i+3):l).replace(/\s+/g,' ').trim();}
+function activityOf(a,s){if(!a)return '';var t=s==='running'?(a.tool?'Using '+a.tool:subjectOf(a)):(a.summary||subjectOf(a));return String(t).replace(/\s+/g,' ').trim().slice(0,80);}
+function limitOf(m){var t=FLOW.models;if(!m||!t)return 0;if(t[m]>0)return t[m];var best=0,bk=0;Object.keys(t).forEach(function(k){if(m.indexOf(k)===0&&k.length>bk&&t[k]>0){bk=k.length;best=t[k];}});return best;}
+function handoffOf(a){if(!a)return '';var p=null;for(var i=0;i<ORDER.length&&ORDER[i]!==a.id;i++){var q=A[ORDER[i]];if(q.ticket===a.ticket&&q.summary&&inView(q))p=q;}return p?'\u21b3 '+p.summary.slice(0,78):'';}
+function capText(n){
+ var s=C[n.id].s,a=latest(n.id),d=a?dur(a)||'0:00':'',cnt=agentsOf(n.id).length,t;
+ if(s==='idle')t=RUN.end?'Not run':'Waiting';
+ else if(s==='waiting')t='Needs you';
+ else if(s==='running')t='Running '+d;
+ else t=STATE_TXT[s]+' in '+d+(cnt>1?' \u00b7 '+cnt+' agents':'');
+ return t;
+}
+function renderCaps(){if(!FLOW)return;FLOW.nodes.forEach(function(n){var c=C[n.id],t=capText(n);if(c.capT!==t){c.capT=t;c.cap.textContent=t;}});}
+function renderCards(){
+ FLOW.nodes.forEach(function(n){
+  var c=C[n.id],s=boxState(n.id),a=latest(n.id);
+  if(c.s!==s){c.s=s;c.el.setAttribute('data-s',s);c.cap.setAttribute('data-s',s);c.ico.innerHTML=ICON[s];c.ico.classList.remove('pop');void c.ico.offsetWidth;c.ico.classList.add('pop');}
+  var mt=modelText(a),mc='mdl'+(a&&a.model?'':' none');
+  if(c.mdlT!==mt){c.mdlT=mt;c.mdl.textContent=mt;}
+  if(c.mdlC!==mc){c.mdlC=mc;c.mdl.className=mc;}
+  var at=activityOf(a,s);if(c.actT!==at){c.actT=at;c.act.textContent=at;}
+  var lim=a?limitOf(a.model):0,has=a&&a.tokens!=null&&lim>0,tt=has?Math.floor(a.tokens/1000)+'k / '+Math.floor(lim/1000)+'k':'tokens n/a';
+  if(c.tktT!==tt){c.tktT=tt;c.tkt.textContent=tt;}
+  var pct=has?Math.min(100,Math.round(a.tokens/lim*200)/2):null;
+  if(has&&!c.barEl){c.tok.insertAdjacentHTML('beforeend','<span class="tbar" aria-hidden="true"><i style="width:0"></i></span>');c.barEl=c.tok.querySelector('.tbar i');c.bar=null;}
+  if(!has&&c.barEl){c.tok.removeChild(c.tok.querySelector('.tbar'));c.barEl=null;c.bar=null;}
+  if(has&&c.bar!==pct){c.bar=pct;c.barEl.style.width=pct+'%';}
+  var tl=a&&a.tools?a.tools:[],tk=tl.join(',');
+  if(c.toolsK!==tk){c.toolsK=tk;c.tools.innerHTML=tl.slice(0,4).map(toolIcon).join('')+(tl.length>4?'<span class="more">+'+(tl.length-4)+'</span>':'');}
+  var ho=handoffOf(a);if(c.title!==ho){c.title=ho;if(ho)c.el.setAttribute('title',ho);else c.el.removeAttribute('title');}
+  var sl=sel===n.id;if(c.sel!==sl){c.sel=sl;c.el.classList.toggle('sel',sl);}
+ });
+ renderCaps();
+ FLOW.edges.forEach(function(d,i){var cl='edge'+(d[2]==='join'?' nohead':'')+' '+edgeCls(d);if(E[i].cls!==cl){E[i].cls=cl;document.getElementById('e'+i).setAttribute('class',cl);}});
+}
 function render(){
  if(!FLOW)return;
- FLOW.nodes.forEach(function(n){
-  var s=nodeState(n.id),a=latest(n.id),el=document.querySelector('.node[data-id="'+n.id+'"]'),cap=document.querySelector('.cap[data-id="'+n.id+'"]');
-  if(el.getAttribute('data-s')!==s){el.setAttribute('data-s',s);el.querySelector('.ico').innerHTML=ICON[s];cap.setAttribute('data-s',s);}
-  var mm=el.querySelector('.mdl');mm.textContent=modelText(a);mm.className='mdl'+(a&&a.model?'':' none');
-  el.classList.toggle('sel',sel===n.id);
-  var t=(s==='idle'&&RUN.end)?'Not run':STATE_TXT[s],d=a?dur(a):'',cnt=agentsOf(n.id).length;
-  if(s==='done'&&d)t+=' in '+d;else if(s==='failed'&&d)t+=' after '+d;
-  if(cnt>1)t+=' · '+cnt+' agents';
-  cap.textContent=t;
- });
- FLOW.edges.forEach(function(d,i){document.getElementById('e'+i).setAttribute('class','edge '+edgeCls(d));});
+ renderCards();
  document.getElementById('round').textContent=round()+' / '+MAX_ROUNDS;
  var u=checkPhase(),ue=document.getElementById('uatstate');ue.textContent=u[0];ue.className='pill '+u[1];
  document.getElementById('runid').textContent=RUN.id||'—';
  document.getElementById('agents').textContent=ORDER.length;
  var o=document.getElementById('overall'),anyRun=ORDER.some(function(k){return A[k].status==='running';}),anyWait=ORDER.some(function(k){return A[k].status==='waiting';});
+ var capHit=boxState('rerun')==='waiting';
  if(!RUN.id){o.textContent='Waiting for a run';o.className='pill idle';}
+ else if(RUN.end&&capHit){o.textContent='Needs you';o.className='pill warn';}
  else if(RUN.end){o.textContent=RUN.end.status==='completed'?'Finished':'Ended: '+RUN.end.status;o.className='pill '+(RUN.end.status==='completed'?'ok':'bad');}
- else if(anyWait){o.textContent='Needs you';o.className='pill warn';}
+ else if(anyWait||capHit){o.textContent='Needs you';o.className='pill warn';}
  else if(anyRun){o.textContent='Running';o.className='pill';}
  else {o.textContent='Between steps';o.className='pill idle';}
  var pr=RUN.end&&RUN.end.pr;document.getElementById('prkv').hidden=!pr;document.getElementById('pr').textContent=pr||'';
@@ -309,31 +382,32 @@ function renderDetail(){
  var p=pickNow(),id=p.id,el=document.getElementById('detail');nowId=id;
  var main=FLOW.nodes.filter(function(n){return !n.cond;});
  var finMain=main.filter(function(n){var s=nodeState(n.id);return s==='done'||s==='failed';});
- if(!id){el.setAttribute('data-s','idle');el.innerHTML='<div class="nowtop"><h2>Now</h2></div><p class="msg">'+(RUN.id?'The run started; no agent has reached a box yet.':'No ship.js run found for this project yet. Start /harness:autopilot; the board picks up the newest run.')+'</p>';}
+ if(!id){el.setAttribute('data-s','idle');setHTML(el,'detail','<div class="nowtop"><h2>Now</h2></div><p class="msg">'+(RUN.id?'The run started; no agent has reached a box yet.':'No ship.js run found for this project yet. Start /harness:autopilot; the board picks up the newest run.')+'</p>');}
  else{
   var n=N[id],s=nodeState(id),a=latest(id),cls={running:'',done:'ok',failed:'bad',waiting:'warn',idle:'idle'}[s];
   el.setAttribute('data-s',s);
   var pct=Math.round(100*finMain.length/main.length);
   var facts=a?(a.checks?a.checks.passed+' of '+a.checks.total+' rows pass'+(a.checks.not_checkable?' · '+a.checks.not_checkable+' not-checkable':'')+(a.sha?' · at '+a.sha.slice(0,7):''):''):'';
-  el.innerHTML='<div><div class="nowtop"><h2>'+(p.pinned?'Pinned step':'Now')+'</h2><span class="pill '+cls+'">'+STATE_TXT[s]+'</span>'+(p.pinned?'<button type="button" id="unpin" class="link">Back to live</button>':'')+'</div>'+
+  setHTML(el,'detail','<div><div class="nowtop"><h2>'+(p.pinned?'Pinned step':'Now')+'</h2><span class="pill '+cls+'">'+STATE_TXT[s]+'</span>'+(p.pinned?'<button type="button" id="unpin" class="link">Back to live</button>':'')+'</div>'+
    '<div class="nowrow"><div class="nowico">'+ICON[s]+'</div><div class="nowtx"><strong>'+esc(n.t)+(a&&a.ticket?' · #'+esc(a.ticket):'')+'</strong><span>'+esc(a?a.stage:n.a)+' · '+esc(modelText(a))+'</span></div><div class="nowtime" id="nowTime">'+(a?dur(a)||'0:00':'')+'</div></div>'+
    '<p class="msg">'+esc(facts?facts+'. ':'')+esc(a?(a.summary||(a.status==='running'?a.label:'No summary')):'Not reached in this run.')+'</p></div>'+
-   '<div><div class="bar" aria-hidden="true"><i style="width:'+pct+'%"></i></div><p class="note">'+finMain.length+' of '+main.length+' main steps finished.</p></div>';
+   '<div><div class="bar" aria-hidden="true"><i style="width:'+pct+'%"></i></div><p class="note">'+finMain.length+' of '+main.length+' main steps finished.</p></div>');
  }
  var ch=function(list,c){return list.map(function(n){return '<span class="chip '+(c||'')+'">'+esc(n.t)+'</span>';}).join('')||'<span class="chip none">none</span>';};
  var by=function(st){return FLOW.nodes.filter(function(n){return nodeState(n.id)===st;});};
- document.getElementById('lists').innerHTML=
+ setHTML(document.getElementById('lists'),'lists',
   '<div class="lrow"><h2>Running</h2><div class="chips r1">'+ch(by('running'))+'</div></div>'+
   '<div class="lrow"><h2>Finished ('+by('done').length+')</h2><div class="chips r3">'+ch(by('done'),'ok')+'</div></div>'+
   '<div class="lrow"><h2>Failed ('+by('failed').length+')</h2><div class="chips r1">'+ch(by('failed'),'bad')+'</div></div>'+
-  '<div class="lrow"><h2>Needs you ('+by('waiting').length+')</h2><div class="chips r2">'+ch(by('waiting'),'warn')+'</div></div>';
+  '<div class="lrow"><h2>Needs you ('+by('waiting').length+')</h2><div class="chips r2">'+ch(by('waiting'),'warn')+'</div></div>');
 }
 function renderLog(){
- document.getElementById('log').innerHTML=LOG.map(function(l){return '<li><time>'+esc(clock(logTs(l)))+'</time><span class="dot '+esc(l.state)+'"></span><span><span class="who">'+esc(l.who)+'</span> · '+esc(l.msg)+'</span></li>';}).join('')||'<li><time></time><span class="dot"></span><span>No events yet.</span></li>';
+setHTML(document.getElementById('log'),'log',LOG.map(function(l){return '<li><time>'+esc(clock(logTs(l)))+'</time><span class="dot '+esc(l.state)+'"></span><span><span class="who">'+esc(l.who)+'</span> · '+esc(l.msg)+'</span></li>';}).join('')||'<li><time></time><span class="dot"></span><span>No events yet.</span></li>');
 }
 
 // --- wiring ---
-var pending=false;function later(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;render();});}
+// Redraw at most every 150 ms, however many events arrive.
+var pending=false,lastR=0;function later(){if(pending)return;pending=true;setTimeout(function(){requestAnimationFrame(function(){pending=false;lastR=Date.now();render();});},Math.max(0,150-(Date.now()-lastR)));}
 function connect(){
  var es=new EventSource('events');
  es.onmessage=function(m){try{onEvent(JSON.parse(m.data));}catch(e){}later();};
@@ -342,7 +416,7 @@ function connect(){
 }
 document.getElementById('detail').addEventListener('click',function(e){if(e.target&&e.target.id==='unpin'){sel=null;render();}});
 document.getElementById('tk').addEventListener('change',function(e){view=e.target.value;render();});
-setInterval(function(){var nt=document.getElementById('nowTime'),a=nowId&&latest(nowId);if(nt&&a&&a.status==='running')nt.textContent=dur(a);},1000);
+setInterval(function(){var nt=document.getElementById('nowTime'),a=nowId&&latest(nowId);if(nt&&a&&a.status==='running')nt.textContent=dur(a);if(FLOW&&ORDER.some(function(k){return A[k].status==='running';}))renderCaps();},1000);
 window.addEventListener('resize',fit);
 // In embed mode, tell the host page our height so its iframe needs no inner scroll bar. Only a number is sent.
 if(EMBED&&window.parent!==window&&window.ResizeObserver){var lastH=0;new ResizeObserver(function(){var h=Math.ceil(document.querySelector('.page').getBoundingClientRect().height);if(h!==lastH){lastH=h;window.parent.postMessage({type:'afb-height',height:h},'*');}}).observe(document.querySelector('.page'));}
