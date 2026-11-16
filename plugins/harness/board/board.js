@@ -11,7 +11,7 @@
 //
 // The server tails those files and pushes normalized events to the page over SSE (Server-Sent Events).
 // It binds 127.0.0.1 only. It sends labels, phases, statuses, models, efforts, times and the agent's short
-// summary; it never sends prompts, tool calls or file contents.
+// summary, a token count and tool names (names only); it never sends prompts, tool inputs or outputs, or file contents.
 //
 //   node board.js [--project <path>] [--run <run id | run dir>] [--port <n>] [--no-follow]
 //
@@ -90,9 +90,24 @@ function splitLines(carry, chunk) {
   return { rows, carry: rest };
 }
 
-// First and last timestamp, model and effort of one agent transcript (already parsed rows).
+// Tool names the board may send: a plain identifier (Bash, Read, mcp__server__tool). Anything else is dropped.
+const TOOL_NAME = /^[A-Za-z0-9_.:-]{1,60}$/;
+const MAX_TOOLS = 40;
+
+// Tokens in the context after one assistant message: input + cache creation + cache read + output.
+// It is the size of the context window at that turn, not a running sum of all calls.
+function usedTokens(u) {
+  if (!u || typeof u !== 'object') return null;
+  const n = k => (Number.isFinite(u[k]) && u[k] >= 0 ? u[k] : 0);
+  const t = n('input_tokens') + n('cache_creation_input_tokens') + n('cache_read_input_tokens') + n('output_tokens');
+  return t > 0 ? t : null;
+}
+
+// First and last timestamp, model, effort, tokens and tool names of one agent transcript (already parsed rows).
+// Only names of tool_use blocks are read; their input, and every text block, is never looked at.
 function agentFacts(rows, facts) {
-  const f = facts || { first: null, last: null, model: null, effort: null };
+  const f = facts || { first: null, last: null, model: null, effort: null, tokens: null, tools: [], tool: null };
+  if (!Array.isArray(f.tools)) f.tools = [];
   for (const d of rows) {
     if (typeof d.timestamp === 'string') {
       if (!f.first || d.timestamp < f.first) f.first = d.timestamp;
@@ -101,6 +116,18 @@ function agentFacts(rows, facts) {
     const msg = d.message && typeof d.message === 'object' ? d.message : null;
     if (!f.model && d.type === 'assistant' && msg && typeof msg.model === 'string') f.model = msg.model;
     if (!f.effort && typeof d.effort === 'string') f.effort = d.effort;
+    if (d.type === 'assistant' && msg) {
+      const t = usedTokens(msg.usage);
+      if (t != null) f.tokens = t;
+      if (Array.isArray(msg.content)) {
+        for (const b of msg.content) {
+          if (b && b.type === 'tool_use' && typeof b.name === 'string' && TOOL_NAME.test(b.name)) {
+            f.tool = b.name;
+            if (!f.tools.includes(b.name) && f.tools.length < MAX_TOOLS) f.tools.push(b.name);
+          }
+        }
+      }
+    }
   }
   return f;
 }
@@ -193,7 +220,7 @@ class RunTail {
   constructor(run, flow, emit) {
     this.run = run; this.flow = flow; this.emit = emit;
     this.agents = new Map();          // agentId -> parsed label + node
-    this.facts = new Map();           // agentId -> { first, last, model, effort }
+    this.facts = new Map();           // agentId -> { first, last, model, effort, tokens, tools, tool }
     this.offsets = new Map();         // file -> { pos, carry }
     this.ended = false;
   }
@@ -224,7 +251,7 @@ class RunTail {
     const before = JSON.stringify(this.facts.get(agentId) || null);
     const f = agentFacts(rows, this.facts.get(agentId));
     this.facts.set(agentId, f);
-    return JSON.stringify(f) !== before ? { kind: 'agent_facts', run_id: this.run.id, agent_id: agentId, ...f } : null;
+    return JSON.stringify(f) !== before ? { kind: 'agent_facts', run_id: this.run.id, agent_id: agentId, ...f, tools: f.tools.slice() } : null;
   }
 
   tick() {
@@ -354,4 +381,4 @@ if (require.main === module) {
   }).catch(e => { console.error(`board: ${e.message}`); process.exit(1); });
 }
 
-module.exports = { projectKey, parseLabel, nodeFor, statusOf, splitLines, agentFacts, eventOf, endEventOf, runsOf, resolveRun, RunTail, parseArgs, start };
+module.exports = { projectKey, parseLabel, nodeFor, statusOf, splitLines, agentFacts, usedTokens, eventOf, endEventOf, runsOf, resolveRun, RunTail, parseArgs, start };

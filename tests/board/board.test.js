@@ -218,6 +218,25 @@ test('qb12: the page works under a path prefix and has an embed mode', () => {
   assert.ok(/postMessage\(\{type:'afb-height',height:h\}/.test(html));
 });
 
+test('qb13: agent_facts carries tokens and tool names, and never tool input, prompts or answers', () => {
+  const base = tmp();
+  const rows = transcript('2026-11-16T08:00:00.000Z', '2026-11-16T08:01:00.000Z', 'claude-sonnet-5-5', 'medium');
+  rows[1].message.usage = { input_tokens: 100, cache_creation_input_tokens: 200, cache_read_input_tokens: 4000, output_tokens: 50 };
+  rows[1].message.content.push({ type: 'tool_use', name: 'Bash', input: { command: 'SECRET TOOL INPUT' } },
+    { type: 'tool_use', name: 'Read', input: { file_path: 'SECRET TOOL INPUT' } }, { type: 'tool_use', name: 'Bash', input: {} },
+    { type: 'tool_use', name: 'bad name\nwith newline', input: {} }, { type: 'tool_use', name: 'mcp__srv__do_it', input: {} });
+  const dir = makeRun(base, 'wf_tk', [{ type: 'started', key: 'k', agentId: 'a1', label: '#4 implement · t', phase: 'T' }], { a1: rows });
+  const evs = [];
+  new B.RunTail({ id: 'wf_tk', dir, summary: path.join(base, 'sess1', 'workflows', 'wf_tk.json') }, FLOW, e => evs.push(e)).tick();
+  const f = evs.find(e => e.kind === 'agent_facts');
+  assert.strictEqual(f.tokens, 4350);
+  assert.deepStrictEqual(f.tools, ['Bash', 'Read', 'mcp__srv__do_it']);
+  assert.strictEqual(f.tool, 'mcp__srv__do_it');
+  assert.ok(!JSON.stringify(evs).includes('SECRET'), 'an event carries transcript text or tool input');
+  assert.strictEqual(B.usedTokens({}), null);
+  assert.strictEqual(B.usedTokens(undefined), null);
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of cases) {

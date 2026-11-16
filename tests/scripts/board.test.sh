@@ -8,3 +8,4 @@ if ! command -v node >/dev/null 2>&1; then
   exit 0
 fi
 node "$root/tests/board/board.test.js"
+node "$root/tests/board/board-ui.test.js"
