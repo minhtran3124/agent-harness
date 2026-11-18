@@ -2367,6 +2367,16 @@ test('rx8: decisions from the blocked first run are kept when the retry succeeds
   assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
 })
 
+test('rx9: a decision the retry repeats from the blocked first run is recorded once', async () => {
+  const dec = { title: 'REPEATED-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => {
+    if (c.label === 'implement:1') return rcBlocked({ decisions: [dec] })
+    if (c.label === 'implement:1:retry') return { ...implOk(), decisions: [dec] }
+  }))
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+  assert.strictEqual(allDecisions(r).filter(d => d.title === 'REPEATED-DECISION').length, 1)
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {

@@ -497,6 +497,7 @@ async function runStage(t, stage, build, schema, opts) {
   //   result with a dangerous or contradicts_confirmed decision gets none: it goes to the owner as before.
   // Does not verify: that the advisor's advice is right. The retry result passes the same checks as any result.
   let suffix = ''
+  const firstTitles = new Set()   // titles the blocked first run already recorded; the retry must not record them twice
   const flagged = ((res && res.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
   if ((!res || res.status === 'blocked') && !flagged && !recovered.has(`${t.n}:${stage}`)) {
     recovered.add(`${t.n}:${stage}`)
@@ -508,11 +509,11 @@ async function runStage(t, stage, build, schema, opts) {
     }
     log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
     suffix = `; advisor (retry failed): ${v.reason}`
-    if (res) takeDecisions(t.n, stage, res)   // keep what the blocked run decided; the retry result is taken below
+    if (res) { takeDecisions(t.n, stage, res); for (const d of res.decisions || []) if (d && typeof d === 'object') firstTitles.add(str(d.title)) }   // keep what the blocked run decided; the retry result is taken below
     res = await call(build(ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
-  takeDecisions(t.n, stage, res)
+  takeDecisions(t.n, stage, firstTitles.size ? { ...res, decisions: (res.decisions || []).filter(d => !(d && typeof d === 'object' && firstTitles.has(str(d.title)))) } : res)
   if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}${suffix}`)
   const bad = (res.decisions || []).find(d => d.contradicts_confirmed || d.dangerous)
   if (bad) throw new Blocked(`${stage}: question for the owner: ${bad.title} (${bad.contradicts_confirmed ? 'contradicts an owner-confirmed answer' : 'dangerous'})`)
