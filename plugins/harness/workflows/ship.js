@@ -229,7 +229,7 @@ function validateArgs(a) {
     if (!['S', 'M', 'L'].includes(t.depth)) throw new Error(`ship: ticket #${t.n} depth must be S, M or L`)
     if (!Number.isInteger(t.group)) throw new Error(`ship: ticket #${t.n} needs an integer group`)
     if (t.deps !== undefined && !Array.isArray(t.deps)) throw new Error(`ship: ticket #${t.n} deps must be an array`)
-    if (t.verifyDrafted !== undefined && typeof t.verifyDrafted !== 'boolean') throw new Error(`ship: ticket #${t.n} verifyDrafted must be true or false`)
+    if (t.decisions !== undefined && (!Array.isArray(t.decisions) || t.decisions.some(d => !d || typeof d.title !== 'string' || !d.title))) throw new Error(`ship: ticket #${t.n} decisions must be an array of decisions that each have a title`)
   }
   // Each entry is pasted into a prompt as one line, so a line break is rejected.
   if (a.worktreeSetup !== undefined && (!Array.isArray(a.worktreeSetup) ||
@@ -965,13 +965,8 @@ async function stageGate(t, fin, impl, branch) {
 async function runTicket(t) {
   const branch = ticketBranch(t)
   const spec = specs[t.n] = {}
-  // A Verify: row the autopilot drafted with nobody to confirm it: the owner reviews it before the merge.
-  if (NO_ASK && t.verifyDrafted === true) {
-    addDecision(t.n, 'autopilot', { title: `Verify: row drafted for #${t.n}`, needs_review: true, confidence: 'medium',
-      context: 'The issue had no Verify: row and the run had --no-ask, so nobody confirmed the row drafted from the acceptance criteria.',
-      decision: 'Verify with the drafted row in the owner-confirmed decisions.', why: 'A missing Verify: row would block the verify stage.',
-      consequences: 'The ticket is not auto-merged until the owner accepts the drafted row.', how_to_reverse: 'Add a Verify: row to the issue and rerun the verify stage.' })
-  }
+  // Decisions the autopilot skill passed with the ticket (for example a drafted Verify: row under --no-ask).
+  for (const d of t.decisions || []) addDecision(t.n, 'autopilot', d)
   try {
     const intent = spec.intent = await stageIntent(t)
     boundaries[t.n] = boundaryOf(intent)

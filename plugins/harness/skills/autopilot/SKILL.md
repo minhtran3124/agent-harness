@@ -36,8 +36,8 @@ Typing `/harness:autopilot` authorizes the launch in step 8, after the owner say
 6. **Record.** Post each ticket's confirmed answers as one comment titled "Confirmed decisions":
    `gh issue comment <n> --repo <repo> --body-file <file>`. Grilling posts its own. A ticket with no
    `Verify:` row: put intake's drafted row (its own line, starting `Verify:`) in that comment and in
-   `confirmed`, and set `verifyDrafted: true` (with `--no-ask`, a `Verify: row drafted for #<n>` decision
-   for review). With `--no-ask`, pass open questions on with `noAsk: true`; the workflow records
+   `confirmed`, (with `--no-ask`, also pass a `decisions` entry with `needs_review: true` and the title
+   `Verify: row drafted for #<n>`). With `--no-ask`, pass open questions on with `noAsk: true`; the workflow records
    them as `needs_review` decisions.
 7. **Summary, then ONE go/no-go question.** Table: ticket, title, verdict, depth, group, deps,
    confirmed decisions (short). State the base branch, the integration branch `feat/<slug>`,
