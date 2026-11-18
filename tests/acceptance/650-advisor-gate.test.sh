@@ -26,8 +26,11 @@ bash "$ROOT/tests/hooks/merge-guard.test.sh" >/dev/null 2>&1 && pass || fail "me
 t "AC7: the merge-guard hook is unchanged against the main branch"
 REF=""
 for r in origin/main github/main main; do git -C "$ROOT" rev-parse --verify -q "$r" >/dev/null && { REF=$r; break; }; done
-d=$(git -C "$ROOT" diff --stat "$REF" -- plugins/harness/hooks/merge-guard.sh)
-[ -z "$d" ] && pass || fail "merge-guard.sh differs from $REF: $d"
+if [ -z "$REF" ]; then fail "no main ref found to compare merge-guard.sh against"
+else
+  d=$(git -C "$ROOT" diff --stat "$REF" -- plugins/harness/hooks/merge-guard.sh)
+  [ -z "$d" ] && pass || fail "merge-guard.sh differs from $REF: $d"
+fi
 
 SHIP="$ROOT/plugins/harness/workflows/ship.js"
 

@@ -2638,6 +2638,34 @@ test('gav11: an advisor fix with no base_sha is not reviewed, so the gate fails,
   assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
 })
 
+test('gav12: a fixed needs_review decision is not set aside when the gate still fails after the fix', async () => {
+  const r = await gavFlow(c => {
+    if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] }
+    if (c.label === 'greview:1:adv') return ok({ findings: [gaFinding], skill_invoked: true })
+  }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && !d.advisor_fixed && d.needs_review === true, JSON.stringify(d))
+  assert(t1(r).reason.includes('needs_review'), t1(r).reason)
+})
+
+test('gav13: a fix verdict whose fix lands nothing runs no second CI check', async () => {
+  const r = await gavFlow(c => {
+    if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] }
+    if (c.label === 'gfix:1:adv') return ok({ fix_status: 'skipped', reason: 'nothing to change' })
+  }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, labelsOf(r.calls).join())
+})
+
+test('gav14: the advisor gate prompt points at readable files and asks for no command', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  const p = named(r.calls, /^advisor:gate:1$/)[0].prompt
+  assert(!p.includes('gh pr diff'), 'the advisor has no shell')
+  assert(p.includes('You cannot run commands') && /Read the files it names under \S+/.test(p), p.slice(-400))
+  assert(p.includes('a decision the code can make unnecessary'), 'fix must be allowed on decisions')
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {

@@ -152,7 +152,7 @@ const ADVISOR_GATE_SCHEMA = { type: 'object',
     items: { type: 'array', items: { type: 'object',
       properties: {
         id: { type: 'string', description: 'the item id from the prompt, for example R1 or D1' },
-        verdict: { type: 'string', enum: ['accept', 'fix', 'owner'], description: 'accept: the item may stay as it is. fix: one more fix round can fix it (review items only). owner: only the owner can decide it.' },
+        verdict: { type: 'string', enum: ['accept', 'fix', 'owner'], description: 'accept: the item may stay as it is. fix: one more fix round can fix it (a review finding, or a decision the code can make unnecessary). owner: only the owner can decide it.' },
         reason: { type: 'string', description: 'One sentence: why this verdict.' } },
       required: ['id', 'verdict', 'reason'] } } },
   required: ['items'] }
@@ -496,16 +496,16 @@ async function askRecovery(t, stage, res, model) {
 // The advisor's verdict on each item of a failed ticket gate. Only an explicit accept or fix counts; a failed call, an
 // answer that is not an object or a clear text list, a missing id or an unknown verdict gives owner for that item.
 const GATE_VERDICTS = ['accept', 'fix', 'owner']
-async function askGate(t, fin, items) {
+async function askGate(t, fin, items, wt) {
   const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title}, ticket PR ${fin.pr} in ${repo}, run base ${base}.\n` +
     `${notCwd()}\nThe merge gate of this ticket failed only on the items below. Give one verdict per item id:\n` +
-    `- accept: the item may stay as it is and the ticket PR may merge into ${integBranch}. The owner still reads every accepted item in the final PR before the merge into ${base}.\n` +
-    `- fix: one more fix round can fix it. Only for R items (review findings).\n` +
-    `- owner: only the owner can decide it. D items (needs_review decisions) take only accept or owner.\n\n` +
+    `- accept: the item may stay as it is and the ticket PR may merge into ${integBranch}. The final PR body lists every accepted item; an accepted decision keeps the final PR a human merge, an accepted review finding does not by itself.\n` +
+    `- fix: one more fix round can fix it: a review finding, or a decision the code can make unnecessary.\n` +
+    `- owner: only the owner can decide it.\n\n` +
     `Items:\n${items.map(i => `${i.id}: ${i.text}`).join('\n')}\n\n` +
     `Return items: one entry per id with verdict and a one-sentence reason. ` +
     `If your answer is plain text, write exactly one line per id in the form \`R1: accept: <reason>\` (verdict accept, fix or owner). ` +
-    `Read only what you need (for example: gh pr diff ${fin.pr} --repo ${repo}). Do not edit anything.`
+    `You cannot run commands. ${wt ? `To check an item against the code, Read the files it names under ${wt} (the ticket branch as the implement stage left it; later fix commits may be missing there). ` : ''}Read only what you need. Do not edit anything.`
   let ans = null
   try {
     ans = await call(prompt, { label: lbl(`#${t.n} advisor gate`, t.title), phase: 'Gate', schema: ADVISOR_GATE_SCHEMA, model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
@@ -1098,13 +1098,15 @@ async function stageGate(t, fin, impl, branch) {
   if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
   const CI_SKIPPED = { ok: false, text: 'not checked (an earlier gate failed)' }
   let ciG = CI_SKIPPED, head = ''
+  // The fallback head CI must have run on when it reports no branch tip: the intent-fix tip, else the last review fix.
+  const expectTip = () => intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || ''
   const runCi = async (expect) => {
     const res = await stageCi(t, fin, ctx, `${ctx.labelPrefix}CI checks`)
     ciG = judgeCi(res, expect)
     head = ciG.ok ? res.headRefOid.trim() : ''
   }
   if (!failed.length) {
-    await runCi(intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || '')
+    await runCi(expectTip())
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
   // An advisor-accepted or advisor-fixed decision keeps needs_review (the final PR stays a human merge); only this gate sets it aside.
@@ -1128,7 +1130,7 @@ async function stageGate(t, fin, impl, branch) {
     !decisions.some(d => d.ticket === t.n && (d.flagged || d.dangerous || d.contradicts_confirmed))
   if (eligible && ciG === CI_SKIPPED) {
     // CI is skipped once review failed. It must be green before the advisor is asked, so read it now.
-    await runCi(intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || '')
+    await runCi(expectTip())
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
   if (eligible && ciG.ok) {
@@ -1138,7 +1140,7 @@ async function stageGate(t, fin, impl, branch) {
       ...(review.leftover || []).filter(f => f.score >= FIX_THRESHOLD).map(f => ({ kind: 'R', f, summary: f.summary, text: `review finding left after the fix rounds (score ${f.score}) ${findingText(f)}` })),
     ].map((x, i) => ({ ...x, id: `R${i + 1}` }))
     items.push(...openNr().map((d, i) => ({ kind: 'D', d, id: `D${i + 1}`, summary: d.title, text: `needs_review decision: ${d.title}. Decision: ${d.decision}. Why: ${d.why}` })))
-    const verdicts = await askGate(t, fin, items)
+    const verdicts = await askGate(t, fin, items, impl.worktree)
     const v = i => verdicts.get(i.id)
     const said = items.map(i => `${i.id} ${v(i).verdict}: ${v(i).reason}`).join('; ')
     advised = { verdicts: Object.fromEntries(items.map(i => [i.id, v(i)])), accepted: [] }
@@ -1150,6 +1152,8 @@ async function stageGate(t, fin, impl, branch) {
       const fixes = items.filter(i => v(i).verdict === 'fix')
       const accepts = items.filter(i => v(i).verdict === 'accept')
       let fixTip = ''
+      let moved = false   // an advisor fix landed commits, so CI must run again at the new tip
+      const fixedD = []
       if (fixes.length) {
         // One fix round for the fix items, one re-review of its commits, then the gate is judged again with no second advisor call.
         const many = fixes.length > 1
@@ -1157,17 +1161,18 @@ async function stageGate(t, fin, impl, branch) {
           : `Finding ${i.id}${i.f.score != null ? ` (score ${i.f.score})` : ''} ${findingText(i.f)}`
         const res = await fixAgent(`${ctx.labelPrefix}fix advisor`, many ? `Fix each of these ${fixes.length} items, in this order:\n${fixes.map(line).join('\n')}` : line(fixes[0]),
           '', 'Gate', 'advisor', ctx, many)
-        takeDecisions(t.n, 'review-fix', res)
+        takeDecisions(t.n, 'advisor-fix', res)
         const per = new Map(((res && Array.isArray(res.findings)) ? res.findings : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]))
         const fixedIds = fixes.filter(i => {
           if (!many) return res && res.fix_status === 'fixed' && res.commit
           const r = per.get(i.id); return r && r.fix_status === 'fixed' && r.commit
         })
         if (fixedIds.length) {
+          moved = true
           // The fix agent's last commit is the new tip. Without a range its commits are unreviewed, and the gate fails on them.
           const lastCommit = (res && res.commit) || ''
           for (const i of fixedIds) {
-            if (i.kind === 'D') { i.d.advisor_fixed = true; continue }
+            if (i.kind === 'D') { fixedD.push(i.d); continue }   // marked advisor_fixed only when the gate then passes
             review.notFixed = review.notFixed.filter(f => f !== i.f)
             review.leftover = review.leftover.filter(f => f !== i.f)
             review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || lastCommit })
@@ -1187,13 +1192,14 @@ async function stageGate(t, fin, impl, branch) {
       const stripped = { ...review, notFixed: review.notFixed.filter(f => !acceptedR.has(f)), leftover: review.leftover.filter(f => !acceptedR.has(f)),
         accepted: [...(review.accepted || []), ...acceptedR] }
       const rG = judgeReview(stripped)
-      if (fixes.length) {
+      if (moved) {
         if (rG.ok && intentG.ok) await runCi(fixTip)   // the fix moved the branch tip: CI must be green there
         else { ciG = { ok: false, text: `not checked (the ${rG.ok ? 'intent' : 'review'} after the advisor fix failed)` }; head = '' }
       }
-      const nrLeft = openNr().filter(d => !acceptedD.includes(d))
+      const nrLeft = openNr().filter(d => !acceptedD.includes(d) && !fixedD.includes(d))
       if (rG.ok && intentG.ok && ciG.ok && nrLeft.length === 0) {
         Object.assign(review, stripped)
+        for (const d of fixedD) d.advisor_fixed = true
         for (const i of accepts) {
           if (i.kind === 'D') i.d.advisor_accepted = true
           const reason = v(i).reason
