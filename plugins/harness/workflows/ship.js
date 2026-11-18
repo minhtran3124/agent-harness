@@ -513,9 +513,16 @@ function stageQaRepair(t, qa, problems, where) {
     `Stage: qa repair. Act as the QA writer (${pluginDir}/agents/qa-writer.md) in repair mode and stay blind: read no application source and no plan.\n` +
     `The branch is already checked out in ${where.dir}. Fix only the flaws named below in the tests under ${qa.dir}/. Commit with the exact subject ${QA_SUBJECT(t.n)}. Never push, never force.\n` +
     `Flaws:\n${problems}\n` +
-    (where.remove ? `After the commit, remove this worktree so the implement stage can check out the branch: run \`git -C ${repoDir} worktree remove --force ${where.dir}\` from outside it.\n` : '') +
     `Return ready, dir, files and tests (name and covers).${advice}`, where.dir)
   return runStage(t, 'qa repair', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// The script, not the repair agent, frees the branch for implement: it runs on the failure and not-ready paths too.
+async function stageQaRepairCleanup(t, dir) {
+  try {
+    await call(`git -C ${repoDir} worktree remove --force ${dir}\n\n${notCwd()}\nRun the command above from outside ${dir}. If ${dir} does not exist, do nothing. Edit nothing else.`,
+      { label: lbl(`#${t.n} qa repair cleanup`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`#${t.n} qa repair cleanup: skipped (${e && e.message ? e.message : String(e)})`) }
 }
 
 // The implementer must not touch the acceptance tests. Only commits with the QA subject may; any other commit is a violation.
@@ -992,10 +999,15 @@ async function runTicket(t) {
       repairUsed = true
       try {
         const r = await stageQaRepair(t, qa, problems, where)
-        if (r && r.ready && r.dir) { qa = spec.qa = r; return true }
+        if (r && r.ready && r.dir) {
+          // dir is repo-relative; a repair worktree path must never become the tests' location
+          qa = spec.qa = where.remove ? { ...r, dir: qa.dir } : r
+          return true
+        }
         log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)
         return false
-      } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false }
+      } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false
+      } finally { if (where.remove) await stageQaRepairCleanup(t, where.dir) }
     }
     const flawDecision = (title, problems) => addDecision(t.n, 'qa', {
       title, context: `The blind acceptance tests still have flaws after the one repair: ${problems.join('; ')}.`,
