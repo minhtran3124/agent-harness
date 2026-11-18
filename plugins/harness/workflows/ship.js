@@ -9,7 +9,7 @@ export const meta = {
     { title: 'Intent review', detail: 'plan-blind check of the final diff against the original request' },
     { title: 'UAT', detail: 'plan-blind acceptance test of the running app against the original request (FE, BE, FE+BE)' },
     { title: 'Testing', detail: 'full test suite once, on the final branch' },
-    { title: 'Decisions', detail: 'artifact, ADR files, final PR body' },
+    { title: 'Decisions', detail: 'ADR files, final PR body' },
   ],
 }
 
@@ -222,7 +222,6 @@ const INTENT_REVIEW_SCHEMA = { type: 'object',
 const SUITE_SCHEMA = { type: 'object',
   properties: { passed: NUM, failed: NUM, skipped: NUM, failing: strList, exit_code: NUM, tail: STR },
   required: ['passed', 'failed', 'skipped', 'failing'] }
-const ARTIFACT_SCHEMA = { type: 'object', properties: { created: BOOL, url: STR, fallback: STR }, required: ['created'] }
 const ADR_SCHEMA = stageSchema({
   adrs: { type: 'array', items: { type: 'object',
     properties: { number: NUM, path: STR, needs_review: BOOL, ticket: STR, title: STR }, required: ['number', 'path', 'needs_review'] } },
@@ -1873,18 +1872,7 @@ async function stageSuite() {
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, fixRan: true, note: `${first.failed} failed first; re-ran only those` }
 }
 
-async function stageArtifact(results) {
-  // Local mode publishes nothing outside the machine: no push, no PR, no artifact.
-  if (LOCAL) return { fallback: 'docs/adr/' }
-  const prompt = `${RULES_LITE}\n\nStage: build ONE private artifact for this run. If the 'ink-artifact' skill and the Artifact tool both exist, use the skill to build it: one section per ticket, decisions with needs_review: true first. Keep it private.\n` +
-    `If either is missing, build nothing, return created: false and fallback: 'docs/adr/' (the ADR files are the source of truth).\n` +
-    `Tickets: ${JSON.stringify(results.map(r => ({ n: r.n, status: r.status, summary: r.summary, reason: r.reason, url: r.url })))}\n` +
-    `Decisions: ${JSON.stringify(decisions)}`
-  const res = await call(prompt, { label: 'update run artifact', phase: 'Decisions', schema: ARTIFACT_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
-  return res && res.created && res.url ? { url: res.url } : { fallback: (res && res.fallback) || 'docs/adr/' }
-}
-
-async function stageAdr(finalPr, artifact, bodyTemplate) {
+async function stageAdr(finalPr, bodyTemplate) {
   const input = JSON.stringify({ run: slug, decisions })
   const update = LOCAL
     ? `Local mode: save the final body as PR-BODY.md at the worktree root (do not commit it) and return its absolute path as body_file.`
@@ -1895,7 +1883,7 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
     `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true and two or more options, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
-    `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
+    `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json\n` +
     `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review, ticket, title). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
   const res = await call(prompt, { label: 'write ADRs', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
@@ -2057,7 +2045,7 @@ for (const g of groups) {
 const deliveredAll = ordered().filter(r => r.status === 'done')
 const out = {
   single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [],
-  intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], artifact: { fallback: 'docs/adr/' }, decisions, specFiles: [],
+  intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], decisions, specFiles: [],
 }
 // The files the main session writes after the run (summary.md, and any file the writer was refused).
 // {{DATE}} stays in the text: the main session replaces it with the output of date +%F.
@@ -2114,12 +2102,10 @@ out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
 
 phase('Decisions')
-const artifact = await stageArtifact(ordered())
-out.artifact = artifact
 const ciSnap = await stageCiSnapshot(finalPr)
 const defaultBranch = await stageDefaultBranch()
 finalPolicy = decideFinalMerge(defaultBranch, review, intent, suite)
-const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat, ciSnap))
+const adr = await stageAdr(finalPr, buildBody(ordered(), review, intent, suite, uat, ciSnap))
 takeDecisions('run', 'adr', adr)
 if (adr.status === 'blocked') failures.push(`ADR stage: ${adr.blocked_reason || adr.summary || 'blocked'}`)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))

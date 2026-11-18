@@ -106,7 +106,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
    not start), becomes a `needs_review` decision and the ticket stays done. The PR body gets a
    `## UAT sign-off` checklist that nothing enforces.
 7. Testing: the full suite once, at the end.
-8. Decisions: one artifact, the ADR files (`scripts/write_adrs.py`), and the PR body.
+8. Decisions: the ADR files (`scripts/write_adrs.py`), and the PR body.
 
 No agent uses `isolation: 'worktree'`: it binds to the session's working directory, which is not the
 target repo (ADR 0002). Each agent runs `git -C <repoDir> fetch` and `git -C <repoDir> worktree add`

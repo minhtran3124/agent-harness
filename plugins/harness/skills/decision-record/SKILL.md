@@ -58,7 +58,7 @@ Every decision is an entry in `specs/<slug>/decision.md`. A depth L design from 
 1. Save all `decisions[]` of the run, each with `decided_by`, as `{"run": "<slug>", "decisions": [...]}`.
 2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file> [--dry-run] [--table-out <file>]`. Exit 2 means bad input.
 3. Commit the new files in `docs/adr/` to the PR branch.
-4. Build the artifact when the Artifact tool exists (`references/artifact.md`). Run `write_adrs.py --render-section <written.json> [--artifact <url>]`; put the output, then the table file, in the PR body as `## Decisions`.
+4. Run `write_adrs.py --render-section <written.json>`; put the output, then the table file, in the PR body as `## Decisions`.
 
 ## Auto mode
 
