@@ -13,17 +13,28 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
                confirmed: "owner-confirmed decisions text incl. the Verify: row, may be empty" } ],
   testCmd: "<related-tests command or template>", lintCmd: "<lint command>",
   fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false,
-  profile: { stages: { review: { model: "opus", effort: "high" } } } }
+  profile: { stages: { review: { model: "opus", effort: "high" } } }, worktreeSetup: ["npm ci"] }
 ```
 
 - `advisorModel` is the profile's `advisor`. `profile` is optional and holds the profile's `stages`
   (see `profile.md`). Leave it out when `stages` is empty.
+- `worktreeSetup` is the profile's `worktreeSetup`, top-level. Leave it out when the list is empty or
+  absent. A stage runs it once, right after it creates a worktree.
+- `decisions` is optional. Use it only with `--no-ask`, for a ticket whose `Verify:` row the skill drafted (SKILL.md
+  step 6): one entry `{ title: "Verify: row drafted for #<n>", context, decision, why, consequences, how_to_reverse }`,
+  all strings, with the drafted row in `decision`. The workflow keeps only these text fields and always records the
+  entry with `needs_review: true` and `adr: false`, so the ticket is not merged until the owner accepts the row.
 
 - Take `testCmd`, `lintCmd` and `fullTestCmd` from `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only.
 - `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
 - One ticket means single mode: no integration branch (ADR 0001, decision 5).
 - `noAsk: true` when `--no-ask` was given. `local` stays false unless the owner asks for a run
   without GitHub writes.
+
+## While the run goes
+
+Give the owner the run ID; `/workflows` shows progress. Wait for completion. Answer "done yet?" from the phase
+and agent counts.
 
 ## Completion report
 
