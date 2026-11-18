@@ -2,7 +2,7 @@
 name: qa-writer
 description: "Use this agent to write blind acceptance tests for one ticket before any code exists. It reads the ticket, its acceptance criteria and the public interface only, never the application source. It commits the tests on the ticket branch and reports which test covers which criterion."
 tools: Bash, Read, Write, Glob
-model: claude-sonnet-5-5
+model: claude-opus-5-5
 effort: medium
 ---
 

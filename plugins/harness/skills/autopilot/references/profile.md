@@ -39,12 +39,12 @@ keys of `MODEL` in `workflows/ship.js`, for example `review`, `intent`, `plan`, 
 `workflows/ship.js` rejects an unknown stage when it starts.
 
 Every stage can be set, `implement` and `fix` included. One rule holds whatever the profile says:
-at depth L, `design` and `plan` run on Opus. Without a profile entry, `implement` runs on Opus at
+at depth L, `design` and `plan` run on Opus. Without a profile entry, `intent`, `plan` and `qa` run on Opus at `medium` at every depth (depth M has its own plan stage), and `implement` runs on Opus at
 depth L and on Sonnet at depth M and S (both at `medium`), and `fix` runs on Sonnet at `medium`. A
 profile entry for `implement` replaces that depth rule at every depth.
 
 ## Model plan in step 7
 
 State the orchestrator, the researcher and intake models, the advisor, and each stage the profile
-overrides. Then add the defaults: Opus for design, plan and implement at depth L; implement on Sonnet
+overrides. Then add the defaults: Opus for intent, plan and qa at every depth, and for design and implement at depth L; implement on Sonnet
 at depth M and S; fix on Sonnet at `medium`.
