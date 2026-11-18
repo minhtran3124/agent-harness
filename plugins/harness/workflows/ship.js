@@ -1131,7 +1131,7 @@ async function stageGate(t, fin, impl, branch) {
     const v = i => verdicts.get(i.id)
     const said = items.map(i => `${i.id} ${v(i).verdict}: ${v(i).reason}`).join('; ')
     advised = { verdicts: Object.fromEntries(items.map(i => [i.id, v(i)])), accepted: [] }
-    const toOwner = items.filter(i => v(i).verdict === 'owner' || (i.kind === 'D' && v(i).verdict !== 'accept'))
+    const toOwner = items.filter(i => v(i).verdict === 'owner')
     if (toOwner.length) {
       log(`#${t.n} advisor gate: ${toOwner.map(i => i.id).join(', ')} go to the owner`)
       for (const f of failed) f.detail += `; advisor: ${said}`
@@ -1142,8 +1142,9 @@ async function stageGate(t, fin, impl, branch) {
       if (fixes.length) {
         // One fix round for the fix items, one re-review of its commits, then the gate is judged again with no second advisor call.
         const many = fixes.length > 1
-        const line = i => `Finding ${i.id}${i.f.score != null ? ` (score ${i.f.score})` : ''} ${findingText(i.f)}`
-        const res = await fixAgent(`${ctx.labelPrefix}fix advisor`, many ? `Fix each of these ${fixes.length} review findings, in this order:\n${fixes.map(line).join('\n')}` : line(fixes[0]),
+        const line = i => i.kind === 'D' ? `Decision ${i.id} (needs_review, resolve it in the code so it no longer needs the owner) ${i.text}`
+          : `Finding ${i.id}${i.f.score != null ? ` (score ${i.f.score})` : ''} ${findingText(i.f)}`
+        const res = await fixAgent(`${ctx.labelPrefix}fix advisor`, many ? `Fix each of these ${fixes.length} items, in this order:\n${fixes.map(line).join('\n')}` : line(fixes[0]),
           '', 'Gate', 'advisor', ctx, many)
         takeDecisions(t.n, 'review-fix', res)
         const per = new Map(((res && Array.isArray(res.findings)) ? res.findings : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]))
@@ -1160,6 +1161,7 @@ async function stageGate(t, fin, impl, branch) {
             `This is a re-review of the advisor fix commits only, range ${range}. Review that diff and nothing else; ignore the rest of the branch.\n`, ctx)
           else review.unreviewedFix = true
           for (const i of fixedIds) {
+            if (i.kind === 'D') { i.d.needs_review = false; i.d.advisor_fixed = true; continue }
             review.notFixed = review.notFixed.filter(f => f !== i.f)
             review.leftover = review.leftover.filter(f => f !== i.f)
             review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || lastCommit })

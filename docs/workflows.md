@@ -35,8 +35,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
 - **Advisor on a failed gate** (base `feat/*` only): when the run's base matches `feat/*` and the gate failed only on
   review findings (not fixed, or left at score 50 or more) or on open `needs_review` decisions, with CI green, intent
   `match`, no failed security gate and no `dangerous` or `contradicts_confirmed` decision on the ticket, the gate asks the
-  advisor once (`#<n> advisor gate`) for a verdict per item: `accept`, `fix` or `owner`. `owner` on any item, or `fix` on a
-  decision, blocks the ticket as above. `fix` runs one more fix round and one re-review, then CI again, with no second advisor
+  advisor once (`#<n> advisor gate`) for a verdict per item: `accept`, `fix` or `owner`. `owner` on any item blocks the ticket as above. `fix`, on a review finding or a decision, runs one more fix round and one re-review, then CI again, with no second advisor
   call. All other items accepted: the gate passes, each item is recorded as an `Accepted by advisor: ` decision, and the
   final PR body lists it under `## Accepted by advisor`. The call fails closed: no answer, or an unclear one, means `owner`.
   An accepted item, a `needs_review` decision or a review finding, does not block the final PR; only a protected base keeps it a human merge.

@@ -2555,12 +2555,14 @@ test('gav3: an accepted needs_review decision passes the ticket gate and is clea
   assert(!body.includes('gate open decisions failed'), body)
 })
 
-test('gav4: fix on a needs_review decision counts as owner: no advisor fix and the ticket blocks', async () => {
+test('gav4: fix on a needs_review decision runs one advisor fix round, clears the decision and the ticket passes', async () => {
   const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] } }, { decisions: [gavD] })
   assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
-  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 0)
-  assert.strictEqual(t1(r).status, 'blocked')
-  assert(t1(r).reason.startsWith('human merge: gate needs_review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
+  assert(/SKILL-DECISION/.test(named(r.calls, /^gfix:1:adv$/)[0].prompt))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && d.needs_review === false, JSON.stringify(d))
 })
 
 test('gav5: a dangerous decision from a gate fix agent gets no advisor gate call and the ticket blocks', async () => {
