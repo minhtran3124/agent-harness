@@ -2251,6 +2251,54 @@ test('pf5: the verify prompt falls back to the Verify: row in the owner-confirme
   assert(named(calls, /^verify:1$/)[0].prompt.includes('when the body has none, use the one in the owner-confirmed decisions'))
 })
 
+// ---- #649: one advisor recovery for a blocked stage ------------------------------------------
+const rcBlocked = (extra) => ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '', ...extra })
+const rcCalls = (calls, re) => calls.filter(c => re.test(c.label || '')).length
+const rcOver = (verdict, implement) => c => {
+  if (c.label === 'advisor:recovery implement:1') return verdict
+  if (/^implement:1(:retry)?$/.test(c.label)) return implement(c)
+  return undefined
+}
+
+test('rc1: a stage that returns blocked then ok gives done, 1 recovery call and 2 stage calls', async () => {
+  const { result, calls } = await run({}, rcOver('retry: build it the other way', c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1, Object.keys(result.stats.byStage).join())
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+})
+
+test('rc2: a stage that returns blocked twice gives blocked, 1 recovery call and no third stage call', async () => {
+  const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked()))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery implement:1$/), 1)
+})
+
+test('rc3: a blocked ticket does not stop an independent second ticket', async () => {
+  const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, rcOver('retry: try again', () => rcBlocked()))
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+  const by = Object.fromEntries(result.tickets.map(t => [t.n, t]))
+  assert.strictEqual(by[1].status, 'blocked')
+  assert.strictEqual(by[2].status, 'done')
+})
+
+test('rc4: an advisor verdict owner gives no retry call and the reason in the block text', async () => {
+  const { result, calls } = await run({}, rcOver('owner: NEEDS-OWNER-KEY', () => rcBlocked()))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0)
+  assert(result.tickets[0].reason.includes('NEEDS-OWNER-KEY'), result.tickets[0].reason)
+})
+
+test('rc5: a stage result with a dangerous decision gets no recovery call', async () => {
+  const bad = { title: 'T', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, dangerous: true }
+  const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked({ decisions: [bad] })))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 0)
+  assert(!('advisor recovery' in result.stats.byStage), Object.keys(result.stats.byStage).join())
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
