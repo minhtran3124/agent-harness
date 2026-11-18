@@ -78,7 +78,7 @@ test('qb2: every agent label ship.js builds lands on the right box, or on none b
   // Drift guard: the fixed labels in ship.js must still be ones this map knows.
   const ship = fs.readFileSync(path.join(root, 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8');
   const fixed = [...ship.matchAll(/label: '([^']+)'/g)].map(m => B.parseLabel(m[1]).stage);
-  const known = new Set([...Object.keys(want), 'update run artifact', 'write specs/ early']);
+  const known = new Set([...Object.keys(want), 'write specs/ early']);
   for (const s of fixed) assert.ok(known.has(s), `ship.js label stage "${s}" is not in the board map; add it to flow.json or to this list`);
 });
 

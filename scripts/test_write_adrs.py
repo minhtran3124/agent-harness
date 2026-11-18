@@ -136,15 +136,25 @@ def test_render_section(tmp_path):
     written = tmp_path / "w.json"
     written.write_text(run(adr, inp, "--dry-run").stdout)
     r = subprocess.run(
-        [sys.executable, str(SCRIPT), "--render-section", str(written), "--artifact", "https://x/y"],
+        [sys.executable, str(SCRIPT), "--render-section", str(written)],
         capture_output=True, text=True,
     )
     assert r.returncode == 0, r.stderr
     s = r.stdout
-    assert s.startswith("## Decisions") and "Artifact: https://x/y" in s
+    assert s.startswith("## Decisions") and "Artifact:" not in s
     assert "- [ADR 0003](docs/adr/0003-risky.md) (#5, design): Risky" in s
     assert "- [ADR 0002](docs/adr/0002-plain.md) (#1, design): Plain" in s
     assert s.index("Plain") < s.index("Risky")
+
+
+def test_artifact_option_is_gone(tmp_path):
+    written = tmp_path / "w.json"
+    written.write_text("[]")
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--render-section", str(written), "--artifact", "x"],
+        capture_output=True, text=True,
+    )
+    assert r.returncode == 2
 
 
 def test_default_template_matches_the_repo_template():

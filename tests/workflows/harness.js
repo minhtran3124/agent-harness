@@ -30,7 +30,7 @@ function metaText() {
 const FIXED_LABELS = {
   'write specs/ flow files': 'specs', 'write specs/ early': 'specs-early', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
-  'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
+  'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun',
   'CI snapshot': 'ci-snapshot', 'default branch': 'default-branch', 'merge final PR': 'final-merge', 'write ADRs': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
 }
 const TICKET_VERBS = {
@@ -128,7 +128,6 @@ function defaults(c, st) {
   if (l === 'suite-rerun') return { passed: 2, failed: 0, skipped: 0, failing: [] }
   if (l === 'default-branch') return { name: 'main' }
   if (l === 'final-merge') return ok({ merged: true, reason: '' })
-  if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
   if (l === 'specs' || l === 'specs-early') return ok()
   throw new Error(`no scripted answer for label '${l}'`)
@@ -212,7 +211,7 @@ test('p1: the result counts every agent call by stage, with model and effort', a
   assert.strictEqual(Object.values(s.byStage).reduce((n, e) => n + e.failed, 0), 0)
 })
 
-const noRepoTouch = /^(request:|artifact|final-pr)/
+const noRepoTouch = /^(request:|final-pr)/
 test('a2: no agent call uses isolation (it binds to the session cwd, not the target repo)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1), T(3, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
   assert(calls.length > 15)
@@ -944,7 +943,15 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early')   // the local spec write needs the ADR paths
   assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
-  assert.strictEqual(result.artifact.fallback, 'docs/adr/')
+})
+
+test('ar1: the run builds no artifact', async () => {
+  for (const local of [false, true]) {
+    const { calls, result } = await run({ local, tickets: [T(1, 1)] }, null)
+    assert.strictEqual(calls.filter(c => c.display === 'update run artifact').length, 0)
+    assert.strictEqual(named(calls, /artifact/).length, 0)
+    assert(!('artifact' in result))
+  }
 })
 
 test('i: local mode never mentions pushing or opening a PR and fetches no issue', async () => {
@@ -955,7 +962,6 @@ test('i: local mode never mentions pushing or opening a PR and fetches no issue'
       assert(!c.prompt.includes('git push'), `${c.label} mentions git push`)
     }
     assert.strictEqual(named(calls, /^request:/).length, 0)
-    assert.strictEqual(named(calls, /^artifact/).length, 0, 'local mode publishes no artifact')
     assert.strictEqual(result.final.pr, null)
     assert(result.tickets.every(t => t.status === 'done'))
   }
@@ -1073,7 +1079,7 @@ test('p3c: depth S and depth L keep their flow: S has no plan agent, L has a pla
 test('p5: stages that only run a gh or git command get the core rules; stages that read or edit code get all of them', async () => {
   const { calls } = await run({ tickets: [T(1, 1), T(2, 2, [1])] }, null)
   const block = c => (c.prompt.match(/(Core rules|Rules) \(all of them apply\):[\s\S]*?\n\n/) || [''])[0]
-  const lite = calls.filter(c => /^(setup-integration|merge:|final-pr|ci-snapshot|adr|suite|artifact|gci:|gbody:|advisor:)/.test(c.label || ''))
+  const lite = calls.filter(c => /^(setup-integration|merge:|final-pr|ci-snapshot|adr|suite|gci:|gbody:|advisor:)/.test(c.label || ''))
   const full = calls.filter(c => /^(intent:|implement:|review:|fix:|uat:)/.test(c.label || ''))
   assert(lite.length >= 8 && full.length >= 4, `${lite.length} lite, ${full.length} full: ${labelsOf(calls).join()}`)
   for (const c of lite) {

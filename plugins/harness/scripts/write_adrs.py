@@ -16,7 +16,7 @@ Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
 Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run] [--table-out FILE]
-     python3 write_adrs.py --render-section written.json [--artifact URL]
+     python3 write_adrs.py --render-section written.json
 """
 
 import argparse
@@ -417,7 +417,7 @@ def plan(data: dict, adr_dir: Path, template: str, date: str) -> list:
     return items
 
 
-def render_section(written: list, artifact: str = "") -> str:
+def render_section(written: list) -> str:
     def line(w):
         name = Path(w["path"]).name
         return (
@@ -426,8 +426,6 @@ def render_section(written: list, artifact: str = "") -> str:
         )
 
     out = ["## Decisions", ""]
-    if artifact:
-        out += [f"Artifact: {artifact} (private; the ADR files are the source of truth)", ""]
     if written:
         out += ["ADRs added:", ""] + [line(w) for w in written] + [""]
     return "\n".join(out)
@@ -458,7 +456,6 @@ def main() -> int:
                     help="write the markdown table of all merged decisions to FILE")
     ap.add_argument("--render-section", metavar="WRITTEN_JSON",
                     help="render the PR '## Decisions' section from this script's JSON output")
-    ap.add_argument("--artifact", default="", help="artifact URL for the section (optional)")
     args = ap.parse_args()
 
     try:
@@ -467,7 +464,7 @@ def main() -> int:
                 written = json.loads(Path(args.render_section).read_text())
             except (OSError, json.JSONDecodeError) as e:
                 raise BadInput(f"cannot read written JSON: {e}")
-            print(render_section(written, args.artifact))
+            print(render_section(written))
             return 0
         if not args.input:
             raise BadInput("--input is required")
