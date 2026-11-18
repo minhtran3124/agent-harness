@@ -2520,6 +2520,70 @@ test('ga6: a run with no accepted item has no "## Accepted by advisor" in the fi
   }
 })
 
+// ---- #650 extra paths: fix success, needs_review items, flagged decisions, text answers -------------
+const gavD = { title: 'SKILL-DECISION', decision: 'drafted a Verify row' }
+const gavFlow = (ovr, extra) => run({ base: 'feat/x', tickets: [T(1, 1, [], extra), T(2, 1)] }, ovr)
+const gavBody = calls => gaBodies(calls)[0] || ''
+
+test('gav1: an advisor fix that the re-review passes gives done, and the merge uses the fix tip CI ran on', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const m = named(r.calls, /^merge:/)[0]
+  assert(m && /#1 branch \S+ PR 101 head gc3\b/.test(m.prompt), m && m.prompt)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+})
+
+test('gav2: an advisor fix that the re-review does not pass blocks the ticket and records no accepted item', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => { if (c.label === 'greview:1:adv') return ok({ findings: [gaFinding], skill_invoked: true }) }))
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+  assert.strictEqual(gaAccepted(r.calls), null)
+})
+
+test('gav3: an accepted needs_review decision passes the ticket gate but stays open, so the final PR is a human merge', async () => {
+  const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'accept', reason: 'REASON-D1' }] } }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, 'CI already ran green; it must not run twice')
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && d.needs_review === true, JSON.stringify(d))
+  const body = gavBody(r.calls)
+  assert(/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), body)
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('REASON-D1')))
+  assert(body.includes('Merge: human'), body)
+  assert.strictEqual(r.result.final.merged, false)
+})
+
+test('gav4: fix on a needs_review decision counts as owner: no advisor fix and the ticket blocks', async () => {
+  const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] } }, { decisions: [gavD] })
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate needs_review failed'), t1(r).reason)
+})
+
+test('gav5: a dangerous decision from a gate fix agent gets no advisor gate call and the ticket blocks', async () => {
+  const all = { items: [{ id: 'R1', verdict: 'accept', reason: 'a' }, { id: 'D1', verdict: 'accept', reason: 'b' }] }   // accepts everything: only the guard can block
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(all, c => {
+    if (c.label === 'gfix:1:r1:1') return ok({ fix_status: 'fixed', base_sha: 'gb0', commit: 'gx1', decisions: [{ title: 'DANGER', dangerous: true, decision: 'd' }] })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review, needs_review failed'), t1(r).reason)
+})
+
+test('gav6: a plain-text advisor answer is parsed per line; ADVICE-TEXT gives owner', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver('Looked at it.\nR1: accept: TEXT-REASON'))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('TEXT-REASON')))
+  const o = await gateFlow({ base: 'feat/x' }, gaOver(undefined))
+  assert.strictEqual(gaCalls(o.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(t1(o).status, 'blocked')
+  assert.strictEqual(gaAccepted(o.calls), null)
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
