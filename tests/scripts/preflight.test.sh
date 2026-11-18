@@ -29,6 +29,7 @@ mkenv() {
   ln -s "$git_bin" "$bin/git"
   printf '#!%s\nexit 0\n' "$bash_bin" > "$bin/python3"
   # gh auth status exits with FAKE_GH_AUTH_RC; any other gh call exits 0.
+  # shellcheck disable=SC2016  # the stub expands its own arguments
   printf '#!%s\n[ "$1 $2" = "auth status" ] && exit "${FAKE_GH_AUTH_RC:-0}"\nexit 0\n' "$bash_bin" > "$bin/gh"
   [ "$2" = 1 ] && printf '#!%s\nexit 0\n' "$bash_bin" > "$bin/jq"
   chmod +x "$bin"/python3 "$bin"/gh
