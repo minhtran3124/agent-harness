@@ -146,6 +146,16 @@ const RECOVERY_SCHEMA = { type: 'object',
     reason: { type: 'string', description: 'One sentence: why this verdict.' },
     advice: { type: 'string', description: 'For retry: what the stage must do differently. It goes into the retry prompt.' } },
   required: ['verdict', 'reason'] }
+// The advisor's answer on a failed ticket gate: one verdict per item id.
+const ADVISOR_GATE_SCHEMA = { type: 'object',
+  properties: {
+    items: { type: 'array', items: { type: 'object',
+      properties: {
+        id: { type: 'string', description: 'the item id from the prompt, for example R1 or D1' },
+        verdict: { type: 'string', enum: ['accept', 'fix', 'owner'], description: 'accept: the item may stay as it is. fix: one more fix round can fix it (review items only). owner: only the owner can decide it.' },
+        reason: { type: 'string', description: 'One sentence: why this verdict.' } },
+      required: ['id', 'verdict', 'reason'] } } },
+  required: ['items'] }
 // The spec writer lists each file the Write tool refused, so the main session can write it from the run result.
 const SPECS_SCHEMA = stageSchema({ refused: { type: 'array', items: STR, description: 'absolute path of each file the Write tool refused to write' } })
 const MERGE_SCHEMA = stageSchema({
@@ -390,6 +400,7 @@ function takeDecisions(ticket, stage, res) {
       adr: d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX),
       owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
+      ...(flagged ? { flagged: true } : {}),   // the ticket gate never lets the advisor judge a flagged decision
       decided_by: `claude (ship workflow: ${stage})`,
     })
   }
@@ -480,6 +491,42 @@ async function askRecovery(t, stage, res, model) {
   const m = first.match(/^\s*[*_`]*\s*(retry|owner)[*_`]*(?:\s*:|\s*[-\u2013\u2014]\s)\s*(.*)$/i)
   if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
+}
+
+// The advisor's verdict on each item of a failed ticket gate. Only an explicit accept or fix counts; a failed call, an
+// answer that is not an object or a clear text list, a missing id or an unknown verdict gives owner for that item.
+const GATE_VERDICTS = ['accept', 'fix', 'owner']
+async function askGate(t, fin, items) {
+  const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title}, ticket PR ${fin.pr} in ${repo}, run base ${base}.\n` +
+    `${notCwd()}\nThe merge gate of this ticket failed only on the items below. Give one verdict per item id:\n` +
+    `- accept: the item may stay as it is and the ticket PR may merge into ${integBranch}. The owner still reads every accepted item in the final PR before the merge into ${base}.\n` +
+    `- fix: one more fix round can fix it. Only for R items (review findings).\n` +
+    `- owner: only the owner can decide it. D items (needs_review decisions) take only accept or owner.\n\n` +
+    `Items:\n${items.map(i => `${i.id}: ${i.text}`).join('\n')}\n\n` +
+    `Return items: one entry per id with verdict and a one-sentence reason. ` +
+    `If your answer is plain text, write exactly one line per id in the form \`R1: accept: <reason>\` (verdict accept, fix or owner). ` +
+    `Read only what you need (for example: gh pr diff ${fin.pr} --repo ${repo}). Do not edit anything.`
+  let ans = null
+  try {
+    ans = await call(prompt, { label: lbl(`#${t.n} advisor gate`, t.title), phase: 'Gate', schema: ADVISOR_GATE_SCHEMA, model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+      `${pluginDir}/agents/advisor.md`)
+  } catch (e) { log(`#${t.n} advisor gate failed (${e && e.message}); every item goes to the owner`) }
+  const got = new Map()
+  const put = (id, verdict, reason) => {
+    const v = String(verdict || '').toLowerCase()
+    if (typeof id === 'string' && !got.has(id.trim()) && GATE_VERDICTS.includes(v)) got.set(id.trim(), { verdict: v, reason: capSummary(reason) || '(no reason given)' })
+  }
+  if (ans && typeof ans === 'object' && Array.isArray(ans.items)) {
+    for (const x of ans.items) if (x && typeof x === 'object') put(x.id, x.verdict, x.reason)
+  } else if (typeof ans === 'string') {
+    for (const line of ans.split('\n')) {
+      const m = line.match(/^\s*[-*]?\s*[*_`]*\s*([RD]\d+)\s*[*_`]*\s*:\s*[*_`]*(accept|fix|owner)[*_`]*\s*:\s*(.*)$/i)
+      if (m) put(m[1].toUpperCase(), m[2], m[3])
+    }
+  }
+  const out = new Map()
+  for (const i of items) out.set(i.id, got.get(i.id) || { verdict: 'owner', reason: ans ? '(no verdict for this item)' : '(no advisor answer)' })
+  return out
 }
 
 // Added to the retry prompt of a blocked stage: the first run may have left work behind.
@@ -636,6 +683,7 @@ async function stageTestGuard(t, impl, qa) {
 }
 
 const securityNotes = {}   // ticket number -> the gate result, for the PR body
+const advisorAccepted = []   // { n, item, reason } per gate item the advisor accepted, for the final PR body
 function isRisky(t, intent, impl) {
   const text = [t.title, t.confirmed, intent && intent.goal, ...((intent && intent.acceptance) || [])].filter(Boolean).join('\n')
   const paths = ((impl && impl.files) || []).filter(f => RISKY_PATH.test(f))
