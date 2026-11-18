@@ -48,7 +48,7 @@ from `gh issue view <n> --repo <repo> --json body -q .body`. Write only paths un
 never stage or commit them. Then say in the report how many spec files you wrote.
 
 Short, in the owner's language: final PR link, per-ticket status, what was skipped and why, review
-rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact link.
+rounds and findings, full-suite counts, the ADRs in `docs/adr/`.
 
 In local mode there is no PR. Print the result's `delivery` field: the branch that holds the code, the commit
 range (`<base>..<branch>`) and the sentence "the base branch has not changed". Never write that the code is on the base.

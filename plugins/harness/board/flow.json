@@ -23,7 +23,7 @@
     { "id": "rerun", "t": "Re-check", "a": "fresh worktree", "x": 652, "y": 500, "match": ["^(UAT|QA check) rerun$"], "cond": true },
     { "id": "check", "t": "UAT / QA check", "a": "uat / qa-verifier", "x": 448, "y": 300, "match": ["^UAT$", "^QA check$"] },
     { "id": "test", "t": "Test suite", "a": "full suite once", "x": 856, "y": 300, "match": ["^test$"] },
-    { "id": "adr", "t": "Decisions", "a": "ADRs, specs, artifact", "x": 1060, "y": 300, "match": ["^write ADRs$", "^write specs/ flow files$", "^update run artifact$"] },
+    { "id": "adr", "t": "Decisions", "a": "ADRs, specs", "x": 1060, "y": 300, "match": ["^write ADRs$", "^write specs/ flow files$"] },
     { "id": "final", "t": "Final PR", "a": "auto or human merge", "x": 1264, "y": 300, "match": ["^open final PR$", "^CI snapshot$", "^default branch$", "^merge final PR$"] }
   ],
   "edges": [
