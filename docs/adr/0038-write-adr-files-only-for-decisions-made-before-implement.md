@@ -7,7 +7,7 @@ decided_by: claude (ship workflow: design)
 date: 2026-11-18
 ---
 
-# 0037. Write ADR files only for decisions made before implement
+# 0038. Write ADR files only for decisions made before implement
 
 ## Context
 
