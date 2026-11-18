@@ -284,6 +284,12 @@ test('rv4: the fix-range re-review carries the same instruction', async () => {
   assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
 })
 
+const REVIEW_MD = fs.readFileSync(path.join(__dirname, '..', '..', 'REVIEW.md'), 'utf8')
+
+test('rv5: REVIEW.md caps Nits at five per review', () => {
+  assert(/at most five Nits per review/i.test(REVIEW_MD) && !/at most 3 Nits/i.test(REVIEW_MD))
+})
+
 test('d4: code-review not run: one retry with the error, then NOT RUN, a needs_review decision, no fix', async () => {
   const { result, calls } = await run({}, c => {
     if (c.label === 'review:r0') return ok({ findings: [{ id: 'x', summary: 's', score: 90 }], skill_invoked: false, skill_error: 'Skill tool unavailable' })

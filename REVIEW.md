@@ -8,7 +8,7 @@ A finding is Important when it breaks a gate, a hook, a script run on both ubunt
 
 ## Cap the nits
 
-Report at most 3 Nits per review. Keep the 3 most useful and drop the rest.
+Report at most five Nits per review. Keep the five most useful and drop the rest.
 
 ## Do not report
 
