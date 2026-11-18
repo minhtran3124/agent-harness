@@ -556,9 +556,12 @@ async function runStage(t, stage, build, schema, opts) {
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
   let earlier = ''   // advice from the needs_advisor call; a recovery retry keeps it
+  let advised = false   // the needs_advisor call returned real advice
   if (res && res.needs_advisor) {
-    const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
+    let advice = ''
+    try { advice = await askAdvisor(t, stage, res.advisor_question, res.summary) } catch (e) { log(`#${t.n} ${stage}: advisor call failed (${e && e.message}); retrying without advice`) }
     earlier = ADVICE_HEADING + advice
+    advised = advice.trim() !== ''
     res = await call(build(earlier), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
@@ -572,7 +575,7 @@ async function runStage(t, stage, build, schema, opts) {
     recovered.add(`${t.n}:${stage}`)
     // Fable only when Opus advice already failed to unblock this stage: its needs_advisor call ran on Opus and the
     // retry is still blocked (CLAUDE.md, Models; owner, 2026-11-18). Otherwise the recovery asks advisorModel.
-    const opusAdviceFailed = earlier !== '' && advisorModel === 'opus'
+    const opusAdviceFailed = advised && advisorModel === 'opus'
     const v = await askRecovery(t, stage, res, opusAdviceFailed ? 'fable' : advisorModel)
     if (v.verdict !== 'retry') {
       if (res) takeDecisions(t.n, stage, res)
