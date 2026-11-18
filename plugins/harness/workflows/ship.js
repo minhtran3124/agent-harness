@@ -64,7 +64,8 @@ const rulesCore = repoDir => `- No human is in the loop. Never ask anyone anythi
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
-- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
+- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.
+- Dependencies: when a project dependency is missing, install it with the project's own package manager inside your worktree and go on. When a system tool or system package is missing, stop and return blocked with its name; never run sudo.`
 const rulesCode = repoDir => `- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
 - Run only the tests related to your change. The full suite is the last stage's job.`
 const rulesDecisions = () => `- adr: true ONLY when ${ADR_WHEN} Only adr makes an ADR file, so be strict.
@@ -228,6 +229,12 @@ function validateArgs(a) {
     if (!['S', 'M', 'L'].includes(t.depth)) throw new Error(`ship: ticket #${t.n} depth must be S, M or L`)
     if (!Number.isInteger(t.group)) throw new Error(`ship: ticket #${t.n} needs an integer group`)
     if (t.deps !== undefined && !Array.isArray(t.deps)) throw new Error(`ship: ticket #${t.n} deps must be an array`)
+    if (t.verifyDrafted !== undefined && typeof t.verifyDrafted !== 'boolean') throw new Error(`ship: ticket #${t.n} verifyDrafted must be true or false`)
+  }
+  // Each entry is pasted into a prompt as one line, so a line break is rejected.
+  if (a.worktreeSetup !== undefined && (!Array.isArray(a.worktreeSetup) ||
+    !a.worktreeSetup.every(c => typeof c === 'string' && c.trim() && !/[\r\n]/.test(c)))) {
+    throw new Error('ship: args.worktreeSetup must be a list of command strings')
   }
   validateProfile(a.profile)
 }
@@ -259,6 +266,11 @@ const RULES = `${rulesCommon(repoDir)}\n- Harness files (skills/, agents/, scrip
 const RULES_LITE = `Core rules (all of them apply):\n${rulesCore(repoDir)}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
+// Commands each new worktree runs once, after git worktree add (profile key worktreeSetup). Empty: no setup text.
+const SETUP = args.worktreeSetup || []
+const setupBlock = dir => (SETUP.length
+  ? `Then, in ${dir}, run these setup commands once, in order, before any other work:\n${SETUP.join('\n')}\nIf one fails, follow the dependency rule.\n\n`
+  : '')
 const tickets = args.tickets
 const single = tickets.length === 1
 
@@ -285,7 +297,7 @@ function newWt(name, branch, from, existing) {
   const add = existing ? `${dir} ${branch}` : `${branch ? `-b ${branch} ` : '--detach '}${dir} ${from}`
   return { dir, setup:
     `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} worktree add ${add}\n\n` +
-    `Run the two commands above first, in that order. If ${dir} already exists (an earlier attempt of this stage), do not recreate it: cd into it and continue. Your worktree is ${dir}. ${notCwd(dir)}\n\n` }
+    `Run the two commands above first, in that order. If ${dir} already exists (an earlier attempt of this stage), do not recreate it: cd into it and continue. Your worktree is ${dir}. ${notCwd(dir)}\n\n` + setupBlock(dir) }
 }
 // Publish the current HEAD to an existing branch (fast-forward only).
 const land = branch => (LOCAL
@@ -564,7 +576,7 @@ function stageVerify(t, impl, mode) {
   const w = base ? newWt(`verify-base-${t.n}`, null, integRef) : null
   const dir = base ? w.dir : impl.worktree
   const build = advice => (base ? w.setup : '') + head(t, null,
-    `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above. ` +
+    `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above; when the body has none, use the one in the owner-confirmed decisions. ` +
     (base
       ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
       : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
@@ -681,7 +693,7 @@ function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
   const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
   const dir = impl.worktree || fw.dir
-  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n`
+  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n${setupBlock(fw.dir)}`
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines), contains this merge-policy block exactly once, unchanged, and ends with the footer line. Return the PR number as pr and its url.\n${single ? mergeBlock({ mode: 'human', why: `the PR targets ${base}` }) : mergeBlock({ mode: 'pending' })}\n`
@@ -948,6 +960,13 @@ async function stageGate(t, fin, impl, branch) {
 async function runTicket(t) {
   const branch = ticketBranch(t)
   const spec = specs[t.n] = {}
+  // A Verify: row the autopilot drafted with nobody to confirm it: the owner reviews it before the merge.
+  if (NO_ASK && t.verifyDrafted === true) {
+    addDecision(t.n, 'autopilot', { title: `Verify: row drafted for #${t.n}`, needs_review: true, confidence: 'medium',
+      context: 'The issue had no Verify: row and the run had --no-ask, so nobody confirmed the row drafted from the acceptance criteria.',
+      decision: 'Verify with the drafted row in the owner-confirmed decisions.', why: 'A missing Verify: row would block the verify stage.',
+      consequences: 'The ticket is not auto-merged until the owner accepts the drafted row.', how_to_reverse: 'Add a Verify: row to the issue and rerun the verify stage.' })
+  }
   try {
     const intent = spec.intent = await stageIntent(t)
     boundaries[t.n] = boundaryOf(intent)
