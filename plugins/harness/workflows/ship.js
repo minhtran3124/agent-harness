@@ -566,28 +566,37 @@ async function runStage(t, stage, build, schema, opts) {
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
   // Gate: blocked-stage recovery.
-  // Verifies: a stage gets at most one recovery per ticket (the recovered set, keyed by ticket and stage), and a
-  //   result with a dangerous or contradicts_confirmed decision gets none: it goes to the owner as before.
-  // Does not verify: that the advisor's advice is right. The retry result passes the same checks as any result.
+  // Verifies: a stage gets at most one recovery per ticket (the recovered set, keyed by ticket and stage), with at most
+  //   two rounds: the profile's advisor, then, when that advisor is Opus and its advice did not unblock the stage, Fable
+  //   (owner, 2026-11-18: Fable only after Opus advice failed). A result with a dangerous or contradicts_confirmed
+  //   decision gets no round: it goes to the owner as before.
+  // Does not verify: that the advisor's advice is right. Each retry result passes the same checks as any result.
   let suffix = ''
-  const flagged = ((res && res.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
-  if ((!res || res.status === 'blocked') && !flagged && !recovered.has(`${t.n}:${stage}`)) {
+  const flaggedOf = r => ((r && r.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
+  const blockedOf = r => !r || r.status === 'blocked'
+  if (blockedOf(res) && !flaggedOf(res) && !recovered.has(`${t.n}:${stage}`)) {
     recovered.add(`${t.n}:${stage}`)
-    // Fable only when Opus advice already failed to unblock this stage: its needs_advisor call ran on Opus and the
-    // retry is still blocked (CLAUDE.md, Models; owner, 2026-11-18). Otherwise the recovery asks advisorModel.
+    // Fable only when Opus advice already failed to unblock this stage (CLAUDE.md, Models). Real Opus advice from the
+    // needs_advisor call counts as one failed round, so the recovery starts on Fable; otherwise Opus first, then Fable.
     const opusAdviceFailed = advised && advisorModel === 'opus'
-    const v = await askRecovery(t, stage, res, opusAdviceFailed ? 'fable' : advisorModel)
-    if (v.verdict !== 'retry') {
-      if (res) takeDecisions(t.n, stage, res)
-      throw new Blocked(`${stage}: ${(res && (res.blocked_reason || res.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
+    const rounds = opusAdviceFailed ? ['fable'] : (advisorModel === 'opus' ? ['opus', 'fable'] : [advisorModel])
+    let advice = earlier   // every round keeps the advice of the rounds before it
+    for (const [i, model] of rounds.entries()) {
+      if (i > 0 && (!blockedOf(res) || flaggedOf(res))) break
+      const v = await askRecovery(t, stage, res, model)
+      if (v.verdict !== 'retry') {
+        if (res) takeDecisions(t.n, stage, res)
+        throw new Blocked(`${stage}: ${(res && (res.blocked_reason || res.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
+      }
+      log(`#${t.n} ${stage}: blocked; the advisor (${model}) says retry (${v.reason})`)
+      suffix = `; advisor (retry failed): ${v.reason}`
+      // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
+      const prev = res
+      advice += ADVICE_HEADING + v.text
+      res = await call(build(advice + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+      // A retry that returns nothing leaves only the blocked run's record: keep its decisions.
+      if (!res && prev) takeDecisions(t.n, stage, prev)
     }
-    log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
-    suffix = `; advisor (retry failed): ${v.reason}`
-    // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
-    const first = res
-    res = await call(build(earlier + ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
-    // A retry that returns nothing leaves only the blocked run's record: keep its decisions.
-    if (!res && first) takeDecisions(t.n, stage, first)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
   takeDecisions(t.n, stage, res)

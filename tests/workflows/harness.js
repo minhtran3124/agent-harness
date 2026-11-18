@@ -2337,18 +2337,18 @@ test('rc1: a stage that returns blocked then ok gives done, 1 recovery call and 
   assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
 })
 
-test('rc2: a stage that returns blocked twice gives blocked, 1 recovery call and no third stage call', async () => {
+test('rc2: a stage that stays blocked gives blocked after an Opus and a Fable recovery, and no fourth stage call (owner, 2026-11-18)', async () => {
   const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked()))
   assert.strictEqual(result.tickets[0].status, 'blocked')
-  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1)
-  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
-  assert.strictEqual(rcCalls(calls, /^advisor:recovery implement:1$/), 1)
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 2)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3)
+  assert.deepStrictEqual(named(calls, /^advisor:recovery implement:1$/).map(c => c.opts.model), ['opus', 'fable'])
 })
 
 test('rc3: a blocked ticket does not stop an independent second ticket', async () => {
   const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, rcOver('retry: try again', () => rcBlocked()))
-  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1)
-  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 2)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3)
   const by = Object.fromEntries(result.tickets.map(t => [t.n, t]))
   assert.strictEqual(by[1].status, 'blocked')
   assert.strictEqual(by[2].status, 'done')
@@ -2492,6 +2492,27 @@ test('rx15: a failed needs_advisor call does not stop the stage or count as Opus
   assert.strictEqual(r.result.tickets[0].status, 'blocked')
   assert(r.result.tickets[0].reason.includes('advisor (owner)'), r.result.tickets[0].reason)
   assert.strictEqual(named(r.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+})
+
+test('rx16: when the Opus recovery retry is still blocked, Fable advises one more retry that can unblock the stage', async () => {
+  let n = 0
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? 'retry: FABLE-HINT' : 'retry: OPUS-HINT'
+    if (c.label === 'implement:1') return rcBlocked()
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
+  })
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  const retries = named(calls, /^implement:1:retry$/)
+  assert.strictEqual(retries.length, 2)
+  assert(retries[1].prompt.includes('OPUS-HINT') && retries[1].prompt.includes('FABLE-HINT'), 'the Fable retry keeps the Opus advice')
+})
+
+test('rx17: no Fable round when the profile advisor is not Opus, or when the Opus retry returns a dangerous decision', async () => {
+  const s = await run({ advisorModel: 'sonnet' }, rcOver('retry: x', () => rcBlocked()))
+  assert.deepStrictEqual(named(s.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model), ['sonnet'])
+  const d = await run({}, rcOver('retry: x', c => (c.label === 'implement:1' ? rcBlocked() : rcBlocked({ decisions: [{ title: 'DANGER', dangerous: true, decision: 'd' }] }))))
+  assert.deepStrictEqual(named(d.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model), ['opus'])
+  assert.strictEqual(d.result.tickets[0].status, 'blocked')
 })
 
 test('rx11: a failed fable recovery call falls back once to advisorModel', async () => {
