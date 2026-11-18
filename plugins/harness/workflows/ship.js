@@ -272,7 +272,7 @@ const NO_ASK = args.noAsk === true
 // stage does not get the dependency rule of rulesCore.
 const SETUP = args.worktreeSetup || []
 const setupBlock = dir => (SETUP.length
-  ? `Then, in ${dir}, run these setup commands once, in order, before any other work (also when you reused ${dir}):\n${SETUP.join('\n')}\nIf one fails because a system tool or system package is missing, stop and return blocked with its name; never run sudo.\n\n`
+  ? `Then, in ${dir}, run these setup commands once, in order, before any other work (also when you reused ${dir}):\n${SETUP.join('\n')}\nIf one fails because a system tool or system package is missing, stop and return blocked with its name; never run sudo. If one fails for another reason, stop and return blocked with the command and its last error line.\n\n`
   : '')
 const tickets = args.tickets
 const single = tickets.length === 1
