@@ -2078,6 +2078,15 @@ test('qt9: the pre-implement qa repair removes its worktree so implement can use
   assert(rp && /worktree remove/.test(rp.prompt), 'the repair prompt must tell the agent to remove its worktree')
 })
 
+test('qt10: a pre-implement repair with no ready tests gives no second qa check', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label)) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa check:1/).length, 1, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
 test('qt3: a Flawed acceptance test decision from implement gives one qa repair and one more implement call', async () => {
   let n = 0
   const { calls } = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label)

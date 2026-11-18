@@ -1004,8 +1004,8 @@ async function runTicket(t) {
     if (qa) {
       let c = await check(branch)
       if (problemsOf(c).length) {
-        await repair(problemsOf(c).join('\n'), { ...newWt(`qa-repair-${t.n}`, branch, null, true), remove: true })
-        c = await check(branch)
+        const repaired = await repair(problemsOf(c).join('\n'), { ...newWt(`qa-repair-${t.n}`, branch, null, true), remove: true })
+        if (repaired) c = await check(branch)
         if (problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', problemsOf(c))
       }
     }
