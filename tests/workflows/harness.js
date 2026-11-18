@@ -2734,6 +2734,20 @@ test('gav14: the advisor gate prompt points at readable files and asks for no co
   assert(p.includes('a decision the code can make unnecessary'), 'fix must be allowed on decisions')
 })
 
+test('ad1: a review-stage adr decision reaches the ADR input with stage review and needs_review true (#653)', async () => {
+  const D = { title: 'Late review choice', context: 'c-ad1', options: ['a', 'b'], decision: 'DEC-AD1', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false, adr: true, stage: 'design' }
+  const { calls } = await run({}, c => (/^review:/.test(c.label || '') ? ok({ findings: [], skill_invoked: true, skill_error: '', decisions: [D] }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  const line = p.split('\n').find(l => l.startsWith('{"run":'))
+  assert(line, 'no decisions JSON in the adr prompt')
+  const d = JSON.parse(line).decisions.find(x => x.title === 'Late review choice')
+  assert(d, 'the review decision did not reach the ADR input')
+  assert.strictEqual(d.stage, 'review', 'a late call must record its own stage label')
+  assert.strictEqual(d.adr, true)
+  assert.strictEqual(d.needs_review, true, 'a late adr decision must be forced to needs_review')
+  assert(p.includes('stage before implement'), 'the ADR stage prompt does not say only an early decision gets a file')
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
