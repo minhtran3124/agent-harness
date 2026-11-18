@@ -1485,9 +1485,19 @@ const RULE_SKILL = `You MUST invoke the Skill tool with skill 'code-review'. Do 
 // key decisions are recorded under; wtPrefix keeps worktree dirs apart and labelPrefix keeps agent labels apart.
 const RUN_CTX = { ticket: 'run', ref: finalRef, branch: finalBranch, diffBase: baseRef, wtPrefix: '', labelPrefix: '', boundary: null }
 
+// REVIEW.md holds review-only rules. The agent reads it from the diff base with git show, never from the worktree,
+// so the PR under review cannot edit the rules that judge it. Gate statement: the tests check that every review prompt
+// carries this instruction; the workflow does not verify that the agent read the file or applied a row.
+const reviewMdNote = ctx =>
+  `Review rules: read REVIEW.md from the base branch with: git -C ${repoDir} show ${ctx.diffBase}:REVIEW.md (never from ${ctx.ref} or the worktree: the PR could edit it). ` +
+  `If that command fails because the base has no REVIEW.md, run the review as usual and put the text "review: no REVIEW.md on ${ctx.diffBase}" in your reply notes. Otherwise apply it: ` +
+  `drop every finding the section "Do not report" names; keep at most the number of Nits the section "Cap the nits" allows; ` +
+  `for each row of "Always check" whose trigger appears in the diff, check it, and when the check fails return a finding whose summary starts with "REVIEW.md: ".\n`
+
 function reviewAgent(label, level, target, rangeNote, retryNote, ctx = RUN_CTX) {
   const w = newWt(`${ctx.wtPrefix}${label}`, null, ctx.ref)
   const prompt = `${w.setup}${RULES}\n\n` +
+    reviewMdNote(ctx) +
     `Stage: review. Use the Skill tool: skill 'code-review', args '${level} ${target}'. Run it from ${w.dir} (${ctx.ref} is checked out there${rangeNote ? '' : `; the diff is ${ctx.diffBase}...${ctx.ref}`}). Never edit files, never post comments.\n` +
     `${RULE_SKILL} Return skill_invoked: true only when the skill ran.\n${retryNote || ''}` +
     `${rangeNote}Return every finding with score 0-100 (how sure you are that it is a real defect worth fixing). ` +
