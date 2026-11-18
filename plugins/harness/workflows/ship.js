@@ -1152,18 +1152,22 @@ async function stageGate(t, fin, impl, branch) {
           if (!many) return res && res.fix_status === 'fixed' && res.commit
           const r = per.get(i.id); return r && r.fix_status === 'fixed' && r.commit
         })
-        if (fixedIds.length && res.commit && res.base_sha) {
-          const range = `${res.base_sha}..${res.commit}`
-          const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · advisor fix`, review.level, range,
+        if (fixedIds.length) {
+          // The branch moved even when the agent returned no range: without one the fix is unreviewed, and the gate fails on it.
+          const lastCommit = res.commit || fixedIds.map(i => (per.get(i.id) || {}).commit).filter(Boolean).slice(-1)[0] || ''
+          const range = res.base_sha && res.commit ? `${res.base_sha}..${res.commit}` : ''
+          let again = { notRun: '' }
+          if (range) again = await reviewWithRetry(`${ctx.labelPrefix}code-review · advisor fix`, review.level, range,
             `This is a re-review of the advisor fix commits only, range ${range}. Review that diff and nothing else; ignore the rest of the branch.\n`, ctx)
+          else review.unreviewedFix = true
           for (const i of fixedIds) {
             review.notFixed = review.notFixed.filter(f => f !== i.f)
             review.leftover = review.leftover.filter(f => f !== i.f)
-            review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || res.commit })
+            review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || lastCommit })
           }
           if (again.notRun) review.reReviewNotRun = again.notRun
           else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
-          fixTip = res.commit
+          fixTip = lastCommit
           // The advisor fix changed the diff: intent must still match.
           intent = await stageIntentReview([{ n: t.n }], ctx)
           if (intent.fixRound) {

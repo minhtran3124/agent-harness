@@ -2628,6 +2628,14 @@ test('gav10: an intent fix after the advisor fix is code-reviewed, and CI expect
   assert(m && /PR 101 head intentfixtip\b/.test(m.prompt), m && m.prompt)
 })
 
+test('gav11: an advisor fix with no base_sha is not reviewed, so the gate fails, and intent still runs again', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gfix:1:adv') return ok({ fix_status: 'fixed', commit: 'gcx' })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^gintent:1$/), 2, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
