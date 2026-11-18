@@ -2102,6 +2102,51 @@ test('qt6: the qa-writer agent file states the rule that a test checks nothing t
   assert.strictEqual(f.split('\n').filter(l => l.includes('checks nothing the ticket')).length, 1)
 })
 
+// #648: worktreeSetup commands follow every worktree add line; the dependency rule; the drafted Verify: row.
+const pfTickets = () => [T(1, 1, [], { depth: 'M' }), T(2, 1), T(3, 2, [1])]
+test('pf1: with worktreeSetup [npm ci], every prompt that has worktree add has npm ci after that line', async () => {
+  const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
+  const wt = calls.filter(c => c.prompt.includes('worktree add'))
+  assert(wt.length > 0, 'no prompt creates a worktree')
+  assert(wt.some(c => /^qa:1$/.test(c.label)) && wt.some(c => /^finish:/.test(c.label)), labelsOf(wt).join())
+  for (const c of wt) {
+    const parts = c.prompt.split('worktree add').slice(1)
+    parts.forEach((p, i) => assert(p.includes('npm ci'), `${c.label}: no npm ci after worktree add #${i + 1}`))
+  }
+  const plain = await run({ tickets: pfTickets() }, null)
+  assert(!plain.calls.some(c => c.prompt.includes('npm ci')), 'npm ci without worktreeSetup')
+  const empty = await run({ tickets: pfTickets(), worktreeSetup: [] }, null)
+  assert.deepStrictEqual(empty.calls.map(c => c.prompt), plain.calls.map(c => c.prompt), 'an empty list must not change any prompt')
+})
+
+test('pf2: a worktreeSetup string throws ship: args.worktreeSetup', async () => {
+  for (const v of ['npm ci', [''], ['  '], [3], ['npm ci\nrm -rf /'], ['npm ci\r']]) {
+    await assert.rejects(() => run({ worktreeSetup: v }, null), e => /^ship: args\.worktreeSetup/.test(e.message), JSON.stringify(v))
+  }
+})
+
+test('pf3: the implement prompt rules contain never run sudo', async () => {
+  const { calls } = await run({}, null)
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('never run sudo'))
+})
+
+test('pf4: verifyDrafted with noAsk records one needs_review decision Verify: row drafted for #n', async () => {
+  const title = 'Verify: row drafted for #1'
+  const r = await run({ noAsk: true, tickets: [T(1, 1, [], { verifyDrafted: true }), T(2, 1)] }, null)
+  const ds = allDecisions(r).filter(d => d.title === title)
+  assert.strictEqual(ds.length, 1, JSON.stringify(allDecisions(r).map(d => d.title)))
+  assert.strictEqual(ds[0].needs_review, true)
+  assert(!allDecisions(r).some(d => d.title === 'Verify: row drafted for #2'))
+  const asked = await run({ tickets: [T(1, 1, [], { verifyDrafted: true }), T(2, 1)] }, null)
+  assert(!allDecisions(asked).some(d => d.title === title), 'without noAsk the owner confirmed the row')
+  await assert.rejects(() => run({ tickets: [T(1, 1, [], { verifyDrafted: 'yes' })] }, null), /verifyDrafted/)
+})
+
+test('pf5: the verify prompt falls back to the Verify: row in the owner-confirmed decisions', async () => {
+  const { calls } = await run({}, null)
+  assert(named(calls, /^verify:1$/)[0].prompt.includes('when the body has none, use the one in the owner-confirmed decisions'))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
