@@ -271,10 +271,13 @@ test('rv2: the review prompt never points at REVIEW.md inside the worktree', asy
   assert(!p.includes(`${dir}/REVIEW.md`), `worktree path ${dir}/REVIEW.md found`)
 })
 
-test('rv3: the per-ticket gate review reads REVIEW.md from the integration branch', async () => {
+test('rv3: the per-ticket gate review reads REVIEW.md from the run base, never from the integration branch', async () => {
+  // An earlier ticket merged into feat/<slug> must not change the rules for a later ticket's gate.
   const r = await gateFlow({})
   const p = named(r.calls, /^greview:1:r0$/)[0].prompt
-  assert(p.includes('show origin/feat/ms:REVIEW.md'), p)
+  assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
+  assert(!p.includes('show origin/feat/ms:REVIEW.md'), p)
+  assert(p.includes('origin/feat/ms...'), 'the gate diff range still starts at the integration branch')
 })
 
 test('rv4: the fix-range re-review carries the same instruction', async () => {
@@ -2481,6 +2484,17 @@ test('rx14: an empty Opus advice answer does not count as failed Opus advice, so
   })
   assert.strictEqual(named(r.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
 })
+
+for (const [name, answer] of [['throws', new Error('advisor down')], ['returns nothing', '']]) {
+  test(`rx20: a needs_advisor call that ${name} leaves no empty advice heading in the retry prompt`, async () => {
+    const r = await run({}, c => {
+      if (c.label === 'advisor:intent:1') return answer
+      if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
+    })
+    const retry = named(r.calls, /^intent:1:retry$/)[0].prompt
+    assert(!retry.includes('## Advisor advice'), retry.slice(-600))
+  })
+}
 
 test('rx15: a failed needs_advisor call does not stop the stage or count as Opus advice', async () => {
   const r = await run({ advisorModel: 'opus' }, c => {
