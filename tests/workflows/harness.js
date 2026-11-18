@@ -2101,7 +2101,7 @@ test('qt12: a repair result dir that is a worktree path does not replace the tes
   assert(g && !g.prompt.includes('/wt/qa-repair-1'), 'the guard must use the original tests dir')
 })
 
-test('qt13: after a pre-implement repair, implement gets repo-relative test files, or the original ones when the repair lists none', async () => {
+test('qt13: after a pre-implement repair, implement and the re-check get the original files plus the repaired ones, repo-relative', async () => {
   const dirOf = c => (c.prompt.match(/The branch is already checked out in (\S+)\. Fix only/) || [])[1]
   for (const absolute of [true, false]) {
     let n = 0
@@ -2113,9 +2113,11 @@ test('qt13: after a pre-implement repair, implement gets repo-relative test file
       }
     })
     const p = implementCalls(calls)[0].prompt
-    const want = absolute ? 'tests/acceptance/b.spec.js' : 'tests/acceptance/ticket-1.spec.js'
+    const want = absolute ? 'tests/acceptance/ticket-1.spec.js, tests/acceptance/b.spec.js' : 'tests/acceptance/ticket-1.spec.js'
     assert(p.includes(`under tests/acceptance/ (${want})`), `absolute=${absolute}: ${(p.match(/Acceptance tests already exist[^\n]*/) || [''])[0]}`)
     assert(!p.includes('qa-repair-1'), `absolute=${absolute}: implement prompt names the removed repair worktree`)
+    const recheck = named(calls, /^qa check:1/)[1]
+    assert(recheck && recheck.prompt.includes(`(${want} under tests/acceptance/)`), `absolute=${absolute}: re-check files`)
   }
 })
 
@@ -2130,7 +2132,20 @@ test('qt14: after a repair in the implement worktree, the tests dir and files st
   })
   const impls = implementCalls(calls)
   assert.strictEqual(impls.length, 2, labelsOf(calls).join())
-  assert(impls[1].prompt.includes('under tests/acceptance/ (tests/acceptance/c.spec.js)'), (impls[1].prompt.match(/Acceptance tests already exist[^\n]*/) || [''])[0])
+  assert(impls[1].prompt.includes('under tests/acceptance/ (tests/acceptance/ticket-1.spec.js, tests/acceptance/c.spec.js)'), (impls[1].prompt.match(/Acceptance tests already exist[^\n]*/) || [''])[0])
+  const g = named(calls, /^acceptance-test check:1/)[0]
+  assert(g && /-- tests\/acceptance\n/.test(g.prompt), g && g.prompt.split('\n')[0])
+})
+
+test('qt15: a worktree-absolute tests dir from the qa stage becomes repo-relative for implement and the guard', async () => {
+  const { calls } = await run({ tickets: mTicket() }, c => {
+    if (c.label === 'qa:1') {
+      const wt = (c.prompt.match(/worktree add (?:-b \S+ |--detach )?(\S+)/) || [])[1]
+      return ok({ ready: true, dir: `${wt}/tests/acceptance`, files: [`${wt}/tests/acceptance/a.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
+    }
+  })
+  const p = implementCalls(calls)[0].prompt
+  assert(p.includes('under tests/acceptance/ (tests/acceptance/a.spec.js)'), (p.match(/Acceptance tests already exist[^\n]*/) || [''])[0])
   const g = named(calls, /^acceptance-test check:1/)[0]
   assert(g && /-- tests\/acceptance\n/.test(g.prompt), g && g.prompt.split('\n')[0])
 })

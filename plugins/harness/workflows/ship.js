@@ -276,6 +276,15 @@ const finalRef = single ? (LOCAL ? finalBranch : `${remote}/${finalBranch}`) : i
 const trimmed = repoDir.replace(/\/+$/, '')
 const parentDir = trimmed.split('/').slice(0, -1).join('/')
 const wtRoot = `${parentDir}/.ship-${trimmed.split('/').pop()}/${slugOf(slug)}`
+// A path an agent reports may be absolute: inside one of this run's worktrees (<wtRoot>/<name>/...) or in repoDir.
+// Keep only the repo-relative part, so a prompt or a git log never names another checkout.
+const repoRel = p => {
+  if (typeof p !== 'string') return p
+  const s = p.replace(/\/+$/, '')
+  if (s.startsWith(`${wtRoot}/`)) return s.slice(wtRoot.length + 1).split('/').slice(1).join('/')
+  if (s.startsWith(`${trimmed}/`)) return s.slice(trimmed.length + 1)
+  return s
+}
 const worktrees = new Set()   // every dir the script told an agent to create; the owner removes them
 const notCwd = dir => `Your session working directory is NOT the target repo. Run every command with \`git -C <path>\` or after \`cd ${dir || repoDir}\`; never edit ${repoDir} itself.`
 // branch: create it; null: detached checkout of `from` (an existing ref). existing: check out the branch that already exists (the QA writer made it).
@@ -985,7 +994,7 @@ async function runTicket(t) {
     if (t.depth !== 'S') {
       try {
         const r = await stageQa(t, intent, spec.design, branch)
-        if (r && r.ready && r.dir) qa = spec.qa = r
+        if (r && r.ready && r.dir) qa = spec.qa = { ...r, dir: repoRel(r.dir), files: (r.files || []).map(repoRel) }
         else log(`#${t.n} qa: no acceptance tests (${(r && r.reason) || 'not ready'})`)
       } catch (e) { log(`#${t.n} qa: no acceptance tests (${e && e.message ? e.message : String(e)})`) }
     }
@@ -999,12 +1008,14 @@ async function runTicket(t) {
       repairUsed = true
       try {
         const r = await stageQaRepair(t, qa, problems, where)
-        if (r && r.ready && r.dir) {
-          // The repair fixes tests in place, so the tests dir stays the original repo-relative one. A file the agent
-          // names by its worktree path loses that prefix; an empty list keeps the original files and tests.
-          const rel = f => (typeof f === 'string' && f.startsWith(`${where.dir}/`) ? f.slice(where.dir.length + 1) : f)
-          const files = (r.files || []).map(rel)
-          qa = spec.qa = { ...qa, ...r, dir: qa.dir, files: files.length ? files : qa.files, tests: (r.tests || []).length ? r.tests : qa.tests }
+        if (r && r.ready) {
+          // The repair fixes tests in place: the tests dir stays the original one. It may list only the files and
+          // tests it changed, so those are merged into the original lists, never swapped for them.
+          const rel = f => repoRel(typeof f === 'string' && f.startsWith(`${where.dir}/`) ? f.slice(where.dir.length + 1) : f)
+          const files = [...new Set([...(qa.files || []), ...(r.files || []).map(rel)])]
+          const fixed = new Map((r.tests || []).map(x => [x.name, x]))
+          const tests = [...(qa.tests || []).map(x => fixed.get(x.name) || x), ...(r.tests || []).filter(x => !(qa.tests || []).some(o => o.name === x.name))]
+          qa = spec.qa = { ...qa, files, tests }
           return true
         }
         log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)
