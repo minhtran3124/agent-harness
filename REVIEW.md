@@ -13,8 +13,8 @@ Report at most five Nits per review. Keep the five most useful and drop the rest
 ## Do not report
 
 - Wording or formatting of prose in `docs/` or `SKILL.md` files, unless it changes what an agent does.
-- Anything under `specs/` (local scratch, gitignored).
-- Lint-only findings that `bash scripts/check-shellcheck.sh` already covers.
+- Anything CI already checks: shellcheck (`bash scripts/check-shellcheck.sh`), `claude plugin validate --strict` and the STE lint.
+- Files under `specs/` (local scratch, gitignored) and `tests/evals/*/runs/`.
 
 ## Always check
 

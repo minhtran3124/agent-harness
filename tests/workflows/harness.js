@@ -294,6 +294,10 @@ test('rv6: REVIEW.md defines Important as breaking a hook, ship.js or the merge 
   assert(/breaks the behavior of a hook, of `?ship\.js`? or of the merge rule, or that weakens a test/.test(REVIEW_MD))
 })
 
+test('rv7: REVIEW.md excludes what CI checks and the run output directories', () => {
+  for (const t of ['shellcheck', 'claude plugin validate --strict', 'STE lint', 'specs/', 'tests/evals/*/runs/']) assert(REVIEW_MD.includes(t), t)
+})
+
 test('d4: code-review not run: one retry with the error, then NOT RUN, a needs_review decision, no fix', async () => {
   const { result, calls } = await run({}, c => {
     if (c.label === 'review:r0') return ok({ findings: [{ id: 'x', summary: 's', score: 90 }], skill_invoked: false, skill_error: 'Skill tool unavailable' })
