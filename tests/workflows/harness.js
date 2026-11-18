@@ -938,10 +938,10 @@ test('j: no agent gets max or ultra effort, and every agent gets an explicit eff
   assert.strictEqual(models.suite, 'haiku'); assert.strictEqual(models.research, 'haiku'); assert.strictEqual(models.implement, 'sonnet')
 })
 
-test('j2: design and plan run on opus at depth L only; depth M has no plan agent (implement writes the plan), S runs neither', async () => {
+test('j2: design runs on opus at depth L only; plan runs on opus at depth M and L; S runs neither', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'S' }), T(2, 1, [], { depth: 'M' }), T(3, 1, [], { depth: 'L' })] }, null)
   const models = (n, stage) => named(calls, new RegExp(`^${stage}:${n}$`)).map(c => c.opts.model)
-  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), [])   // depth S and M have no plan agent
+  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), ['opus'])   // depth S has no plan agent; depth M has one (#645)
   assert.deepStrictEqual(models(1, 'design'), []); assert.deepStrictEqual(models(2, 'design'), [])
   assert(models(3, 'design').length > 0 && models(3, 'design').every(m => m === 'opus'), 'L design on opus')
   assert(models(3, 'plan').length > 0 && models(3, 'plan').every(m => m === 'opus'), 'L plan on opus')
@@ -1999,6 +1999,49 @@ test('security: medium and low findings pass the gate and reach the PR body as f
   assert.strictEqual(st(r, 1), 'done')
   const adr = named(r.calls, /^adr$/)[0].prompt
   assert(adr.includes('## Security gate') && adr.includes('weak cookie flag') && adr.includes('rotate keys'), adr.slice(0, 400))
+})
+
+const stageCalls = (calls, stage, n) => named(calls, new RegExp(`^${stage}:${n}$`))
+const mDepths = () => run({ tickets: [T(1, 1, [], { depth: 'S' }), T(2, 1, [], { depth: 'M' }), T(3, 1, [], { depth: 'L' })] }, null)
+
+test('mo1: the intent call runs on opus at medium effort for depth S, M and L', async () => {
+  const { calls } = await mDepths()
+  for (const n of [1, 2, 3]) {
+    const cs = stageCalls(calls, 'intent', n)
+    assert(cs.length > 0, `ticket ${n}: no intent call`)
+    assert(cs.every(c => c.opts.model === 'opus' && c.opts.effort === 'medium'), `ticket ${n}: ${cs.map(c => c.opts.model + '/' + c.opts.effort).join()}`)
+  }
+})
+
+test('mo2: depth M runs exactly one opus/medium plan call before qa; implement prompt has no folded plan', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, null)
+  const plans = stageCalls(calls, 'plan', 1)
+  assert.strictEqual(plans.length, 1, `plan calls: ${plans.length}`)
+  assert(plans[0].opts.model === 'opus' && plans[0].opts.effort === 'medium', `${plans[0].opts.model}/${plans[0].opts.effort}`)
+  const qas = stageCalls(calls, 'qa', 1)
+  assert(qas.length > 0, 'no qa call')
+  assert(calls.indexOf(plans[0]) < calls.indexOf(qas[0]), 'plan must come before qa')
+  const impl = stageCalls(calls, 'implement', 1)
+  assert(impl.length > 0, 'no implement call')
+  for (const c of impl) assert(!c.prompt.includes('no plan exists yet'), 'implement prompt still says no plan exists yet')
+})
+
+test('mo3: the qa call runs on opus at medium effort', async () => {
+  const { calls } = await mDepths()
+  for (const n of [2, 3]) {
+    const cs = stageCalls(calls, 'qa', n)
+    assert(cs.length > 0, `ticket ${n}: no qa call`)
+    assert(cs.every(c => c.opts.model === 'opus' && c.opts.effort === 'medium'), `ticket ${n}: ${cs.map(c => c.opts.model + '/' + c.opts.effort).join()}`)
+  }
+})
+
+test('mo4: a profile entry for intent overrides the opus default', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })], profile: { stages: { intent: { model: 'sonnet' } } } }, null)
+  const cs = stageCalls(calls, 'intent', 1)
+  assert(cs.length > 0, 'no intent call')
+  assert(cs.every(c => c.opts.model === 'sonnet'), cs.map(c => c.opts.model).join())
+  const others = [...stageCalls(calls, 'plan', 1), ...stageCalls(calls, 'qa', 1)]
+  assert(others.length === 2 && others.every(c => c.opts.model === 'opus'), 'plan and qa keep opus: ' + others.map(c => c.label + '=' + c.opts.model).join())
 })
 
 ;(async () => {
