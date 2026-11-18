@@ -268,9 +268,13 @@ const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
 // Commands each new worktree runs once, after git worktree add (profile key worktreeSetup). Empty: no setup text.
 const SETUP = args.worktreeSetup || []
-const setupBlock = (dir, lead = 'Then, ') => (SETUP.length
-  ? `${lead}in ${dir}, run these setup commands once, in order, before any other work (skip them if the directory already existed before this stage: an earlier attempt already ran them):\n${SETUP.join('\n')}\nIf one fails, follow the dependency rule.\n\n`
-  : '')
+// lead opens the block: 'Then, ' after a worktree add, a condition in the finish stage. A marker file in the
+// worktree's git dir records that setup finished, so a retry after a failed or partial setup runs it again.
+const setupBlock = (dir, lead = 'Then, ') => {
+  if (!SETUP.length) return ''
+  const marker = `"$(git -C ${dir} rev-parse --git-dir)/ship-setup-done"`
+  return `${lead}in ${dir}, run these setup commands once, in order, before any other work (skip them only if the file ${marker} exists: an earlier attempt finished them):\n${SETUP.join('\n')}\nWhen all of them succeed, run: touch ${marker}\nIf one fails, follow the dependency rule.\n\n`
+}
 const tickets = args.tickets
 const single = tickets.length === 1
 

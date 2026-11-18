@@ -2191,11 +2191,14 @@ test('pf6: finish setup runs only in the fallback worktree, never in impl.worktr
   assert(gone.includes(`in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
 })
 
-test('pf7: the setup block tells a retry that reuses an existing worktree to skip setup', async () => {
+test('pf7: setup is skipped only by a completion marker, so a failed earlier setup is retried', async () => {
   const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
   const wt = calls.filter(c => c.prompt.includes('run these setup commands'))
   assert(wt.length > 0, 'no setup block')
-  for (const c of wt) assert(c.prompt.includes('skip them if the directory already existed'), `${c.label}: no skip rule`)
+  for (const c of wt) {
+    assert(!c.prompt.includes('already existed'), `${c.label}: skips setup on directory existence`)
+    assert(c.prompt.includes('ship-setup-done') && /touch [^\n]*ship-setup-done/.test(c.prompt), `${c.label}: no completion marker`)
+  }
 })
 
 test('pf8: with no worktreeSetup, the finish prompt has no dangling "Only if you created" sentence', async () => {
