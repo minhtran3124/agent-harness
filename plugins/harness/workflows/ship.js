@@ -1884,8 +1884,14 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
     for (const d of bounded) L.push(`- ${d.title}: ${d.decision}`)
     L.push('')
   }
-  L.push('## Summary', '')
   const ref = n => (LOCAL ? `Ticket ${n}` : `#${n}`)   // in local mode the ticket is not a real issue
+  if (advisorAccepted.length) {
+    // Items the advisor accepted at a ticket gate (feat/* base only): the owner reads them before the merge into main.
+    L.push('## Accepted by advisor', '')
+    for (const a of advisorAccepted) L.push(`- ${ref(a.n)} ${a.item}: ${a.reason}`)
+    L.push('')
+  }
+  L.push('## Summary', '')
   for (const r of results) L.push(`- ${ref(r.n)} ${r.status}${r.summary ? `: ${capSummary(r.summary)}` : ''}${r.reason ? ` (${r.reason})` : ''}`)
   L.push('')
   if (LOCAL) { for (const r of results) L.push(`Ticket ${r.n}`) }
