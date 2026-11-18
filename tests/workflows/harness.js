@@ -2173,3 +2173,15 @@ test('g1: CI that ran on a head older than the last pushed fix commit fails the 
   const body = named(r.calls, /^gbody:1$/)[0].prompt
   assert(body.includes('stale'), body)
 })
+
+test('pf6: finish setup runs only in the fallback worktree, never in impl.worktree', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)], worktreeSetup: ['npm ci'] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f, 'no finish call')
+  assert(!f.prompt.includes('in /wt/1, run these setup'), 'setup aimed at impl.worktree')
+  const m = f.prompt.match(/work in (\S+) \(git fetch/)
+  assert(m, 'no fallback dir')
+  const gone = f.prompt.slice(f.prompt.indexOf('If that path is gone'))
+  assert(/^[^\n]*Only if you created [^\n]*run these setup/.test(gone), 'setup is not tied to the fallback worktree sentence')
+  assert(gone.includes(`in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
+})
