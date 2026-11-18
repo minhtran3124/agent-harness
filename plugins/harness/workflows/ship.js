@@ -570,8 +570,10 @@ async function runStage(t, stage, build, schema, opts) {
   const flagged = ((res && res.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
   if ((!res || res.status === 'blocked') && !flagged && !recovered.has(`${t.n}:${stage}`)) {
     recovered.add(`${t.n}:${stage}`)
-    // Fable only after an Opus stage: the Opus work did not unblock it (CLAUDE.md, Models).
-    const v = await askRecovery(t, stage, res, rest.model === 'opus' ? 'fable' : advisorModel)
+    // Fable only when Opus advice already failed to unblock this stage: its needs_advisor call ran on Opus and the
+    // retry is still blocked (CLAUDE.md, Models; owner, 2026-11-18). Otherwise the recovery asks advisorModel.
+    const opusAdviceFailed = earlier !== '' && advisorModel === 'opus'
+    const v = await askRecovery(t, stage, res, opusAdviceFailed ? 'fable' : advisorModel)
     if (v.verdict !== 'retry') {
       if (res) takeDecisions(t.n, stage, res)
       throw new Blocked(`${stage}: ${(res && (res.blocked_reason || res.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
