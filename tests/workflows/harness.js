@@ -2360,11 +2360,18 @@ test('rx7: the recovery retry prompt tells the stage to reuse work the first run
   assert(p.includes('RETRY-HINT') && p.includes('Reuse it') && p.includes('never open a second pull request'), p.slice(-600))
 })
 
-test('rx8: decisions from the blocked first run are kept when the retry succeeds', async () => {
+test('rx8: the owner path keeps the blocked run decisions; the retry path records only the retry decisions', async () => {
   const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
-  const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : undefined)))
-  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
-  assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
+  const owner = await run({}, rcOver('owner: needs a human', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : undefined)))
+  assert.strictEqual(owner.result.tickets[0].status, 'blocked')
+  assert(allDecisions(owner).some(d => d.title === 'FIRST-RUN-DECISION'), 'owner path lost the first-run decision')
+  const retry = await run({}, rcOver('retry: RETRY-HINT', c => {
+    if (c.label === 'implement:1') return rcBlocked({ decisions: [dec] })
+    if (c.label === 'implement:1:retry') return { ...implOk(), decisions: [{ ...dec, title: 'RETRY-DECISION' }] }
+  }))
+  assert.strictEqual(retry.result.tickets[0].status, 'done', JSON.stringify(retry.result.tickets[0]))
+  assert(allDecisions(retry).some(d => d.title === 'RETRY-DECISION'))
+  assert(!allDecisions(retry).some(d => d.title === 'FIRST-RUN-DECISION'), 'retry path recorded the first-run decision')
 })
 
 test('rx9: a decision the retry repeats from the blocked first run is recorded once', async () => {
@@ -2375,6 +2382,17 @@ test('rx9: a decision the retry repeats from the blocked first run is recorded o
   }))
   assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
   assert.strictEqual(allDecisions(r).filter(d => d.title === 'REPEATED-DECISION').length, 1)
+})
+
+test('rx10: a free-text verdict may use markdown emphasis and a colon or a dash', async () => {
+  for (const ans of ['retry - reuse the worktree', '**retry**: reuse it', 'Retry \u2014 reuse it', '`retry`: x']) {
+    const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+    assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 1, ans)
+  }
+  for (const ans of ['Retry will not help here', 'retrying is pointless: owner', 'owner - needs a human']) {
+    const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+    assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0, ans)
+  }
 })
 
 ;(async () => {

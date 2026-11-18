@@ -471,7 +471,8 @@ async function askRecovery(t, stage, res, model) {
   }
   const text = typeof ans === 'string' ? ans : ''
   const first = text.split('\n').find(l => l.trim()) || ''
-  const m = first.match(/^\s*(retry|owner)\s*:\s*(.*)$/i)
+  // The verdict word, optionally in markdown emphasis, then a colon or a dash. Prose such as "Retry will not help" is no verdict.
+  const m = first.match(/^\s*[*_`]*\s*(retry|owner)\s*[*_`]*\s*[:\-\u2013\u2014]\s*(.*)$/i)
   if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
 }
@@ -497,7 +498,6 @@ async function runStage(t, stage, build, schema, opts) {
   //   result with a dangerous or contradicts_confirmed decision gets none: it goes to the owner as before.
   // Does not verify: that the advisor's advice is right. The retry result passes the same checks as any result.
   let suffix = ''
-  const firstTitles = new Set()   // titles the blocked first run already recorded; the retry must not record them twice
   const flagged = ((res && res.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
   if ((!res || res.status === 'blocked') && !flagged && !recovered.has(`${t.n}:${stage}`)) {
     recovered.add(`${t.n}:${stage}`)
@@ -509,11 +509,11 @@ async function runStage(t, stage, build, schema, opts) {
     }
     log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
     suffix = `; advisor (retry failed): ${v.reason}`
-    if (res) { takeDecisions(t.n, stage, res); for (const d of res.decisions || []) if (d && typeof d === 'object') firstTitles.add(str(d.title)) }   // keep what the blocked run decided; the retry result is taken below
+    // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
     res = await call(build(ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
-  takeDecisions(t.n, stage, firstTitles.size ? { ...res, decisions: (res.decisions || []).filter(d => !(d && typeof d === 'object' && firstTitles.has(str(d.title)))) } : res)
+  takeDecisions(t.n, stage, res)
   if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}${suffix}`)
   const bad = (res.decisions || []).find(d => d.contradicts_confirmed || d.dangerous)
   if (bad) throw new Blocked(`${stage}: question for the owner: ${bad.title} (${bad.contradicts_confirmed ? 'contradicts an owner-confirmed answer' : 'dangerous'})`)
