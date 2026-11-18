@@ -508,6 +508,7 @@ async function runStage(t, stage, build, schema, opts) {
     }
     log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
     suffix = `; advisor (retry failed): ${v.reason}`
+    if (res) takeDecisions(t.n, stage, res)   // keep what the blocked run decided; the retry result is taken below
     res = await call(build(ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
