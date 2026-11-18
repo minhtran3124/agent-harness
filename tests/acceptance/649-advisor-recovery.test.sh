@@ -1,12 +1,12 @@
 #!/bin/bash
-# Acceptance tests for #649: ship.js asks the advisor and retries once when a stage is blocked.
+# Acceptance tests for #649: ship.js asks the advisor and retries when a stage is blocked (Opus, then Fable: owner, 2026-11-18).
 # The ship.js cases rc1-rc5 live in tests/workflows/harness.js (stub agent(), no real agents).
 source "$(dirname "$0")/../lib.sh"
 
 OUT=$(cd "$ROOT" && node tests/workflows/harness.js 2>/dev/null)
 
 for pair in "AC1:rc1:blocked then ok gives done, 1 recovery call, 2 stage calls" \
-            "AC2:rc2:blocked twice gives blocked, 1 recovery call, no third call" \
+            "AC2:rc2:stays blocked gives blocked after an Opus and a Fable recovery (owner, 2026-11-18)" \
             "AC3:rc3:a blocked ticket leaves the independent ticket done" \
             "AC4:rc4:advisor verdict owner gives no retry and carries the reason" \
             "AC5:rc5:a dangerous decision gets no recovery call"; do

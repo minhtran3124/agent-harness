@@ -43,7 +43,7 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
   - the ticket depth is L, or the ticket is important (design or plan review, before implement);
   - the same check fails twice after a fix;
   - an agent reports BLOCKED or low confidence;
-  - a `ship.js` stage returns blocked or nothing: one recovery per stage per ticket, with the verdict `retry` (one more run with the advice) or `owner`; none for a `dangerous` or `contradicts_confirmed` decision; Fable 5.2 only when the stage is still blocked after Opus advice (its `needs_advisor` call);
+  - a `ship.js` stage returns blocked or nothing: one recovery per stage per ticket, in at most two rounds, each with the verdict `retry` (one more run with the advice) or `owner`; none for a `dangerous` or `contradicts_confirmed` decision; Opus first; Fable 5.2 only when the stage is still blocked after Opus advice (the `needs_advisor` call or the Opus round);
   - a decision would become an ADR with `needs_review`;
   - a grilling session reaches a deep design tree.
 - Workflow agents cannot spawn agents, so the script or the main session calls the advisor.
