@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
 """Write ADR files for one run, with numbers assigned by code.
 
-Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
+Input JSON: {"run": "<slug>", "decisions": [{ticket, stage?, title, context, options, decision,
 why, consequences, how_to_reverse, confidence, needs_review, adr, decided_by, owner_confirmed?, date?}]}.
+`stage` may be missing or blank: such a decision is late (see below).
 `date` is optional (ISO YYYY-MM-DD, kept in the ADR front matter); without it the ADR gets today's date. It does not enter dedupe.
 Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the highest confidence (ties to the first).
 A file is written only for a decision with adr true (it changes harness behavior, a data or config
 contract, or how users work) that lists at least two real options (not n/a), and whose title does
-not start with "Boundary: " or "UAT not run". needs_review is the separate owner-ask flag and never
+not start with "Boundary: " or "UAT not run", and whose stage is a stage before implement (exact
+match: intake, grilling, intent, research, design, plan, plan-review). A decision that passes every
+other check but has another stage, or no stage, is late: no file, needs_review forced true (unless it
+is owner_confirmed), table note "late decision, no file". In a merged group an early adr item wins
+over a late one. needs_review is the separate owner-ask flag and never
 makes a file; confidence never decides this, it only marks a guess in the table. Files are always born
 accepted. A decision whose ticket already has an ADR in the folder with the same title slug or the
 same non-empty context and the same decision text is skipped (table note "already recorded"); a changed decision gets a new file that supersedes the old one; this check covers every ticket except
 "run"; a non-numeric placeholder ticket is only skipped on an identical decision and never supersedes. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
+--needs-out FILE writes "## Needs your decision" and one line "- <title>: <decision>" per merged
+needs_review decision (an empty file when there is none).
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
-Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run] [--table-out FILE]
+Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run] [--table-out FILE] [--needs-out FILE]
      python3 write_adrs.py --render-section written.json
 """
 
@@ -46,6 +53,8 @@ REQUIRED = [
 CONFIDENCE = ("high", "medium", "low")
 ADR_RE = re.compile(r"^(\d{4})-.+\.md$")
 SLUG_MAX = 60
+# Only a decision from one of these stages (exact match) gets an ADR file; later ones are listed for the owner.
+EARLY_STAGES = ("intake", "grilling", "intent", "research", "design", "plan", "plan-review")
 
 
 class BadInput(Exception):
@@ -96,7 +105,11 @@ def validate(data) -> list:
     for i, d in enumerate(decisions):
         if not isinstance(d, dict):
             raise BadInput(f"decisions[{i}] must be an object")
+        if d.get("stage") is None or (isinstance(d["stage"], str) and not d["stage"].strip()):
+            d["stage"] = ""   # a missing stage is valid input: the decision is late
         for f in REQUIRED:
+            if f == "stage":
+                continue
             if f not in d or d[f] is None or (isinstance(d[f], str) and not d[f].strip()):
                 raise BadInput(f"decisions[{i}] missing required field '{f}'")
         if not isinstance(d["needs_review"], bool):
@@ -124,13 +137,27 @@ def _real_options(d: dict) -> int:
     return sum(1 for o in opts if str(o).strip().lower() not in ("", "n/a"))
 
 
-def needs_adr(d: dict) -> bool:
-    """A file needs adr true, two real options and a title that is not a scope note or UAT event."""
+def _fits_adr_rule(d: dict) -> bool:
+    """adr true, two real options and a title that is not a scope note or UAT event."""
     if d["adr"] is not True or d.get("boundary") is True:
         return False
     if str(d["title"]).strip().lower().startswith(NO_FILE_TITLES):
         return False
     return _real_options(d) >= 2
+
+
+def is_early(d: dict) -> bool:
+    return str(d.get("stage") or "").strip() in EARLY_STAGES
+
+
+def needs_adr(d: dict) -> bool:
+    """A file needs the ADR rule and a stage before implement."""
+    return _fits_adr_rule(d) and is_early(d)
+
+
+def is_late(d: dict) -> bool:
+    """Fits the ADR rule but comes from implement or later, or has no stage: no file, the owner sees it."""
+    return _fits_adr_rule(d) and not is_early(d)
 
 
 def _norm_context(value) -> str:
@@ -292,7 +319,8 @@ def dedupe(decisions: list) -> list:
 
     Keeps the item with the highest confidence (high, then medium, then low; a tie keeps the
     first). If any merged item has adr true, the kept decision is the highest-confidence one among
-    the adr-true items (its options, decision and confidence stay together). If any merged item
+    the adr-true items from a stage before implement, else among all adr-true items (its options,
+    decision and confidence stay together). If any merged item
     needs review, the kept one does too. The kept one is owner_confirmed only when every merged
     item is. Order follows the first appearance of each group.
     """
@@ -311,7 +339,8 @@ def dedupe(decisions: list) -> list:
         g["items"].append(d)
     merged = []
     for g in groups:
-        pool = [d for d in g["items"] if d["adr"]] or g["items"]
+        pool = ([d for d in g["items"] if d["adr"] and is_early(d)]
+                or [d for d in g["items"] if d["adr"]] or g["items"])
         best = dict(min(pool, key=lambda d: CONFIDENCE.index(d["confidence"])))   # min keeps the first on a tie
         if any(d["needs_review"] for d in g["items"]):
             best["needs_review"] = True
@@ -325,12 +354,27 @@ def dedupe(decisions: list) -> list:
     return merged
 
 
+def force_late_review(merged: list) -> list:
+    """A late decision goes to the owner: needs_review true, unless the owner already confirmed it."""
+    for d in merged:
+        if is_late(d) and d.get("owner_confirmed") is not True:
+            d["needs_review"] = True
+    return merged
+
+
+def needs_section(decisions: list) -> str:
+    """The PR '## Needs your decision' list (same line format as ship.js buildBody); '' when empty."""
+    flat = lambda v: " ".join(as_text(v).split())
+    lines = [f"- {flat(d['title'])}: {flat(d['decision'])}" for d in decisions if d["needs_review"]]
+    return "## Needs your decision\n\n" + "\n".join(lines) + "\n" if lines else ""
+
+
 def _cell(value) -> str:
     return " ".join(as_text(value).split()).replace("|", "\\|")
 
 
 def decisions_table(decisions: list, recorded: dict = None) -> str:
-    """Markdown table of every decision. ADR column: ADR file, owner-confirmed, already recorded, or table only."""
+    """Markdown table of every decision. ADR column: ADR file, already recorded, late decision, owner-confirmed, or table only."""
     recorded = recorded or {}
     rows = ["| Ticket | Title | Decision | Why | ADR |", "|---|---|---|---|---|"]
     for d in decisions:
@@ -338,6 +382,8 @@ def decisions_table(decisions: list, recorded: dict = None) -> str:
             note = f"already recorded (ADR {recorded[id(d)]})"
         elif needs_adr(d):
             note = "ADR file"
+        elif is_late(d):
+            note = "late decision, no file"
         elif d.get("owner_confirmed") is True:
             note = "owner-confirmed"
         elif d["confidence"] == "low":
@@ -454,6 +500,9 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="print the plan, write nothing")
     ap.add_argument("--table-out", metavar="FILE",
                     help="write the markdown table of all merged decisions to FILE")
+    ap.add_argument("--needs-out", metavar="FILE",
+                    help="write '## Needs your decision' with every merged needs_review decision to FILE "
+                         "(empty when none); a late decision (stage after implement or none) is one")
     ap.add_argument("--render-section", metavar="WRITTEN_JSON",
                     help="render the PR '## Decisions' section from this script's JSON output")
     args = ap.parse_args()
@@ -474,7 +523,7 @@ def main() -> int:
             raise BadInput(f"cannot read input: {e}")
         adr_dir = Path(args.adr_dir)
         template = prepare_template(load_template(adr_dir))   # a broken template fails before any work
-        merged = dedupe(validate(data))
+        merged = force_late_review(dedupe(validate(data)))
         keys = existing_keys(adr_dir)
         recorded = {}
         repair = {}   # old number -> new number, for a supersede a failed mark left unfinished
@@ -507,6 +556,8 @@ def main() -> int:
                     raise BadInput(f"refusing to overwrite {it['path']}")
             if args.table_out:
                 Path(args.table_out).write_text(decisions_table(merged, recorded))
+            if args.needs_out:
+                Path(args.needs_out).write_text(needs_section(merged))
             for it in items:
                 with open(it["path"], "x") as f:
                     f.write(it["_text"])
