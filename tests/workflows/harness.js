@@ -53,6 +53,8 @@ function legacyLabel(l) {
     if (what.startsWith('intent review')) return `gintent:${gn}`
     if (what.startsWith('intent fix')) return `gintent-fix:${gn}`
     if (what === 'CI checks') return `gci:${gn}`
+    if (what === 'fix advisor') return `gfix:${gn}:adv`
+    if (what === 'code-review · advisor fix') return `greview:${gn}:adv`
     if (what === 'PR body') return `gbody:${gn}`
   }
   const head = l.split(' · ')[0]
@@ -2425,6 +2427,97 @@ test('rx13: a recovery retry that returns nothing keeps the blocked run decision
   const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : null)))
   assert.strictEqual(r.result.tickets[0].status, 'blocked')
   assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
+})
+
+// ---- #650: the advisor judges a failed ticket gate when the base is feat/* ------------------------
+const gaFinding = { id: 'f1', summary: 'leftover bug', score: 55, path: 'a.js', line: 3 }
+const gaVerdict = (verdict, reason) => ({ items: [{ id: 'R1', verdict, reason: reason || 'REASON-R1' }] })
+// A leftover finding of score 55 survives the fix rounds; the advisor answers with `answer`.
+const gaOver = (answer, extra) => c => {
+  if (extra) { const v = extra(c); if (v !== undefined) return v }
+  if (c.label === 'greview:1:adv') return ok({ findings: [], skill_invoked: true })
+  if (/^greview:1:r\d$/.test(c.label)) return ok({ findings: [gaFinding], skill_invoked: true })
+  if (c.label === 'advisor:gate:1') return answer
+}
+const gaCalls = (calls, re) => calls.filter(x => re.test(x.label || '')).length
+const gaBodies = calls => calls.filter(x => /^(adr|final-pr)$/.test(x.label || '')).map(x => x.prompt)
+const gaAccepted = calls => {
+  for (const b of gaBodies(calls)) {
+    const i = b.indexOf('## Accepted by advisor')
+    if (i < 0) continue
+    const lines = b.slice(i).split('\n').slice(1)
+    while (lines.length && lines[0].trim() === '') lines.shift()
+    const items = []
+    while (lines.length && lines[0].startsWith('- ')) items.push(lines.shift())
+    return items
+  }
+  return null
+}
+
+test('ga1: a leftover finding of 55 on a feat/* base, advisor accepts: ticket done, 1 advisor gate call, one item in the final body', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert.strictEqual(r.result.stats.byStage['advisor gate'].calls, 1, Object.keys(r.result.stats.byStage).join())
+  const items = gaAccepted(r.calls)
+  assert(items, 'no "## Accepted by advisor" in the final PR body')
+  assert.strictEqual(items.length, 1, items.join('\n'))
+  assert(items[0].includes('REASON-R1'), items[0])
+  const d = allDecisions(r).filter(x => /^Accepted by advisor: /.test(x.title))
+  assert.strictEqual(d.length, 1, JSON.stringify(allDecisions(r).map(x => x.title)))
+  assert.strictEqual(d[0].needs_review, false)
+})
+
+test('ga2: the same ticket on base main gets no advisor gate call and is blocked (feat/x control gets one call)', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(ctl.calls, /^advisor:gate:1$/), 1, 'control: feat/x must call the advisor')
+  const r = await gateFlow({ base: 'main' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert(!('advisor gate' in r.result.stats.byStage), Object.keys(r.result.stats.byStage).join())
+  assert.strictEqual(t1(r).status, 'blocked')
+})
+
+test('ga3: advisor verdict owner blocks the ticket with reason "human merge: gate review failed"', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1, 'the advisor must be asked')
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 0)
+})
+
+test('ga4: advisor verdict fix runs exactly 1 more fix call and 1 more gate review, and no second advisor gate call', async () => {
+  const base = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(r.result.stats.byStage['advisor gate'].calls, 1)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(gaCalls(r.calls, /^greview:1:adv$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1/), gaCalls(base.calls, /^gfix:1/) + 1)
+  assert.strictEqual(gaCalls(r.calls, /^greview:1/), gaCalls(base.calls, /^greview:1/) + 1)
+})
+
+test('ga5: a ticket whose CI gate failed gets no advisor gate call (a green-CI control gets one)', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(ctl.calls, /^advisor:gate:1$/), 1, 'control: green CI must call the advisor')
+  const ci = failingCi([{ name: 'x', bucket: 'fail' }])
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept'), ci))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.includes('ci'), t1(r).reason)
+  const only = await gateFlow({ base: 'feat/x' }, c => { const v = ci(c); if (v !== undefined) return v; if (c.label === 'advisor:gate:1') return gaVerdict('accept') })
+  assert.strictEqual(gaCalls(only.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(only).status, 'blocked')
+})
+
+test('ga6: a run with no accepted item has no "## Accepted by advisor" in the final body', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert(gaAccepted(ctl.calls), 'control: an accepted item must show the section')
+  const none = await gateFlow({ base: 'feat/x' }, null)
+  const owner = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  for (const r of [none, owner]) {
+    assert(gaBodies(r.calls).length > 0, 'no final body call to inspect')
+    assert.strictEqual(gaAccepted(r.calls), null)
+    assert(!gaBodies(r.calls).some(b => b.includes('Accepted by advisor')))
+  }
 })
 
 ;(async () => {
