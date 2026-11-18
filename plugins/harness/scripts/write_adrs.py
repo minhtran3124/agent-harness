@@ -9,9 +9,10 @@ Duplicates (same ticket, same title slug or same non-empty context) are merged f
 A file is written only for a decision with adr true (it changes harness behavior, a data or config
 contract, or how users work) that lists at least two real options (not n/a), and whose title does
 not start with "Boundary: " or "UAT not run", and whose stage is a stage before implement (exact
-match: intake, grilling, intent, research, design, plan, plan-review). A decision that passes every
-other check but has another stage, or no stage, is late: no file, needs_review forced true (unless it
-is owner_confirmed), table note "late decision, no file". In a merged group an early adr item wins
+match, ignoring case and spaces: intake, grilling, intent, research, design, plan, plan-review). A decision
+that passes every other check but has another stage, or no stage, is late: no file, needs_review forced
+true (also when owner_confirmed), table note "late decision, no file"; a late restatement of an ADR the
+folder already holds is "already recorded" instead. In a merged group an early adr item wins
 over a late one. needs_review is the separate owner-ask flag and never
 makes a file; confidence never decides this, it only marks a guess in the table. Files are always born
 accepted. A decision whose ticket already has an ADR in the folder with the same title slug or the
