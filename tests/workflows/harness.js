@@ -2515,6 +2515,33 @@ test('rx17: no Fable round when the profile advisor is not Opus, or when the Opu
   assert.strictEqual(d.result.tickets[0].status, 'blocked')
 })
 
+test('rx18: an Opus retry that returns nothing still escalates; Fable sees the real reason and the tried advice, and only the last retry\'s decisions count', async () => {
+  const dec = t => ({ title: t, context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false })
+  let n = 0
+  const r = await run({}, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? 'retry: FABLE-HINT' : 'retry: OPUS-HINT'
+    if (c.label === 'implement:1') return rcBlocked({ blocked_reason: 'REAL-REASON', decisions: [dec('FIRST')] })
+    if (c.label === 'implement:1:retry') return ++n === 1 ? null : { ...implOk(), decisions: [dec('LAST')] }
+  })
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+  const fable = named(r.calls, /^advisor:recovery implement:1$/).find(c => c.opts.model === 'fable')
+  assert(fable && fable.prompt.includes('REAL-REASON') && fable.prompt.includes('OPUS-HINT'), fable && fable.prompt.slice(-600))
+  const titles = allDecisions(r).map(d => d.title)
+  assert(titles.includes('LAST') && !titles.includes('FIRST'), titles.join())
+})
+
+test('rx19: in the escalation round a failed Fable call does not fall back to Opus; the ticket blocks', async () => {
+  const r = await run({}, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? new Error('unknown model fable') : 'retry: OPUS-HINT'
+    if (/^implement:1(:retry)?$/.test(c.label)) return rcBlocked()
+  })
+  const models = named(r.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model)
+  assert.strictEqual(models[0], 'opus')
+  assert(models.slice(1).length > 0 && models.slice(1).every(m => m === 'fable'), models.join())   // call() may retry fable itself, never opus
+  assert.strictEqual(rcCalls(r.calls, /^implement:1(:retry)?$/), 2)
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+})
+
 test('rx11: a failed fable recovery call falls back once to advisorModel', async () => {
   let n = 0
   const r = await run({ advisorModel: 'opus' }, c => {

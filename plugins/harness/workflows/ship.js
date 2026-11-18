@@ -477,34 +477,38 @@ async function askAdvisor(t, stage, question, state) {
 
 // The advisor's verdict on a blocked stage. Only an explicit retry gives retry; a failed call, an empty or
 // unparseable answer, or owner gives owner, so on any doubt the ticket blocks as it did before recovery existed.
-async function askRecovery(t, stage, res, model) {
+// opts.tried: advice an earlier round gave that did not unblock the stage. opts.noFallback: an escalation round does not
+// fall back to advisorModel (that would repeat the round before it).
+async function askRecovery(t, stage, res, model, opts = {}) {
   const why = (res && (res.blocked_reason || res.summary)) || '(the agent returned nothing)'
   const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nThe stage is blocked. Decide if one more run of the stage can unblock it.\n` +
     `Blocked reason: ${why}\nStage summary: ${capSummary(res && res.summary) || '(none)'}\n` +
     `Work from the first run may already exist (worktree, commits, a pushed branch, an open pull request); a retry must check for it and reuse it, never redo it.\n` +
+    (opts.tried ? `Advice already tried, and the stage is still blocked after it (give different advice, or owner):\n${opts.tried}\n` : '') +
     `Answer with verdict retry (and advice: what the stage must do differently) or verdict owner (only the owner can unblock it), and a one-sentence reason. ` +
     `If your answer is plain text, its first line must be exactly \`retry: <what the stage must do differently>\` or \`owner: <why only the owner can unblock this>\`. ` +
     `Read only what you need. Do not edit anything.`
   let ans = null
+  let used = model
   const ask = m => call(prompt, { label: lbl(`#${t.n} advisor recovery ${stage}`, t.title), phase: 'Tickets', schema: RECOVERY_SCHEMA, model: m, effort: EFFORT.advisor, agentType: 'harness:advisor' },
     `${pluginDir}/agents/advisor.md`)
   try { ans = await ask(model) } catch (e) {
     log(`#${t.n} ${stage}: advisor recovery on ${model} failed (${e && e.message})`)
     // A model the account cannot use (for example fable) falls back once to the profile's advisor.
-    if (model !== advisorModel) { try { ans = await ask(advisorModel) } catch (e2) { log(`#${t.n} ${stage}: advisor recovery on ${advisorModel} failed (${e2 && e2.message})`) } }
+    if (model !== advisorModel && !opts.noFallback) { used = advisorModel; try { ans = await ask(advisorModel) } catch (e2) { log(`#${t.n} ${stage}: advisor recovery on ${advisorModel} failed (${e2 && e2.message})`) } }
   }
   if (!ans) log(`#${t.n} ${stage}: no advisor recovery answer; the ticket goes to the owner`)
   if (ans && typeof ans === 'object') {
     const reason = capSummary(ans.reason) || capSummary(ans.advice) || '(no reason given)'
-    return ans.verdict === 'retry' ? { verdict: 'retry', reason, text: (typeof ans.advice === 'string' && ans.advice.trim()) || reason } : { verdict: 'owner', reason }
+    return ans.verdict === 'retry' ? { verdict: 'retry', reason, text: (typeof ans.advice === 'string' && ans.advice.trim()) || reason, model: used } : { verdict: 'owner', reason }
   }
   const text = typeof ans === 'string' ? ans : ''
   const first = text.split('\n').find(l => l.trim()) || ''
   // The verdict word, optionally in markdown emphasis, then a colon, or a dash with a space after it. Prose such as
   // "Retry will not help" or "Retry-safe? No" is no verdict.
   const m = first.match(/^\s*[*_`]*\s*(retry|owner)[*_`]*(?:\s*:|\s*[-\u2013\u2014]\s)\s*(.*)$/i)
-  if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
+  if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text, model: used }
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
 }
 
@@ -581,27 +585,30 @@ async function runStage(t, stage, build, schema, opts) {
     const opusAdviceFailed = advised && advisorModel === 'opus'
     const rounds = opusAdviceFailed ? ['fable'] : (advisorModel === 'opus' ? ['opus', 'fable'] : [advisorModel])
     let advice = earlier   // every round keeps the advice of the rounds before it
+    let tried = ''         // the recovery advice the rounds before this one gave
+    let lastRun = res      // the last run that returned something: its reason and decisions stand when a retry returns nothing
     for (const [i, model] of rounds.entries()) {
       if (i > 0 && (!blockedOf(res) || flaggedOf(res))) break
-      const v = await askRecovery(t, stage, res, model)
+      const v = await askRecovery(t, stage, lastRun, model, i > 0 ? { tried, noFallback: true } : {})
       if (v.verdict !== 'retry') {
-        if (res) takeDecisions(t.n, stage, res)
-        throw new Blocked(`${stage}: ${(res && (res.blocked_reason || res.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
+        if (lastRun) takeDecisions(t.n, stage, lastRun)
+        throw new Blocked(`${stage}: ${(lastRun && (lastRun.blocked_reason || lastRun.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
       }
-      log(`#${t.n} ${stage}: blocked; the advisor (${model}) says retry (${v.reason})`)
+      log(`#${t.n} ${stage}: blocked; the advisor (${v.model}) says retry (${v.reason})`)
       suffix = `; advisor (retry failed): ${v.reason}`
-      // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
-      const prev = res
       advice += ADVICE_HEADING + v.text
+      tried += `${tried ? '\n' : ''}${v.text}`
+      // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
       res = await call(build(advice + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
-      // A retry that returns nothing leaves only the blocked run's record: keep its decisions.
-      if (!res && prev) takeDecisions(t.n, stage, prev)
+      if (res) lastRun = res
     }
+    // A last retry that returns nothing leaves only the last run's record: keep its decisions.
+    if (!res && lastRun) takeDecisions(t.n, stage, lastRun)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
   takeDecisions(t.n, stage, res)
   if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}${suffix}`)
-  const bad = (res.decisions || []).find(d => d.contradicts_confirmed || d.dangerous)
+  const bad = flaggedOf(res) && res.decisions.find(d => d && (d.contradicts_confirmed || d.dangerous))
   if (bad) throw new Blocked(`${stage}: question for the owner: ${bad.title} (${bad.contradicts_confirmed ? 'contradicts an owner-confirmed answer' : 'dangerous'})`)
   return res
 }
