@@ -32,14 +32,23 @@ for tool in git gh jq python3; do
   command -v "$tool" >/dev/null 2>&1 || miss "$tool"
 done
 
-# The gh host comes from the origin remote, so a GitHub Enterprise checkout checks its own host; no origin or
-# an unparsed URL falls back to github.com.
+# The gh host comes from the origin remote, so a GitHub Enterprise checkout checks its own host; an SSH alias
+# resolves to its HostName; no origin or an unparsed URL falls back to github.com.
+# ssh_real <host>: the HostName an SSH config alias maps to (ssh -G), or <host> unchanged when ssh is
+# missing or prints no hostname line.
+ssh_real() {
+  local real=''
+  command -v ssh >/dev/null 2>&1 && real=$(ssh -G "$1" 2>/dev/null | awk '$1 == "hostname" { print $2; exit }')
+  printf '%s\n' "${real:-$1}"
+}
+
 gh_host() {
   local url host
   url=$(git -C "$dir" remote get-url origin 2>/dev/null) || url=''
   case $url in
+    ssh://*) host=${url#*://}; host=${host#*@}; host=${host%%/*}; host=$(ssh_real "${host%%:*}") ;;
     *://*) host=${url#*://}; host=${host#*@}; host=${host%%/*}; host=${host%%:*} ;;
-    *@*:*) host=${url#*@}; host=${host%%:*} ;;
+    *@*:*) host=${url#*@}; host=$(ssh_real "${host%%:*}") ;;
     *) host='' ;;
   esac
   printf '%s\n' "${host:-github.com}"
