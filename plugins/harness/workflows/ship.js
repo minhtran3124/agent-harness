@@ -1000,8 +1000,11 @@ async function runTicket(t) {
       try {
         const r = await stageQaRepair(t, qa, problems, where)
         if (r && r.ready && r.dir) {
-          // dir is repo-relative; a repair worktree path must never become the tests' location
-          qa = spec.qa = where.remove ? { ...r, dir: qa.dir } : r
+          // The repair fixes tests in place, so the tests dir stays the original repo-relative one. A file the agent
+          // names by its worktree path loses that prefix; an empty list keeps the original files and tests.
+          const rel = f => (typeof f === 'string' && f.startsWith(`${where.dir}/`) ? f.slice(where.dir.length + 1) : f)
+          const files = (r.files || []).map(rel)
+          qa = spec.qa = { ...qa, ...r, dir: qa.dir, files: files.length ? files : qa.files, tests: (r.tests || []).length ? r.tests : qa.tests }
           return true
         }
         log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)

@@ -2101,6 +2101,40 @@ test('qt12: a repair result dir that is a worktree path does not replace the tes
   assert(g && !g.prompt.includes('/wt/qa-repair-1'), 'the guard must use the original tests dir')
 })
 
+test('qt13: after a pre-implement repair, implement gets repo-relative test files, or the original ones when the repair lists none', async () => {
+  const dirOf = c => (c.prompt.match(/The branch is already checked out in (\S+)\. Fix only/) || [])[1]
+  for (const absolute of [true, false]) {
+    let n = 0
+    const { calls } = await run({ tickets: mTicket() }, c => {
+      if (/^qa check:1/.test(c.label) && ++n === 1) return { uncovered: [], unmapped: [], invented: ['x'] }
+      if (/^qa repair:1/.test(c.label)) {
+        const wt = dirOf(c)
+        return ok({ ready: true, dir: `${wt}/tests/acceptance`, files: absolute ? [`${wt}/tests/acceptance/b.spec.js`] : [], tests: [] })
+      }
+    })
+    const p = implementCalls(calls)[0].prompt
+    const want = absolute ? 'tests/acceptance/b.spec.js' : 'tests/acceptance/ticket-1.spec.js'
+    assert(p.includes(`under tests/acceptance/ (${want})`), `absolute=${absolute}: ${(p.match(/Acceptance tests already exist[^\n]*/) || [''])[0]}`)
+    assert(!p.includes('qa-repair-1'), `absolute=${absolute}: implement prompt names the removed repair worktree`)
+  }
+})
+
+test('qt14: after a repair in the implement worktree, the tests dir and files stay repo-relative', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => {
+    if (/^implement:1(:|$)/.test(c.label)) return ++n === 1 ? { ...implOk(), decisions: [FLAWED] } : implOk()
+    if (/^qa repair:1/.test(c.label)) {
+      const wt = (c.prompt.match(/The branch is already checked out in (\S+)\. Fix only/) || [])[1]
+      return ok({ ready: true, dir: `${wt}/tests/acceptance`, files: [`${wt}/tests/acceptance/c.spec.js`], tests: [] })
+    }
+  })
+  const impls = implementCalls(calls)
+  assert.strictEqual(impls.length, 2, labelsOf(calls).join())
+  assert(impls[1].prompt.includes('under tests/acceptance/ (tests/acceptance/c.spec.js)'), (impls[1].prompt.match(/Acceptance tests already exist[^\n]*/) || [''])[0])
+  const g = named(calls, /^acceptance-test check:1/)[0]
+  assert(g && /-- tests\/acceptance\n/.test(g.prompt), g && g.prompt.split('\n')[0])
+})
+
 test('qt10: a pre-implement repair with no ready tests gives no second qa check', async () => {
   const r = await run({ tickets: mTicket() }, c => {
     if (/^qa check:1/.test(c.label)) return { uncovered: [], unmapped: [], invented: ['x'] }
