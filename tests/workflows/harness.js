@@ -90,6 +90,8 @@ function defaults(c, st) {
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
   if (l.startsWith('qa:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
+  if (l.startsWith('qa check:')) return { uncovered: [], unmapped: [], invented: [] }
+  if (l.startsWith('qa repair:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
   if (l.startsWith('acceptance-test check:')) return { commits: [{ sha: 'qa1', subject: `Add acceptance tests for #${n}` }] }
   if (l.startsWith('security gate:')) return { why_risky: 'touches secrets', risk_note: 'NOTE', findings: [], followups: [] }
   if (/^uat(-rerun(-r\d+)?)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
@@ -2032,6 +2034,72 @@ test('mo4: a profile entry for intent overrides the opus default', async () => {
   assert(cs.every(c => c.opts.model === 'sonnet'), cs.map(c => c.opts.model).join())
   const others = [...stageCalls(calls, 'plan', 1), ...stageCalls(calls, 'qa', 1)]
   assert(others.length === 2 && others.every(c => c.opts.model === 'opus'), 'plan and qa keep opus: ' + others.map(c => c.label + '=' + c.opts.model).join())
+})
+
+// ---- qa check and qa repair: the blind tests are checked, one flawed test is repaired (#647) ------
+const FLAWED = { title: 'Flawed acceptance test', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, adr: false }
+const mTicket = () => [T(1, 1, [], { depth: 'M' })]
+const implementCalls = calls => named(calls, /^implement:1(:|$)/)
+const implOk = () => ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [], plan_md: 'PLAN-MD', plan_steps: [] })
+const allDecisions = r => [...(r.result.decisions || []), ...r.result.tickets.flatMap(t => t.decisions || [])]
+
+test('qt1: a depth M ticket runs one opus qa check after qa, and its prompt has no plan', async () => {
+  const { calls } = await run({ tickets: mTicket() }, null)
+  const cs = named(calls, /^qa check:1/)
+  assert.strictEqual(cs.length, 1, labelsOf(calls).join())
+  assert.strictEqual(cs[0].opts.model, 'opus')
+  assert(calls.indexOf(named(calls, /^qa:1$/)[0]) < calls.indexOf(cs[0]), 'qa check must come after qa')
+  assert(!cs[0].prompt.includes('PLAN-MD') && !cs[0].prompt.includes('plan_md'), 'the qa check prompt must not hold the plan')
+})
+
+test('qt2: a qa check result with one invented test gives one qa repair and a second qa check', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['guards against a future .py file'] } : undefined))
+  assert.strictEqual(named(calls, /^qa repair:1/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(named(calls, /^qa check:1/).length, 2, labelsOf(calls).join())
+})
+
+test('qt3: a Flawed acceptance test decision from implement gives one qa repair and one more implement call', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label)
+    ? (++n === 1 ? { ...implOk(), decisions: [FLAWED] } : implOk()) : undefined))
+  assert.strictEqual(named(calls, /^qa repair:1/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(implementCalls(calls).length, 2, labelsOf(calls).join())
+})
+
+test('qt4: a second Flawed acceptance test decision gives no second qa repair and a needs_review decision', async () => {
+  const r = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label) ? { ...implOk(), decisions: [FLAWED] } : undefined))
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, labelsOf(r.calls).join())
+  assert.strictEqual(implementCalls(r.calls).length, 2, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
+test('qt7: a repair that returns no ready tests gives no second implement call and a needs_review decision', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^implement:1(:|$)/.test(c.label)) return { ...implOk(), decisions: [FLAWED] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, labelsOf(r.calls).join())
+  assert.strictEqual(implementCalls(r.calls).length, 1, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
+test('qt5: a fix test commit that touches the acceptance folder still blocks the ticket after a repair', async () => {
+  let n = 0
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label) && ++n === 1) return { uncovered: ['AC2'], unmapped: [], invented: [] }
+    if (c.label === 'acceptance-test check:1') return { commits: [{ sha: 'qa1', subject: 'Add acceptance tests for #1' }, { sha: 'bad2', subject: 'fix test' }] }
+  })
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, 'the repair must have run: ' + labelsOf(r.calls).join())
+  assert.strictEqual(st(r, 1), 'blocked')
+  assert(r.result.tickets.find(t => t.n === 1).reason.includes('bad2'))
+  assert.strictEqual(named(r.calls, /^finish:/).length, 0)
+})
+
+test('qt6: the qa-writer agent file states the rule that a test checks nothing the ticket does not state', async () => {
+  const f = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'agents', 'qa-writer.md'), 'utf8')
+  assert.strictEqual(f.split('\n').filter(l => l.includes('checks nothing the ticket')).length, 1)
 })
 
 ;(async () => {

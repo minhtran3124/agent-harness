@@ -173,6 +173,12 @@ const QA_SCHEMA = stageSchema({
   files: strList,
   tests: { type: 'array', items: { type: 'object', properties: { name: STR, covers: STR }, required: ['name', 'covers'] } },
 }, ['ready'])
+const QACHECK_SCHEMA = { type: 'object',
+  properties: {
+    uncovered: { ...strList, description: 'Acceptance criteria (by id) that no test covers.' },
+    unmapped: { ...strList, description: 'Tests (by name) that match no criterion.' },
+    invented: { ...strList, description: 'Tests (by name) that check something the ticket text and criteria do not state.' } },
+  required: ['uncovered', 'unmapped', 'invented'] }
 const TESTGUARD_SCHEMA = { type: 'object',
   properties: { commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } } },
   required: ['commits'] }
@@ -484,6 +490,29 @@ function stageQa(t, intent, design, branch) {
     `Acceptance criteria:\n${criteria}\n${iface}` +
     `Return ready, dir, files and tests (name and covers). Return ready false with a reason when nothing can be tested from outside.${advice}`, w.dir)
   return runStage(t, 'qa', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// Gate statement for `qa check`. Verifies: every criterion has at least one test and every test names one criterion.
+// Does not verify: that a test catches every defect, or that the criterion itself is right.
+// Read-only: Opus reads the ticket text, the criteria and the committed test files; never the plan or the application source.
+function stageQaCheck(t, intent, qa, tip) {
+  const w = newWt(`qa-check-${t.n}`, null, tip)
+  const criteria = (intent.acceptance || []).map((a, i) => `AC${i + 1}: ${a}`).join('\n') || '(none listed: use the ticket text)'
+  const build = advice => w.setup + head(t, null,
+    `Stage: qa check. Read-only: edit nothing, commit nothing. Read no plan and no application source.\n` +
+    `Read only the committed acceptance tests (${(qa.files || []).join(', ')} under ${qa.dir}/) in your worktree, and compare them with the ticket text and these criteria:\n${criteria}\n` +
+    `Return uncovered (criteria with no test), unmapped (tests that match no criterion) and invented (tests that check something the ticket text and criteria do not state, for example a guard against a future file, function or tool, or a path the ticket does not name). Empty lists when all is well.${advice}`, w.dir)
+  return call(build(''), { label: lbl(`#${t.n} qa check`, t.title), phase: 'Tickets', schema: QACHECK_SCHEMA, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// One repair of the blind tests, by the qa-writer, on the existing ticket branch. where: { dir, setup } of a worktree with that branch checked out.
+function stageQaRepair(t, qa, problems, where) {
+  const build = advice => where.setup + head(t, null,
+    `Stage: qa repair. Act as the QA writer (${pluginDir}/agents/qa-writer.md) in repair mode and stay blind: read no application source and no plan.\n` +
+    `The branch is already checked out in ${where.dir}. Fix only the flaws named below in the tests under ${qa.dir}/. Commit with the exact subject ${QA_SUBJECT(t.n)}. Never push, never force.\n` +
+    `Flaws:\n${problems}\n` +
+    `Return ready, dir, files and tests (name and covers).${advice}`, where.dir)
+  return runStage(t, 'qa repair', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
 }
 
 // The implementer must not touch the acceptance tests. Only commits with the QA subject may; any other commit is a violation.
@@ -950,7 +979,49 @@ async function runTicket(t) {
         else log(`#${t.n} qa: no acceptance tests (${(r && r.reason) || 'not ready'})`)
       } catch (e) { log(`#${t.n} qa: no acceptance tests (${e && e.message ? e.message : String(e)})`) }
     }
-    const impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
+    // One repair of the blind tests per ticket, from a failed qa check or an implementer 'Flawed acceptance test' decision.
+    let repairUsed = false
+    const problemsOf = c => (c ? [...(c.uncovered || []).map(x => `uncovered: ${x}`), ...(c.unmapped || []).map(x => `unmapped: ${x}`), ...(c.invented || []).map(x => `invented: ${x}`)] : [])
+    const check = async tip => {
+      try { return await stageQaCheck(t, intent, qa, tip) } catch (e) { log(`#${t.n} qa check: skipped (${e && e.message ? e.message : String(e)})`); return null }
+    }
+    const repair = async (problems, where) => {
+      repairUsed = true
+      try {
+        const r = await stageQaRepair(t, qa, problems, where)
+        if (r && r.ready && r.dir) { qa = spec.qa = r; return true }
+        log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)
+        return false
+      } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false }
+    }
+    const flawDecision = (title, problems) => addDecision(t.n, 'qa', {
+      title, context: `The blind acceptance tests still have flaws after the one repair: ${problems.join('; ')}.`,
+      decision: 'The ticket goes on with the tests as they are.', why: 'One repair per ticket; a second round is out of scope.',
+      consequences: 'A flawed test can still fail the ticket gate.', how_to_reverse: 'Fix the test by hand on the ticket branch.', needs_review: true, confidence: 'high' })
+    if (qa) {
+      let c = await check(branch)
+      if (problemsOf(c).length) {
+        await repair(problemsOf(c).join('\n'), newWt(`qa-repair-${t.n}`, branch, null, true))
+        c = await check(branch)
+        if (problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', problemsOf(c))
+      }
+    }
+    let impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
+    const flaws = r => (r.decisions || []).filter(d => d && /^Flawed acceptance test/i.test(String(d.title || '')))
+    if (qa && flaws(impl).length) {
+      const text = flaws(impl).map(d => `${d.title}: ${d.context || ''} ${d.decision || ''}`.trim()).join('\n')
+      if (repairUsed) {
+        flawDecision('Flawed acceptance test reported after the repair was used', [text])
+      } else {
+        if (await repair(text, { dir: impl.worktree, setup: `cd ${impl.worktree}\n\n` })) {
+          impl = spec.impl = await stageImplement(t, branch, planText + `\n\nThe qa-writer repaired the acceptance tests under ${qa.dir}/ after your report. Make them pass.`, boundary, qa)
+          const c = await check(impl.branch || branch)
+          if (flaws(impl).length || problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', [...flaws(impl).map(d => d.title), ...problemsOf(c)])
+        } else {
+          flawDecision('Flawed acceptance test reported but the repair produced no tests', [text])
+        }
+      }
+    }
     if (qa) {
       const bad = await stageTestGuard(t, impl, qa)
       if (bad.length) throw new Blocked(`the implementer changed ${qa.dir}/ in ${bad.map(c => `${c.sha} ${c.subject}`).join('; ')}`)
