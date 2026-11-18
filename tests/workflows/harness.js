@@ -2197,3 +2197,10 @@ test('pf7: the setup block tells a retry that reuses an existing worktree to ski
   assert(wt.length > 0, 'no setup block')
   for (const c of wt) assert(c.prompt.includes('skip them if the directory already existed'), `${c.label}: no skip rule`)
 })
+
+test('pf8: with no worktreeSetup, the finish prompt has no dangling "Only if you created" sentence', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f, 'no finish call')
+  assert(!f.prompt.includes('Only if you created'), 'dangling setup condition')
+})
