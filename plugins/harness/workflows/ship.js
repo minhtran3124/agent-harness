@@ -495,8 +495,10 @@ function stageQa(t, intent, design, branch) {
 // Gate statement for `qa check`. Verifies: every criterion has at least one test and every test names one criterion.
 // Does not verify: that a test catches every defect, or that the criterion itself is right.
 // Read-only: Opus reads the ticket text, the criteria and the committed test files; never the plan or the application source.
+const qaCheckRuns = {}   // a re-check needs a fresh worktree: a reused dir would hold the pre-repair tests
 function stageQaCheck(t, intent, qa, tip) {
-  const w = newWt(`qa-check-${t.n}`, null, tip)
+  qaCheckRuns[t.n] = (qaCheckRuns[t.n] || 0) + 1
+  const w = newWt(`qa-check-${t.n}-${qaCheckRuns[t.n]}`, null, tip)
   const criteria = (intent.acceptance || []).map((a, i) => `AC${i + 1}: ${a}`).join('\n') || '(none listed: use the ticket text)'
   const build = advice => w.setup + head(t, null,
     `Stage: qa check. Read-only: edit nothing, commit nothing. Read no plan and no application source.\n` +

@@ -2060,6 +2060,16 @@ test('qt2: a qa check result with one invented test gives one qa repair and a se
   assert.strictEqual(named(calls, /^qa check:1/).length, 2, labelsOf(calls).join())
 })
 
+test('qt8: the second qa check runs in a different worktree than the first', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['x'] } : undefined))
+  const cs = named(calls, /^qa check:1/)
+  assert.strictEqual(cs.length, 2, labelsOf(calls).join())
+  const dirOf = c => (c.prompt.match(/worktree add --detach (\S+)/) || [])[1]
+  assert(dirOf(cs[0]) && dirOf(cs[1]) && dirOf(cs[0]) !== dirOf(cs[1]), `${dirOf(cs[0])} vs ${dirOf(cs[1])}`)
+})
+
 test('qt3: a Flawed acceptance test decision from implement gives one qa repair and one more implement call', async () => {
   let n = 0
   const { calls } = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label)
