@@ -25,11 +25,11 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 - Coding: Sonnet 5.5 (`implementer` agent). Testing: Haiku 5.5
   (`test-runner`). Research and search: Haiku 5.5 (`researcher`). Intent review: Sonnet 5.5
   (`intent-reviewer`). Checking a ticket with no app: Sonnet 5.5 (`qa-verifier`).
-- Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.1 only when the Opus advice did not
+- Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.2 only when the Opus advice did not
   unblock the work, for a high-stakes architecture decision, or when the owner asks.
 - The orchestrator chooses the model and the effort for each subagent and each workflow agent,
   based on how hard the task is. It thinks for itself; the models above are defaults, not fixed
-  assignments, and it may raise or lower the model or the effort. Effort is not fixed. The Fable 5.1
+  assignments, and it may raise or lower the model or the effort. Effort is not fixed. The Fable 5.2
   conditions and the depth L rule below are hard limits.
 - Effort levels differ by model. Sonnet 5.5: `medium` for well-specified work, `high` for harder or
   longer work; `low` can skip verification, so use it only for mechanical stages. Opus 5.5: start at
@@ -43,7 +43,7 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
   - the ticket depth is L, or the ticket is important (design or plan review, before implement);
   - the same check fails twice after a fix;
   - an agent reports BLOCKED or low confidence;
-  - a `ship.js` stage returns blocked or nothing: one recovery per stage per ticket, with the verdict `retry` (one more run with the advice) or `owner`; none for a `dangerous` or `contradicts_confirmed` decision; Fable 5.1 after a blocked Opus stage;
+  - a `ship.js` stage returns blocked or nothing: one recovery per stage per ticket, with the verdict `retry` (one more run with the advice) or `owner`; none for a `dangerous` or `contradicts_confirmed` decision; Fable 5.2 after a blocked Opus stage;
   - a decision would become an ADR with `needs_review`;
   - a grilling session reaches a deep design tree.
 - Workflow agents cannot spawn agents, so the script or the main session calls the advisor.
