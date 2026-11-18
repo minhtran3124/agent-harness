@@ -981,25 +981,17 @@ test('p2: at depth L, design and plan stay on opus even when the profile names a
   }
 })
 
-test('p3a: depth M has no plan agent; the implement agent is told to write the plan, and plan_md reaches plan.md', async () => {
-  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1'
-    ? ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [], plan_md: 'MY-OWN-PLAN', plan_steps: [] }) : undefined))
-  assert.strictEqual(named(calls, /^plan:/).length, 0, labelsOf(calls).join())
+test('p3a: depth M runs a plan agent; its plan_md reaches the implement prompt and plan.md (#645)', async () => {
+  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'plan:1'
+    ? ok({ plan_md: 'MY-OWN-PLAN', plan_steps: [] }) : undefined))
+  assert.strictEqual(named(calls, /^plan:/).length, 1, labelsOf(calls).join())
   const impl = named(calls, /^implement:1$/)
   assert.strictEqual(impl.length, 1)
-  assert(impl[0].prompt.includes('/plug/skills/writing-plans/SKILL.md') && impl[0].prompt.includes('as plan_md') && impl[0].prompt.includes('Intent: {'), impl[0].prompt.slice(-700))
-  assert(!impl[0].prompt.includes('Follow this plan:'), 'no plan from another agent')
+  assert(impl[0].prompt.includes('Follow this plan:') && impl[0].prompt.includes('MY-OWN-PLAN'), impl[0].prompt.slice(-700))
+  assert(!impl[0].prompt.includes('as plan_md'), 'implement is not told to write the plan')
   const w = named(calls, /^specs$/)[0].prompt
-  assert(w.includes('MY-OWN-PLAN'), 'plan.md carries the plan the implement agent wrote')
+  assert(w.includes('MY-OWN-PLAN'), 'plan.md carries the plan the plan agent wrote')
   assert.strictEqual(result.tickets[0].status, 'done')
-})
-
-test('p3b: depth M with no plan_md from implement still ships; plan.md falls back to the intent steps and the run logs it', async () => {
-  const { calls, logs, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1'
-    ? ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [] }) : undefined))
-  assert.strictEqual(result.tickets[0].status, 'done')
-  assert(logs.some(l => l.includes('implement returned no plan_md')), logs.join('\n'))
-  assert(named(calls, /^specs$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/plan.md'))
 })
 
 test('p3c: depth S and depth L keep their flow: S has no plan agent, L has a plan agent and the implement prompt follows it', async () => {
@@ -1484,11 +1476,9 @@ test('s4: early spec writes happen after the intent and plan stages, before impl
     const early = named(calls, /^specs-early$/)
     const at = labels.map((l, i) => (l === 'specs-early' ? i : -1)).filter(i => i >= 0)
     assert(early.length >= 1 && at[0] < impl, `${depth}: ${labels.join()}`)
-    // Depth M has no plan agent: its plan.md is written once from the intent steps before implement, then again after implement returns plan_md.
-    if (depth === 'M') assert(at.some(i => i > impl), 'M: plan.md is written again after implement')
-    else assert(at.every(i => i < impl), `${depth}: all early writes before implement`)
+    assert(at.every(i => i < impl), `${depth}: all early writes before implement`)
+    if (depth !== 'S') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
     assert(labels.indexOf('specs-early') > labels.indexOf('intent:1'), `${depth}: after intent`)
-    if (depth === 'L') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
     const p = early.map(c => c.prompt).join('\n')
     for (const f of ['intent.md', 'plan.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f}`)
     if (depth !== 'S') assert(p.includes('=== /repo/specs/1-ticket-1/design.md'), `${depth}: design.md`)
@@ -1507,7 +1497,7 @@ test('s5: the intent.md early write exists when implement is blocked or throws',
   assert(named(a.calls, /^specs-early$/)[0].prompt.includes("=== /repo/specs/1-add-the-thing/intent.md"))
   const b = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1' ? new Error('implement failed') : undefined))
   assert(named(b.calls, /^specs-early$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/intent.md'))
-  assert.strictEqual(named(b.calls, /^plan:/).length, 0)
+  assert.strictEqual(named(b.calls, /^plan:/).length, 1)
   assert.strictEqual(b.result.tickets[0].status, 'blocked')
 })
 

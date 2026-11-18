@@ -16,9 +16,9 @@ export const meta = {
 // ---------------------------------------------------------------------------
 // Constants. Models and effort are chosen here, per stage, never inside a stage.
 // ---------------------------------------------------------------------------
-const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
+const MODEL = { intent: 'opus', research: 'haiku', design: 'sonnet', plan: 'opus', implement: 'sonnet',
   verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku',
-  qa: 'sonnet', qaVerify: 'sonnet', security: 'opus', finish: 'sonnet' }
+  qa: 'opus', qaVerify: 'sonnet', security: 'opus', finish: 'sonnet' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
   verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', qaVerify: 'medium', security: 'high', finish: 'medium' }
 // args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage, any stage.
@@ -114,8 +114,6 @@ const DESIGN_SCHEMA = stageSchema({ design_md: STR }, ['design_md'])
 const PLAN_SCHEMA = stageSchema({ plan_md: STR, plan_steps: { type: 'array', items: STEP } }, ['plan_md'])
 const IMPLEMENT_SCHEMA = stageSchema({
   worktree: STR, branch: STR, files: strList,
-  plan_md: { type: 'string', description: 'Depth M only: the full plan text you wrote before the first edit, in the shape of the plan template. Leave out when the prompt gave you the plan.' },
-  plan_steps: { type: 'array', items: STEP, description: 'Depth M only: the steps of that plan.' },
   commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } },
   verify: { type: 'array', items: { type: 'object', properties: { command: STR, exit: NUM, notes: STR, covers: strList }, required: ['command', 'exit'] } },
 }, ['worktree', 'branch'])
@@ -467,13 +465,6 @@ function stagePlan(t, intent, extra) {
     `Stage: plan. Write no file; return the full plan text as plan_md, in the shape of ${pluginDir}/templates/specs/plan.md, plus plan_steps (the script saves it as specs/<slug>/plan.md).\n` +
     `Intent: ${JSON.stringify(intent)}\n${extra || ''}${advice}`, w.dir)
   return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan })
-}
-
-// Depth M: the prompt text that tells the implement agent to write the plan itself before it codes.
-function foldedPlanText(intent) {
-  return `Plan: no plan exists yet and no other agent writes one. Before your first edit, read ${pluginDir}/skills/writing-plans/SKILL.md and write the plan for this ticket with it, in Mode: auto, ` +
-    `in the shape of ${pluginDir}/templates/specs/plan.md. Return the full plan text as plan_md and its steps as plan_steps (the script saves plan_md as specs/<slug>/plan.md). Then take the steps one at a time.\n` +
-    `Intent: ${JSON.stringify(intent)}`
 }
 
 // A depth-L ticket gets one advisor look at its design and plan before any code is written.
@@ -933,14 +924,14 @@ async function runTicket(t) {
     boundaries[t.n] = boundaryOf(intent)
     const boundary = boundaryText(`Boundary for ticket #${t.n}:`, intent)
     await writeSpecsEarly(t, t.depth === 'S' ? ['intent.md', 'design.md', 'plan.md'] : ['intent.md'])
-    let planText, foldedPlan = false
+    let planText
     if (t.depth === 'S') {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
     } else if (t.depth === 'M') {
-      // Depth M has no plan agent. The implement agent writes the plan, then builds it: one context, no hand-off.
-      foldedPlan = true
+      // Depth M: a plan stage fed by the intent only. No research, design or advisor (those stay at depth L).
+      const plan = spec.plan = await stagePlan(t, intent)
       await writeSpecsEarly(t, ['design.md', 'plan.md'])
-      planText = foldedPlanText(intent)
+      planText = `Follow this plan:\n${plan.plan_md}`
     } else {
       const research = spec.research = await stageResearch(t, intent)
       const design = spec.design = await stageDesign(t, intent, research)
@@ -960,12 +951,6 @@ async function runTicket(t) {
       } catch (e) { log(`#${t.n} qa: no acceptance tests (${e && e.message ? e.message : String(e)})`) }
     }
     const impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
-    if (foldedPlan) {
-      if (typeof impl.plan_md === 'string' && impl.plan_md.trim()) {
-        spec.plan = { plan_md: impl.plan_md, plan_steps: impl.plan_steps || [] }
-        await writeSpecsEarly(t, ['plan.md'])
-      } else log(`#${t.n} implement returned no plan_md; plan.md keeps the steps from the intent stage`)
-    }
     if (qa) {
       const bad = await stageTestGuard(t, impl, qa)
       if (bad.length) throw new Blocked(`the implementer changed ${qa.dir}/ in ${bad.map(c => `${c.sha} ${c.subject}`).join('; ')}`)
