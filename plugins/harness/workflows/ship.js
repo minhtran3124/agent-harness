@@ -268,8 +268,8 @@ const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
 // Commands each new worktree runs once, after git worktree add (profile key worktreeSetup). Empty: no setup text.
 const SETUP = args.worktreeSetup || []
-const setupBlock = dir => (SETUP.length
-  ? `Then, in ${dir}, run these setup commands once, in order, before any other work (skip them if the directory already existed before this stage: an earlier attempt already ran them):\n${SETUP.join('\n')}\nIf one fails, follow the dependency rule.\n\n`
+const setupBlock = (dir, lead = 'Then, ') => (SETUP.length
+  ? `${lead}in ${dir}, run these setup commands once, in order, before any other work (skip them if the directory already existed before this stage: an earlier attempt already ran them):\n${SETUP.join('\n')}\nIf one fails, follow the dependency rule.\n\n`
   : '')
 const tickets = args.tickets
 const single = tickets.length === 1
@@ -693,8 +693,8 @@ function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
   const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
   const dir = impl.worktree || fw.dir
-  const finishSetup = setupBlock(fw.dir)
-  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first). ${finishSetup ? `Only if you created ${fw.dir} just now: ${finishSetup}` : ''}`.trimEnd() + '\n'
+  const finishSetup = setupBlock(fw.dir, `Only if you created ${fw.dir} just now: `)
+  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first). ${finishSetup}`.trimEnd() + '\n'
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines), contains this merge-policy block exactly once, unchanged, and ends with the footer line. Return the PR number as pr and its url.\n${single ? mergeBlock({ mode: 'human', why: `the PR targets ${base}` }) : mergeBlock({ mode: 'pending' })}\n`

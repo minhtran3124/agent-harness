@@ -2204,3 +2204,10 @@ test('pf8: with no worktreeSetup, the finish prompt has no dangling "Only if you
   assert(f, 'no finish call')
   assert(!f.prompt.includes('Only if you created'), 'dangling setup condition')
 })
+
+test('pf9: the finish setup sentence is one conditional, not an "Only if ... Then," chain', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)], worktreeSetup: ['npm ci'] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f.prompt.includes('Only if you created'), 'no condition')
+  assert(!/just now: Then,/.test(f.prompt), 'double conditional')
+})
