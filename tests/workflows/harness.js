@@ -1455,7 +1455,7 @@ test('s2: blocked, merge-blocked and skipped tickets get spec files with their r
   const p = named(calls, /^specs$/)[0].prompt
   const sum = path => (result.specFiles.find(f => f.path === path) || {}).text || ''
   assert.strictEqual(result.specFiles.length, 4, result.specFiles.map(f => f.path).join())
-  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
+  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build; advisor (owner): ADVICE-TEXT)'), 'blocked ticket')
   assert(sum('/repo/specs/3-ticket-3/summary.md').includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
   assert(sum('/repo/specs/4-ticket-4/summary.md').includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
   assert(p.includes('FULL-BODY-1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket body as the request')
@@ -1469,7 +1469,7 @@ test('s3: when no ticket is delivered the spec files are still written', async (
   assert.strictEqual(w.length, 1, labelsOf(calls).join())
   assert(w[0].prompt.includes('=== /repo/specs/1-add-the-thing/intent.md') && !w[0].prompt.includes('summary.md'))
   assert.strictEqual(result.specFiles.length, 1)
-  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope)') && result.specFiles[0].text.includes('code review: not run'))
+  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope; advisor (owner): ADVICE-TEXT)') && result.specFiles[0].text.includes('code review: not run'))
 })
 
 test('s4: early spec writes happen after the intent and plan stages, before implement, in the main checkout', async () => {
@@ -2249,6 +2249,182 @@ test('pf4: a decision passed on a ticket is recorded for that ticket only', asyn
 test('pf5: the verify prompt falls back to the Verify: row in the owner-confirmed decisions', async () => {
   const { calls } = await run({}, null)
   assert(named(calls, /^verify:1$/)[0].prompt.includes('when the body has none, use the one in the owner-confirmed decisions'))
+})
+
+// ---- #649: one advisor recovery for a blocked stage ------------------------------------------
+const rcBlocked = (extra) => ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '', ...extra })
+const rcCalls = (calls, re) => calls.filter(c => re.test(c.label || '')).length
+const rcOver = (verdict, implement) => c => {
+  if (c.label === 'advisor:recovery implement:1') return verdict
+  if (/^implement:1(:retry)?$/.test(c.label)) return implement(c)
+  return undefined
+}
+
+test('rc1: a stage that returns blocked then ok gives done, 1 recovery call and 2 stage calls', async () => {
+  const { result, calls } = await run({}, rcOver('retry: build it the other way', c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1, Object.keys(result.stats.byStage).join())
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+})
+
+test('rc2: a stage that returns blocked twice gives blocked, 1 recovery call and no third stage call', async () => {
+  const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked()))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery implement:1$/), 1)
+})
+
+test('rc3: a blocked ticket does not stop an independent second ticket', async () => {
+  const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, rcOver('retry: try again', () => rcBlocked()))
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+  const by = Object.fromEntries(result.tickets.map(t => [t.n, t]))
+  assert.strictEqual(by[1].status, 'blocked')
+  assert.strictEqual(by[2].status, 'done')
+})
+
+test('rc4: an advisor verdict owner gives no retry call and the reason in the block text', async () => {
+  const { result, calls } = await run({}, rcOver('owner: NEEDS-OWNER-KEY', () => rcBlocked()))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0)
+  assert(result.tickets[0].reason.includes('NEEDS-OWNER-KEY'), result.tickets[0].reason)
+})
+
+test('rc5: a stage result with a dangerous decision gets no recovery call', async () => {
+  const bad = { title: 'T', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, dangerous: true }
+  const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked({ decisions: [bad] })))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 0)
+  assert(!('advisor recovery' in result.stats.byStage), Object.keys(result.stats.byStage).join())
+})
+
+test('rx1: a stage that returns nothing gets a recovery call that says so', async () => {
+  const { result, calls } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? null : undefined)))
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  assert(named(calls, /^advisor:recovery implement:1$/)[0].prompt.includes('(the agent returned nothing)'))
+  const retry = named(calls, /^implement:1:retry$/)[0]
+  assert(retry.prompt.includes('## Advisor advice') && retry.prompt.includes('RETRY-HINT'))
+})
+
+test('rx2: a structured retry verdict puts its advice in the retry prompt; a failed retry carries the reason', async () => {
+  const v = { verdict: 'retry', reason: 'RX-REASON', advice: 'RX-ADVICE' }
+  const a = await run({}, rcOver(v, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  assert.strictEqual(a.result.tickets[0].status, 'done')
+  assert(named(a.calls, /^implement:1:retry$/)[0].prompt.includes('RX-ADVICE'))
+  assert(named(a.calls, /^advisor:recovery implement:1$/)[0].schema, 'recovery call has a schema')
+  const b = await run({}, rcOver(v, () => rcBlocked()))
+  assert.strictEqual(b.result.tickets[0].reason, 'implement: cannot build; advisor (retry failed): RX-REASON')
+})
+
+test('rx3: a free-form advisor answer and a failed advisor call both count as owner', async () => {
+  const md = await run({}, rcOver('1. **Recommendation** - retry: do it again', () => rcBlocked()))
+  assert.strictEqual(rcCalls(md.calls, /^implement:1:retry$/), 0)
+  assert(md.result.tickets[0].reason.includes('advisor (owner)'), md.result.tickets[0].reason)
+  const err = await run({}, rcOver(new Error('no such model'), () => rcBlocked()))
+  assert.strictEqual(err.result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(err.calls, /^implement:1:retry$/), 0)
+  assert(err.result.tickets[0].reason.endsWith('advisor (owner): (no advisor answer)'), err.result.tickets[0].reason)
+})
+
+test('rx4: the recovery advisor runs on advisorModel after a Sonnet stage and on fable after an Opus stage', async () => {
+  const s = await run({ advisorModel: 'opus' }, rcOver('owner: x', () => rcBlocked()))
+  assert.strictEqual(named(s.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+  const l = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, rcOver('owner: x', () => rcBlocked()))
+  assert.strictEqual(named(l.calls, /^implement:1$/)[0].opts.model, 'opus')
+  assert.strictEqual(named(l.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'fable')
+})
+
+test('rx5: a stage that runs twice in one ticket gets one recovery in total', async () => {
+  let n = 0
+  const { result, calls } = await run({ tickets: mTicket() }, c => {
+    if (c.label === 'advisor:recovery implement:1') return 'retry: RETRY-HINT'
+    if (/^implement:1(:retry)?$/.test(c.label)) { n++; return n === 1 ? rcBlocked() : n === 2 ? { ...implOk(), decisions: [FLAWED] } : rcBlocked() }
+  })
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3, labelsOf(calls).join())
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 1, labelsOf(calls).join())
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.tickets[0].reason, 'implement: cannot build')
+})
+
+test('rx6: free text that starts with the word retry but has no colon counts as owner', async () => {
+  const { result, calls } = await run({}, rcOver('Retry will not help here', () => rcBlocked()))
+  assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0)
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert(result.tickets[0].reason.includes('advisor (owner)'), result.tickets[0].reason)
+})
+
+test('rx7: the recovery retry prompt tells the stage to reuse work the first run left', async () => {
+  const { calls } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  const p = named(calls, /^implement:1:retry$/)[0].prompt
+  assert(p.includes('RETRY-HINT') && p.includes('Reuse it') && p.includes('never open a second pull request'), p.slice(-600))
+})
+
+test('rx8: the owner path keeps the blocked run decisions; the retry path records only the retry decisions', async () => {
+  const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const owner = await run({}, rcOver('owner: needs a human', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : undefined)))
+  assert.strictEqual(owner.result.tickets[0].status, 'blocked')
+  assert(allDecisions(owner).some(d => d.title === 'FIRST-RUN-DECISION'), 'owner path lost the first-run decision')
+  const retry = await run({}, rcOver('retry: RETRY-HINT', c => {
+    if (c.label === 'implement:1') return rcBlocked({ decisions: [dec] })
+    if (c.label === 'implement:1:retry') return { ...implOk(), decisions: [{ ...dec, title: 'RETRY-DECISION' }] }
+  }))
+  assert.strictEqual(retry.result.tickets[0].status, 'done', JSON.stringify(retry.result.tickets[0]))
+  assert(allDecisions(retry).some(d => d.title === 'RETRY-DECISION'))
+  assert(!allDecisions(retry).some(d => d.title === 'FIRST-RUN-DECISION'), 'retry path recorded the first-run decision')
+})
+
+test('rx9: a decision the retry repeats from the blocked first run is recorded once', async () => {
+  const dec = { title: 'REPEATED-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => {
+    if (c.label === 'implement:1') return rcBlocked({ decisions: [dec] })
+    if (c.label === 'implement:1:retry') return { ...implOk(), decisions: [dec] }
+  }))
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+  assert.strictEqual(allDecisions(r).filter(d => d.title === 'REPEATED-DECISION').length, 1)
+})
+
+test('rx10: a free-text verdict may use markdown emphasis and a colon or a dash', async () => {
+  for (const ans of ['retry - reuse the worktree', '**retry**: reuse it', 'Retry \u2014 reuse it', '`retry`: x']) {
+    const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+    assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 1, ans)
+  }
+  for (const ans of ['Retry will not help here', 'retrying is pointless: owner', 'owner - needs a human', 'Retry-safe? No - only the owner can']) {
+    const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+    assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0, ans)
+  }
+})
+
+test('rx11: a failed fable recovery call falls back once to advisorModel', async () => {
+  const r = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? new Error('unknown model fable') : 'retry: use the other way'
+    if (c.label === 'implement:1') return rcBlocked()
+    return undefined
+  })
+  const models = named(r.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model)
+  assert(models.includes('fable') && models[models.length - 1] === 'opus', models.join())
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+})
+
+test('rx12: a recovery retry keeps the advice of the earlier needs_advisor call', async () => {
+  let n = 0
+  const { calls } = await run({}, c => {
+    if (c.label === 'advisor:implement:1') return 'EARLIER-ADVICE'
+    if (c.label === 'advisor:recovery implement:1') return 'retry: RETRY-HINT'
+    if (c.label === 'implement:1') return { ...implOk(), status: 'ok', needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
+    return undefined
+  })
+  const retries = named(calls, /^implement:1:retry$/)
+  assert.strictEqual(retries.length, 2, labelsOf(calls).join())
+  assert(retries[1].prompt.includes('EARLIER-ADVICE') && retries[1].prompt.includes('RETRY-HINT'), retries[1].prompt.slice(-800))
+})
+
+test('rx13: a recovery retry that returns nothing keeps the blocked run decisions', async () => {
+  const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : null)))
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+  assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
 })
 
 ;(async () => {
