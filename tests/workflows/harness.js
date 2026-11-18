@@ -2075,6 +2075,16 @@ test('qt4: a second Flawed acceptance test decision gives no second qa repair an
   assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
 })
 
+test('qt7: a repair that returns no ready tests gives no second implement call and a needs_review decision', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^implement:1(:|$)/.test(c.label)) return { ...implOk(), decisions: [FLAWED] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, labelsOf(r.calls).join())
+  assert.strictEqual(implementCalls(r.calls).length, 1, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
 test('qt5: a fix test commit that touches the acceptance folder still blocks the ticket after a repair', async () => {
   let n = 0
   const r = await run({ tickets: mTicket() }, c => {

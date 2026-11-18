@@ -989,8 +989,9 @@ async function runTicket(t) {
       repairUsed = true
       try {
         const r = await stageQaRepair(t, qa, problems, where)
-        if (r && r.ready && r.dir) qa = spec.qa = r
-        return true
+        if (r && r.ready && r.dir) { qa = spec.qa = r; return true }
+        log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)
+        return false
       } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false }
     }
     const flawDecision = (title, problems) => addDecision(t.n, 'qa', {
@@ -1012,10 +1013,13 @@ async function runTicket(t) {
       if (repairUsed) {
         flawDecision('Flawed acceptance test reported after the repair was used', [text])
       } else {
-        await repair(text, { dir: impl.worktree, setup: `cd ${impl.worktree}\n\n` })
-        impl = spec.impl = await stageImplement(t, branch, planText + `\n\nThe qa-writer repaired the acceptance tests under ${qa.dir}/ after your report. Make them pass.`, boundary, qa)
-        const c = await check(impl.branch || branch)
-        if (flaws(impl).length || problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', [...flaws(impl).map(d => d.title), ...problemsOf(c)])
+        if (await repair(text, { dir: impl.worktree, setup: `cd ${impl.worktree}\n\n` })) {
+          impl = spec.impl = await stageImplement(t, branch, planText + `\n\nThe qa-writer repaired the acceptance tests under ${qa.dir}/ after your report. Make them pass.`, boundary, qa)
+          const c = await check(impl.branch || branch)
+          if (flaws(impl).length || problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', [...flaws(impl).map(d => d.title), ...problemsOf(c)])
+        } else {
+          flawDecision('Flawed acceptance test reported but the repair produced no tests', [text])
+        }
       }
     }
     if (qa) {
