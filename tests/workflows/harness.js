@@ -292,6 +292,15 @@ test('rv9: a review that reports review_md missing makes the workflow log "revie
   assert(named(read.calls, /^review:r0$/)[0].prompt.includes('return review_md: missing'))
 })
 
+test('rv10: a missing REVIEW.md is logged once per base; a git show error is logged as such', async () => {
+  const miss = await run({}, c => (/^review:r\d$/.test(c.label) ? ok({ findings: c.label === 'review:r0' ? [{ id: 'f', path: 'a.js', summary: 'S-f', score: 80 }] : [], skill_invoked: true, review_md: 'missing' }) : undefined))
+  assert(named(miss.calls, /^review:r1$/).length === 1, labelsOf(miss.calls).join())
+  assert.strictEqual(miss.logs.filter(l => l === 'review: no REVIEW.md on origin/v5.0.0').length, 1, miss.logs.join('\n'))
+  const err = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'error', skill_error: 'invalid object name' }) : undefined))
+  assert(err.logs.some(l => l.startsWith('review: could not read REVIEW.md on origin/v5.0.0') && l.includes('invalid object name')), err.logs.join('\n'))
+  assert(named(err.calls, /^review:r0$/)[0].prompt.includes('Return every finding the REVIEW.md rules above leave in'))
+})
+
 test('rv8: the reviewNote gate statement has a Verifies and Does not verify split naming CLAUDE.md and .claude/rules/', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
   const c = src.slice(src.indexOf('// Gate statement:'), src.indexOf('const reviewMdNote'))
