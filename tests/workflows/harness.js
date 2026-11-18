@@ -2397,12 +2397,19 @@ test('rx3: a free-form advisor answer and a failed advisor call both count as ow
   assert(err.result.tickets[0].reason.endsWith('advisor (owner): (no advisor answer)'), err.result.tickets[0].reason)
 })
 
-test('rx4: the recovery advisor runs on advisorModel after a Sonnet stage and on fable after an Opus stage', async () => {
+test('rx4: the recovery advisor runs on advisorModel, also after an Opus stage; on fable only after Opus advice failed', async () => {
   const s = await run({ advisorModel: 'opus' }, rcOver('owner: x', () => rcBlocked()))
   assert.strictEqual(named(s.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
   const l = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, rcOver('owner: x', () => rcBlocked()))
   assert.strictEqual(named(l.calls, /^implement:1$/)[0].opts.model, 'opus')
-  assert.strictEqual(named(l.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'fable')
+  assert.strictEqual(named(l.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus', 'an Opus stage with no Opus advice yet asks Opus')
+  const a = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return rcBlocked()
+    if (c.label === 'advisor:recovery implement:1') return 'owner: x'
+  })
+  assert.strictEqual(named(a.calls, /^advisor:implement:1$/)[0].opts.model, 'opus')
+  assert.strictEqual(named(a.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'fable', 'Opus advice failed: escalate to fable')
 })
 
 test('rx5: a stage that runs twice in one ticket gets one recovery in total', async () => {
@@ -2465,10 +2472,34 @@ test('rx10: a free-text verdict may use markdown emphasis and a colon or a dash'
   }
 })
 
+test('rx14: an empty Opus advice answer does not count as failed Opus advice, so the recovery stays on advisorModel', async () => {
+  const r = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'advisor:implement:1') return ''
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return rcBlocked()
+    if (c.label === 'advisor:recovery implement:1') return 'owner: x'
+  })
+  assert.strictEqual(named(r.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+})
+
+test('rx15: a failed needs_advisor call does not stop the stage or count as Opus advice', async () => {
+  const r = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'advisor:implement:1') return new Error('advisor down')
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return rcBlocked()
+    if (c.label === 'advisor:recovery implement:1') return 'owner: x'
+  })
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+  assert(r.result.tickets[0].reason.includes('advisor (owner)'), r.result.tickets[0].reason)
+  assert.strictEqual(named(r.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+})
+
 test('rx11: a failed fable recovery call falls back once to advisorModel', async () => {
-  const r = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, c => {
+  let n = 0
+  const r = await run({ advisorModel: 'opus' }, c => {
     if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? new Error('unknown model fable') : 'retry: use the other way'
-    if (c.label === 'implement:1') return rcBlocked()
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
     return undefined
   })
   const models = named(r.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model)
