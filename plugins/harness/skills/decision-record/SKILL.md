@@ -25,19 +25,15 @@ One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/
 
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
    item with the highest `confidence` (high, then medium, then low; a tie keeps the first); if any
-   merged item has `adr` true, keep the highest-confidence `adr` true item whole (an item from a
-   stage before implement wins over a later one). `needs_review` is OR-ed; `owner_confirmed` is AND-ed.
+   merged item has `adr` true, keep the highest-confidence `adr` true item whole. `needs_review`
+   is OR-ed; `owner_confirmed` is AND-ed.
 2. Write a file only if `adr: true`, `options` lists two real options, and `stage` is a stage
-   before implement: exactly `intake`, `grilling`, `intent`, `research`, `design`, `plan` or
-   `plan-review`. `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
-   A decision that meets the rest of the rule but has another stage (`qa`, `implement`, `review`,
-   a `-fix` stage, ...) or no `stage` is late: no file, the row `late decision, no file`, and
-   `needs_review` forced true (not for an `owner_confirmed` one), so it is listed under
-   `## Needs your decision`. In a manual run, `--needs-out FILE` writes that list.
+   before implement (else it is late: `references/late-decisions.md`). `adr` wins over
+   `owner_confirmed`; `needs_review` and `confidence` never make a file.
 3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
    title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
 4. Every decision is one row in the `## Decisions` PR table (`ADR file`, `owner-confirmed`,
-   `already recorded (ADR NNNN)`, `late decision, no file` or `table only`).
+   `already recorded (ADR NNNN)` or `table only`).
 
 A `dangerous` or `contradicts_confirmed` decision stops the ticket and gets no file. `## Needs your decision` in the PR body lists each `needs_review` decision with its text.
 
@@ -52,7 +48,7 @@ A `dangerous` or `contradicts_confirmed` decision stops the ticket and gets no f
 ## How an agent returns it
 
 Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `context`, `options`,
-`decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, `adr` (required; input without it exits 2, except `stage`: a missing one makes the decision late), and optionally `owner_confirmed`. Never write an ADR file.
+`decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, `adr` (required; input without it exits 2), and optionally `owner_confirmed`. Never write an ADR file.
 
 ## Other places
 
