@@ -53,6 +53,8 @@ function legacyLabel(l) {
     if (what.startsWith('intent review')) return `gintent:${gn}`
     if (what.startsWith('intent fix')) return `gintent-fix:${gn}`
     if (what === 'CI checks') return `gci:${gn}`
+    if (what === 'fix advisor') return `gfix:${gn}:adv`
+    if (what === 'code-review · advisor fix') return `greview:${gn}:adv`
     if (what === 'PR body') return `gbody:${gn}`
   }
   const head = l.split(' · ')[0]
@@ -2425,6 +2427,243 @@ test('rx13: a recovery retry that returns nothing keeps the blocked run decision
   const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : null)))
   assert.strictEqual(r.result.tickets[0].status, 'blocked')
   assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
+})
+
+// ---- #650: the advisor judges a failed ticket gate when the base is feat/* ------------------------
+const gaFinding = { id: 'f1', summary: 'leftover bug', score: 55, path: 'a.js', line: 3 }
+const gaVerdict = (verdict, reason) => ({ items: [{ id: 'R1', verdict, reason: reason || 'REASON-R1' }] })
+// A leftover finding of score 55 survives the fix rounds; the advisor answers with `answer`.
+const gaOver = (answer, extra) => c => {
+  if (extra) { const v = extra(c); if (v !== undefined) return v }
+  if (c.label === 'greview:1:adv') return ok({ findings: [], skill_invoked: true })
+  if (/^greview:1:r\d$/.test(c.label)) return ok({ findings: [gaFinding], skill_invoked: true })
+  if (c.label === 'advisor:gate:1') return answer
+}
+const gaCalls = (calls, re) => calls.filter(x => re.test(x.label || '')).length
+const gaBodies = calls => calls.filter(x => /^(adr|final-pr)$/.test(x.label || '')).map(x => x.prompt)
+const gaAccepted = calls => {
+  for (const b of gaBodies(calls)) {
+    const i = b.indexOf('## Accepted by advisor')
+    if (i < 0) continue
+    const lines = b.slice(i).split('\n').slice(1)
+    while (lines.length && lines[0].trim() === '') lines.shift()
+    const items = []
+    while (lines.length && lines[0].startsWith('- ')) items.push(lines.shift())
+    return items
+  }
+  return null
+}
+
+test('ga1: a leftover finding of 55 on a feat/* base, advisor accepts: ticket done, 1 advisor gate call, one item in the final body', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert.strictEqual(r.result.stats.byStage['advisor gate'].calls, 1, Object.keys(r.result.stats.byStage).join())
+  const items = gaAccepted(r.calls)
+  assert(items, 'no "## Accepted by advisor" in the final PR body')
+  assert.strictEqual(items.length, 1, items.join('\n'))
+  assert(items[0].includes('REASON-R1'), items[0])
+  const d = allDecisions(r).filter(x => /^Accepted by advisor: /.test(x.title))
+  assert.strictEqual(d.length, 1, JSON.stringify(allDecisions(r).map(x => x.title)))
+  assert.strictEqual(d[0].needs_review, false)
+})
+
+test('ga2: the same ticket on base main gets no advisor gate call and is blocked (feat/x control gets one call)', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(ctl.calls, /^advisor:gate:1$/), 1, 'control: feat/x must call the advisor')
+  const r = await gateFlow({ base: 'main' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert(!('advisor gate' in r.result.stats.byStage), Object.keys(r.result.stats.byStage).join())
+  assert.strictEqual(t1(r).status, 'blocked')
+})
+
+test('ga3: advisor verdict owner blocks the ticket with reason "human merge: gate review failed"', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1, 'the advisor must be asked')
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 0)
+})
+
+test('ga4: advisor verdict fix runs exactly 1 more fix call and 1 more gate review, and no second advisor gate call', async () => {
+  const base = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(r.result.stats.byStage['advisor gate'].calls, 1)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(gaCalls(r.calls, /^greview:1:adv$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1/), gaCalls(base.calls, /^gfix:1/) + 1)
+  assert.strictEqual(gaCalls(r.calls, /^greview:1/), gaCalls(base.calls, /^greview:1/) + 1)
+})
+
+test('ga5: a ticket whose CI gate failed gets no advisor gate call (a green-CI control gets one)', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(ctl.calls, /^advisor:gate:1$/), 1, 'control: green CI must call the advisor')
+  const ci = failingCi([{ name: 'x', bucket: 'fail' }])
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept'), ci))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.includes('ci'), t1(r).reason)
+  const only = await gateFlow({ base: 'feat/x' }, c => { const v = ci(c); if (v !== undefined) return v; if (c.label === 'advisor:gate:1') return gaVerdict('accept') })
+  assert.strictEqual(gaCalls(only.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(only).status, 'blocked')
+})
+
+test('ga6: a run with no accepted item has no "## Accepted by advisor" in the final body', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert(gaAccepted(ctl.calls), 'control: an accepted item must show the section')
+  const none = await gateFlow({ base: 'feat/x' }, null)
+  const owner = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  for (const r of [none, owner]) {
+    assert(gaBodies(r.calls).length > 0, 'no final body call to inspect')
+    assert.strictEqual(gaAccepted(r.calls), null)
+    assert(!gaBodies(r.calls).some(b => b.includes('Accepted by advisor')))
+  }
+})
+
+// ---- #650 extra paths: fix success, needs_review items, flagged decisions, text answers -------------
+const gavD = { title: 'SKILL-DECISION', decision: 'drafted a Verify row' }
+const gavFlow = (ovr, extra) => run({ base: 'feat/x', tickets: [T(1, 1, [], extra), T(2, 1)] }, ovr)
+const gavBody = calls => gaBodies(calls)[0] || ''
+
+test('gav1: an advisor fix that the re-review passes gives done, and the merge uses the fix tip CI ran on', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const m = named(r.calls, /^merge:/)[0]
+  assert(m && /#1 branch \S+ PR 101 head gc3\b/.test(m.prompt), m && m.prompt)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+})
+
+test('gav2: an advisor fix that the re-review does not pass blocks the ticket and records no accepted item', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => { if (c.label === 'greview:1:adv') return ok({ findings: [gaFinding], skill_invoked: true }) }))
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+  assert.strictEqual(gaAccepted(r.calls), null)
+})
+
+test('gav3: an accepted needs_review decision passes the ticket gate but keeps needs_review, so the final PR stays a human merge', async () => {
+  const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'accept', reason: 'REASON-D1' }] } }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, 'CI already ran green; it must not run twice')
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && d.needs_review === true && d.advisor_accepted === true, JSON.stringify(d))
+  const body = gavBody(r.calls)
+  assert(/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), 'the owner must still see the decision')
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('REASON-D1')))
+  assert.strictEqual(r.result.final.merged, false, JSON.stringify(r.result.final))
+})
+
+test('gav4: fix on a needs_review decision runs one advisor fix round; the ticket passes and the decision keeps needs_review', async () => {
+  const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] } }, { decisions: [gavD] })
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
+  assert(/SKILL-DECISION/.test(named(r.calls, /^gfix:1:adv$/)[0].prompt))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && d.needs_review === true && d.advisor_fixed === true, JSON.stringify(d))
+  assert.strictEqual(r.result.final.merged, false, JSON.stringify(r.result.final))
+})
+
+test('gav5: a dangerous decision from a gate fix agent gets no advisor gate call and the ticket blocks', async () => {
+  const all = { items: [{ id: 'R1', verdict: 'accept', reason: 'a' }, { id: 'D1', verdict: 'accept', reason: 'b' }] }   // accepts everything: only the guard can block
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(all, c => {
+    if (c.label === 'gfix:1:r1:1') return ok({ fix_status: 'fixed', base_sha: 'gb0', commit: 'gx1', decisions: [{ title: 'DANGER', dangerous: true, decision: 'd' }] })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review, needs_review failed'), t1(r).reason)
+})
+
+test('gav6: a plain-text advisor answer is parsed per line; ADVICE-TEXT gives owner', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver('Looked at it.\nR1: accept: TEXT-REASON'))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('TEXT-REASON')))
+  const o = await gateFlow({ base: 'feat/x' }, gaOver(undefined))
+  assert.strictEqual(gaCalls(o.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(t1(o).status, 'blocked')
+  assert.strictEqual(gaAccepted(o.calls), null)
+})
+
+// ---- #650 review fixes ----
+test('gav7: an advisor id in lowercase in a structured answer still gets its verdict', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver({ items: [{ id: 'r1', verdict: 'accept', reason: 'LOWER-REASON' }] }))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('LOWER-REASON')))
+})
+
+test('gav8: the deferred CI run on the advisor path expects the intent-fix tip, so a stale head blocks before any advisor call', async () => {
+  let n = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept'), c => {
+    if (c.label === 'gintent:1') return n++ === 0 ? gaps : { verdict: 'match', findings: [] }
+    if (c.label === 'gintent-fix:1') return ok({ fix_status: 'fixed', base_sha: 'ib0', commit: 'intentfixtip' })   // CI runs on the last review-fix commit, not on this tip
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'blocked')
+})
+
+test('gav9: intent review runs again after an advisor fix, and a drift it finds blocks the ticket', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(gaCalls(ctl.calls, /^gintent:1$/), 2, labelsOf(ctl.calls).join())
+  let n = 0
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gintent:1') return n++ === 0 ? { verdict: 'match', findings: [] } : { verdict: 'drift found', findings: [{ kind: 'excess', clause: 'c', detail: 'd' }] }
+  }))
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.includes('intent'), t1(r).reason)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+})
+
+test('gav10: an intent fix after the advisor fix is code-reviewed, and CI expects its tip', async () => {
+  let n = 0, ci = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gci:1' && ++ci === 2) return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'intentfixtip' }
+    if (c.label === 'gintent:1') { n++; return n === 2 ? gaps : { verdict: 'match', findings: [] } }
+    if (c.label === 'gintent-fix:1') return ok({ fix_status: 'fixed', base_sha: 'ib1', commit: 'intentfixtip' })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^greview:1:rif$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const m = named(r.calls, /^merge:/)[0]
+  assert(m && /PR 101 head intentfixtip\b/.test(m.prompt), m && m.prompt)
+})
+
+test('gav11: an advisor fix with no base_sha is not reviewed, so the gate fails, and intent still runs again', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gfix:1:adv') return ok({ fix_status: 'fixed', commit: 'gcx' })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^gintent:1$/), 2, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
+})
+
+test('gav12: a fixed needs_review decision is not set aside when the gate still fails after the fix', async () => {
+  const r = await gavFlow(c => {
+    if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] }
+    if (c.label === 'greview:1:adv') return ok({ findings: [gaFinding], skill_invoked: true })
+  }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && !d.advisor_fixed && d.needs_review === true, JSON.stringify(d))
+  assert(t1(r).reason.includes('needs_review'), t1(r).reason)
+})
+
+test('gav13: a fix verdict whose fix lands nothing runs no second CI check', async () => {
+  const r = await gavFlow(c => {
+    if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] }
+    if (c.label === 'gfix:1:adv') return ok({ fix_status: 'skipped', reason: 'nothing to change' })
+  }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, labelsOf(r.calls).join())
+})
+
+test('gav14: the advisor gate prompt points at readable files and asks for no command', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  const p = named(r.calls, /^advisor:gate:1$/)[0].prompt
+  assert(!p.includes('gh pr diff'), 'the advisor has no shell')
+  assert(p.includes('You cannot run commands') && /Read the files it names under \S+/.test(p), p.slice(-400))
+  assert(p.includes('a decision the code can make unnecessary'), 'fix must be allowed on decisions')
 })
 
 ;(async () => {

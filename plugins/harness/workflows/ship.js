@@ -146,6 +146,16 @@ const RECOVERY_SCHEMA = { type: 'object',
     reason: { type: 'string', description: 'One sentence: why this verdict.' },
     advice: { type: 'string', description: 'For retry: what the stage must do differently. It goes into the retry prompt.' } },
   required: ['verdict', 'reason'] }
+// The advisor's answer on a failed ticket gate: one verdict per item id.
+const ADVISOR_GATE_SCHEMA = { type: 'object',
+  properties: {
+    items: { type: 'array', items: { type: 'object',
+      properties: {
+        id: { type: 'string', description: 'the item id from the prompt, for example R1 or D1' },
+        verdict: { type: 'string', enum: ['accept', 'fix', 'owner'], description: 'accept: the item may stay as it is. fix: one more fix round can fix it (a review finding, or a decision the code can make unnecessary). owner: only the owner can decide it.' },
+        reason: { type: 'string', description: 'One sentence: why this verdict.' } },
+      required: ['id', 'verdict', 'reason'] } } },
+  required: ['items'] }
 // The spec writer lists each file the Write tool refused, so the main session can write it from the run result.
 const SPECS_SCHEMA = stageSchema({ refused: { type: 'array', items: STR, description: 'absolute path of each file the Write tool refused to write' } })
 const MERGE_SCHEMA = stageSchema({
@@ -390,6 +400,7 @@ function takeDecisions(ticket, stage, res) {
       adr: d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX),
       owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
+      ...(flagged ? { flagged: true } : {}),   // the ticket gate never lets the advisor judge a flagged decision
       decided_by: `claude (ship workflow: ${stage})`,
     })
   }
@@ -480,6 +491,42 @@ async function askRecovery(t, stage, res, model) {
   const m = first.match(/^\s*[*_`]*\s*(retry|owner)[*_`]*(?:\s*:|\s*[-\u2013\u2014]\s)\s*(.*)$/i)
   if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
+}
+
+// The advisor's verdict on each item of a failed ticket gate. Only an explicit accept or fix counts; a failed call, an
+// answer that is not an object or a clear text list, a missing id or an unknown verdict gives owner for that item.
+const GATE_VERDICTS = ['accept', 'fix', 'owner']
+async function askGate(t, fin, items, wt) {
+  const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title}, ticket PR ${fin.pr} in ${repo}, run base ${base}.\n` +
+    `${notCwd()}\nThe merge gate of this ticket failed only on the items below. Give one verdict per item id:\n` +
+    `- accept: the item may stay as it is and the ticket PR may merge into ${integBranch}. The final PR body lists every accepted item; an accepted decision keeps the final PR a human merge, an accepted review finding does not by itself.\n` +
+    `- fix: one more fix round can fix it: a review finding, or a decision the code can make unnecessary.\n` +
+    `- owner: only the owner can decide it.\n\n` +
+    `Items:\n${items.map(i => `${i.id}: ${i.text}`).join('\n')}\n\n` +
+    `Return items: one entry per id with verdict and a one-sentence reason. ` +
+    `If your answer is plain text, write exactly one line per id in the form \`R1: accept: <reason>\` (verdict accept, fix or owner). ` +
+    `You cannot run commands. ${wt ? `To check an item against the code, Read the files it names under ${wt} (the ticket branch as the implement stage left it; later fix commits may be missing there). ` : ''}Read only what you need. Do not edit anything.`
+  let ans = null
+  try {
+    ans = await call(prompt, { label: lbl(`#${t.n} advisor gate`, t.title), phase: 'Gate', schema: ADVISOR_GATE_SCHEMA, model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+      `${pluginDir}/agents/advisor.md`)
+  } catch (e) { log(`#${t.n} advisor gate failed (${e && e.message}); every item goes to the owner`) }
+  const got = new Map()
+  const put = (id, verdict, reason) => {
+    const v = String(verdict || '').toLowerCase()
+    if (typeof id === 'string' && !got.has(id.trim().toUpperCase()) && GATE_VERDICTS.includes(v)) got.set(id.trim().toUpperCase(), { verdict: v, reason: capSummary(reason) || '(no reason given)' })
+  }
+  if (ans && typeof ans === 'object' && Array.isArray(ans.items)) {
+    for (const x of ans.items) if (x && typeof x === 'object') put(x.id, x.verdict, x.reason)
+  } else if (typeof ans === 'string') {
+    for (const line of ans.split('\n')) {
+      const m = line.match(/^\s*[-*]?\s*[*_`]*\s*([RD]\d+)\s*[*_`]*\s*:\s*[*_`]*(accept|fix|owner)[*_`]*\s*:\s*(.*)$/i)
+      if (m) put(m[1].toUpperCase(), m[2], m[3])
+    }
+  }
+  const out = new Map()
+  for (const i of items) out.set(i.id, got.get(i.id) || { verdict: 'owner', reason: ans ? '(no verdict for this item)' : '(no advisor answer)' })
+  return out
 }
 
 // Added to the retry prompt of a blocked stage: the first run may have left work behind.
@@ -636,6 +683,7 @@ async function stageTestGuard(t, impl, qa) {
 }
 
 const securityNotes = {}   // ticket number -> the gate result, for the PR body
+const advisorAccepted = []   // { n, item, reason } per gate item the advisor accepted, for the final PR body
 function isRisky(t, intent, impl) {
   const text = [t.title, t.confirmed, intent && intent.goal, ...((intent && intent.acceptance) || [])].filter(Boolean).join('\n')
   const paths = ((impl && impl.files) || []).filter(f => RISKY_PATH.test(f))
@@ -975,9 +1023,10 @@ function judgeReview(rv) {
   if (!rv || rv.status !== 'ran') return { ok: false, text: `not run${rv && rv.reason ? ` (${rv.reason})` : ''}` }
   const notFixed = (rv.notFixed || []).length, left = (rv.leftover || []).filter(f => f.score >= FIX_THRESHOLD).length
   if (rv.reReviewNotRun) return { ok: false, text: `re-review not run (${rv.reReviewNotRun})` }
-  if (rv.unreviewedFix) return { ok: false, text: 'the intent fix commits were not reviewed' }
+  if (rv.unreviewedFix) return { ok: false, text: 'fix commits were not reviewed' }
   if (notFixed || left) return { ok: false, text: `${notFixed} not fixed, ${left} left at score ${FIX_THRESHOLD} or more` }
-  return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left` }
+  const acc = (rv.accepted || []).length
+  return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left${acc ? `, ${acc} accepted by advisor` : ''}` }
 }
 
 function stageCi(t, fin, ctx, label) {
@@ -1012,48 +1061,175 @@ async function humanMergeBlock(n, r) {
     mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, open: { ok: true, text: 'none' } }))
 }
 
+// Reviews the commits a fix landed after the main review. With no range the fix is unreviewed, and the gate fails on it.
+async function reviewFixRange(ctx, review, what, range) {
+  if (!range) { review.unreviewedFix = true; return }
+  const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · ${what}`, review.level, range,
+    `This is a review of the ${what} commits only, range ${range}. Review that diff and nothing else.\n`, ctx)
+  if (again.notRun) review.reReviewNotRun = again.notRun
+  else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
+}
+// Intent review of the ticket. Code an intent fix lands is reviewed; a second intent fix is never reviewed, so it fails the
+// gate. Returns the intent result and the tip the intent fix moved the branch to ('' when it made none).
+async function intentWithReview(t, ctx, review) {
+  let intent = await stageIntentReview([{ n: t.n }], ctx)
+  let tip = ''
+  if (intent.fixRound) {
+    tip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
+    await reviewFixRange(ctx, review, 'intent fix', intent.fixRange)
+    intent = await stageIntentReview([{ n: t.n }], ctx)
+    if (intent.fixRound) review.unreviewedFix = true
+  }
+  return { intent, tip }
+}
+
 async function stageGate(t, fin, impl, branch) {
   const fail = (gates, extra) => ({ pass: false, failed: gates, ...extra })
   if (!(fin && fin.pr > 0)) return fail([{ gate: 'pr', detail: 'no PR number was returned' }])
   const tb = impl.branch || branch
   const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
     wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
-  const failed = []
   const review = await reviewLoop(ctx, ctx.target)
-  let intent = await stageIntentReview([{ n: t.n }], ctx)
-  let intentFixTip = ''
-  if (intent.fixRound) {
-    intentFixTip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
-    // Code the intent fix landed has not been reviewed. Review that range; a second fix round is never reviewed, so it fails the gate.
-    if (intent.fixRange) {
-      const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
-        `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, ctx)
-      if (again.notRun) review.reReviewNotRun = again.notRun
-      else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
-    } else review.unreviewedFix = true
-    intent = await stageIntentReview([{ n: t.n }], ctx)
-    if (intent.fixRound) review.unreviewedFix = true
-  }
-  const reviewG = judgeReview(review)
-  const intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+  let { intent, tip: intentFixTip } = await intentWithReview(t, ctx, review)
+  let reviewG = judgeReview(review)
+  let intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+  let failed = []
   if (!reviewG.ok) failed.push({ gate: 'review', detail: reviewG.text })
   if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
-  let ciG, head = ''
-  if (failed.length) ciG = { ok: false, text: 'not checked (an earlier gate failed)' }
-  else {
+  const CI_SKIPPED = { ok: false, text: 'not checked (an earlier gate failed)' }
+  let ciG = CI_SKIPPED, head = ''
+  // The fallback head CI must have run on when it reports no branch tip: the intent-fix tip, else the last review fix.
+  const expectTip = () => intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || ''
+  const runCi = async (expect) => {
     const res = await stageCi(t, fin, ctx, `${ctx.labelPrefix}CI checks`)
-    const lastFix = intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || ''
-    ciG = judgeCi(res, lastFix)
+    ciG = judgeCi(res, expect)
     head = ciG.ok ? res.headRefOid.trim() : ''
+  }
+  if (!failed.length) {
+    await runCi(expectTip())
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
-  const nr = decisions.filter(d => d.ticket === t.n && d.needs_review)
-  const nrG = { ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' }
+  // An advisor-accepted or advisor-fixed decision keeps needs_review (the final PR stays a human merge); only this gate sets it aside.
+  const openNr = () => decisions.filter(d => d.ticket === t.n && d.needs_review && !d.advisor_accepted && !d.advisor_fixed)
+  const nrOf = nr => ({ ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' })
+  let nrG = nrOf(openNr())
   if (!nrG.ok) failed.push({ gate: 'needs_review', detail: nrG.text })
+
+  // Gate: advisor judges a failed ticket gate.
+  // Verifies: the run's base matches feat/*, and every failed gate reason is review (a not-fixed finding, or a leftover
+  //   finding scoring FIX_THRESHOLD or more, from a review that ran) or needs_review; CI is green, intent is match, the
+  //   security gate did not fail (runTicket already stops on a blocking security finding; this check is defensive) and no
+  //   decision of the ticket is dangerous or contradicts_confirmed. One advisor call and at most one fix round per ticket.
+  //   Code an advisor fix lands is reviewed, and intent review runs again on it.
+  // Does not verify: that an accepted item is harmless. An accepted or fixed needs_review decision keeps needs_review, so
+  //   the final PR stays a human merge; the owner reads '## Accepted by advisor' in its body before the merge.
+  let advised = null
+  const eligible = /^feat\//.test(base) && failed.length > 0 && failed.every(f => f.gate === 'review' || f.gate === 'needs_review') &&
+    review.status === 'ran' && !review.reReviewNotRun && !review.unreviewedFix && intent.verdict === 'match' &&
+    !(securityNotes[t.n] && securityNotes[t.n].blocking.length) &&
+    !decisions.some(d => d.ticket === t.n && (d.flagged || d.dangerous || d.contradicts_confirmed))
+  if (eligible && ciG === CI_SKIPPED) {
+    // CI is skipped once review failed. It must be green before the advisor is asked, so read it now.
+    await runCi(expectTip())
+    if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
+  }
+  if (eligible && ciG.ok) {
+    const findingText = f => `${f.path ? `in ${f.path}${f.line ? `:${f.line}` : ''}: ` : ''}${f.summary}`
+    const items = [
+      ...(review.notFixed || []).map(f => ({ kind: 'R', f, summary: f.summary, text: `review finding the fix agent did not fix: ${findingText(f)} (fix agent: ${f.reason || 'no reason'})` })),
+      ...(review.leftover || []).filter(f => f.score >= FIX_THRESHOLD).map(f => ({ kind: 'R', f, summary: f.summary, text: `review finding left after the fix rounds (score ${f.score}) ${findingText(f)}` })),
+    ].map((x, i) => ({ ...x, id: `R${i + 1}` }))
+    items.push(...openNr().map((d, i) => ({ kind: 'D', d, id: `D${i + 1}`, summary: d.title, text: `needs_review decision: ${d.title}. Decision: ${d.decision}. Why: ${d.why}` })))
+    const verdicts = await askGate(t, fin, items, impl.worktree)
+    const v = i => verdicts.get(i.id)
+    const said = items.map(i => `${i.id} ${v(i).verdict}: ${v(i).reason}`).join('; ')
+    advised = { verdicts: Object.fromEntries(items.map(i => [i.id, v(i)])), accepted: [] }
+    const toOwner = items.filter(i => v(i).verdict === 'owner')
+    if (toOwner.length) {
+      log(`#${t.n} advisor gate: ${toOwner.map(i => i.id).join(', ')} go to the owner`)
+      for (const f of failed) f.detail += `; advisor: ${said}`
+    } else {
+      const fixes = items.filter(i => v(i).verdict === 'fix')
+      const accepts = items.filter(i => v(i).verdict === 'accept')
+      let fixTip = ''
+      let moved = false   // an advisor fix landed commits, so CI must run again at the new tip
+      const fixedD = []
+      if (fixes.length) {
+        // One fix round for the fix items, one re-review of its commits, then the gate is judged again with no second advisor call.
+        const many = fixes.length > 1
+        const line = i => i.kind === 'D' ? `Decision ${i.id} (needs_review, resolve it in the code so it no longer needs the owner) ${i.text}`
+          : `Finding ${i.id}${i.f.score != null ? ` (score ${i.f.score})` : ''} ${findingText(i.f)}`
+        const res = await fixAgent(`${ctx.labelPrefix}fix advisor`, many ? `Fix each of these ${fixes.length} items, in this order:\n${fixes.map(line).join('\n')}` : line(fixes[0]),
+          '', 'Gate', 'advisor', ctx, many)
+        takeDecisions(t.n, 'advisor-fix', res)
+        const per = new Map(((res && Array.isArray(res.findings)) ? res.findings : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]))
+        const fixedIds = fixes.filter(i => {
+          if (!many) return res && res.fix_status === 'fixed' && res.commit
+          const r = per.get(i.id); return r && r.fix_status === 'fixed' && r.commit
+        })
+        if (fixedIds.length) {
+          moved = true
+          // The fix agent's last commit is the new tip. Without a range its commits are unreviewed, and the gate fails on them.
+          const lastCommit = (res && res.commit) || ''
+          for (const i of fixedIds) {
+            if (i.kind === 'D') { fixedD.push(i.d); continue }   // marked advisor_fixed only when the gate then passes
+            review.notFixed = review.notFixed.filter(f => f !== i.f)
+            review.leftover = review.leftover.filter(f => f !== i.f)
+            review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || lastCommit })
+          }
+          // After the fixed items leave the lists: a finding the re-review reports again is a new leftover.
+          await reviewFixRange(ctx, review, 'advisor fix', res.base_sha && res.commit ? `${res.base_sha}..${res.commit}` : '')
+          // The advisor fix changed the diff: intent must still match.
+          const again = await intentWithReview(t, ctx, review)
+          intent = again.intent
+          fixTip = again.tip || lastCommit
+          intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+        }
+      }
+      // Judge the gate with the accepted items set aside. They are recorded only when the whole gate then passes.
+      const acceptedR = new Set(accepts.filter(i => i.kind === 'R').map(i => i.f))
+      const acceptedD = accepts.filter(i => i.kind === 'D').map(i => i.d)
+      const stripped = { ...review, notFixed: review.notFixed.filter(f => !acceptedR.has(f)), leftover: review.leftover.filter(f => !acceptedR.has(f)),
+        accepted: [...(review.accepted || []), ...acceptedR] }
+      const rG = judgeReview(stripped)
+      if (moved) {
+        if (rG.ok && intentG.ok) await runCi(fixTip)   // the fix moved the branch tip: CI must be green there
+        else { ciG = { ok: false, text: `not checked (the ${rG.ok ? 'intent' : 'review'} after the advisor fix failed)` }; head = '' }
+      }
+      const nrLeft = openNr().filter(d => !acceptedD.includes(d) && !fixedD.includes(d))
+      if (rG.ok && intentG.ok && ciG.ok && nrLeft.length === 0) {
+        Object.assign(review, stripped)
+        for (const d of fixedD) d.advisor_fixed = true
+        for (const i of accepts) {
+          if (i.kind === 'D') i.d.advisor_accepted = true
+          const reason = v(i).reason
+          addDecision(t.n, 'advisor gate', {
+            title: `Accepted by advisor: #${t.n} ${capSummary(i.summary)}`,
+            context: `The merge gate for #${t.n} failed on this item (${i.text}). The run base ${base} matches feat/*, so the advisor judged it.`,
+            decision: 'accept', why: reason,
+            consequences: i.kind === 'D' ? 'The ticket PR may merge into the integration branch; the final PR body lists it under Accepted by advisor.'
+              : 'The ticket PR may merge into the integration branch with this finding; the final PR body lists it under Accepted by advisor.',
+            how_to_reverse: `Fix the item on ${integBranch} before the final merge, or revert the ticket's merge commit.`,
+            needs_review: false, adr: false,
+          })
+          advisorAccepted.push({ n: t.n, item: capSummary(i.summary), reason })
+          advised.accepted.push(i.id)
+        }
+        log(`#${t.n} advisor gate: passed (${advised.accepted.length} accepted${fixes.length ? `, ${fixes.length} fixed` : ''})`)
+      } else log(`#${t.n} advisor gate: the gate still fails after the advisor ${fixes.length ? 'fix round' : 'verdicts'}`)
+      reviewG = judgeReview(review)
+      nrG = nrOf(openNr())
+      failed = []
+      if (!reviewG.ok) failed.push({ gate: 'review', detail: `${reviewG.text}; advisor: ${said}` })
+      if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
+      if (reviewG.ok && !ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
+      if (!nrG.ok) failed.push({ gate: 'needs_review', detail: `${nrG.text}; advisor: ${said}` })
+    }
+  }
   const pass = failed.length === 0
   const block = mergeBlock({ mode: pass ? 'auto' : 'human', why: pass ? '' : `gate ${failed.map(f => f.gate).join(', ')} failed`, ci: ciG, review: reviewG, intent: intentG, open: nrG })
   await updateMergeBlock(t, fin, ctx, block)
-  return { pass, failed, ci: ciG, review: reviewG, intent: intentG, head }
+  return { pass, failed, ci: ciG, review: reviewG, intent: intentG, head, ...(advised ? { advised } : {}) }
 }
 
 async function runTicket(t) {
@@ -1729,8 +1905,14 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
     for (const d of bounded) L.push(`- ${d.title}: ${d.decision}`)
     L.push('')
   }
-  L.push('## Summary', '')
   const ref = n => (LOCAL ? `Ticket ${n}` : `#${n}`)   // in local mode the ticket is not a real issue
+  if (advisorAccepted.length) {
+    // Items the advisor accepted at a ticket gate (feat/* base only): the owner reads them before the merge into main.
+    L.push('## Accepted by advisor', '')
+    for (const a of advisorAccepted) L.push(`- ${ref(a.n)} ${a.item}: ${a.reason}`)
+    L.push('')
+  }
+  L.push('## Summary', '')
   for (const r of results) L.push(`- ${ref(r.n)} ${r.status}${r.summary ? `: ${capSummary(r.summary)}` : ''}${r.reason ? ` (${r.reason})` : ''}`)
   L.push('')
   if (LOCAL) { for (const r of results) L.push(`Ticket ${r.n}`) }
