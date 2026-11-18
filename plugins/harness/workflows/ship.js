@@ -45,7 +45,9 @@ const RISK_TEXT = /\b(log ?in|log ?out|sign[- ]?in|sign[- ]?up|password|passwd|a
 const QA_SUBJECT = n => `Add acceptance tests for #${n}`   // the only commit subject allowed to touch the acceptance tests
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
 // The one wording of the ADR gate (adr flag), used by the stage rules, the decision schema and the decision-record skill.
-const ADR_WHEN = "the decision (a) changes harness behavior, a data or config contract, or how users work, and (b) had at least two viable options, listed in options. A scope note (Boundary), a 'UAT not run' event, and a decision flagged dangerous or contradicts_confirmed are never adr: they get a table row and needs_review, no ADR file."
+const ADR_WHEN = "the decision (a) changes harness behavior, a data or config contract, or how users work, and (b) had at least two viable options, listed in options. A scope note (Boundary), a 'UAT not run' event, and a decision flagged dangerous or contradicts_confirmed are never adr: they get a table row and needs_review, no ADR file. Only a decision from a stage before implement (intake, grilling, intent, research, design, plan, plan-review) gets a file."
+// The stages before implement (exact labels). Only their adr decisions get a file; write_adrs.py holds the same list.
+const EARLY_STAGES = ['intake', 'grilling', 'intent', 'research', 'design', 'plan', 'plan-review']
 // The wording of the owner-ask flag (needs_review): the owner must look at it before the merge. It makes no file.
 const NEEDS_REVIEW_WHEN = 'affects another ticket, a public contract or interface, stored data, security or cost, or is a trade-off that is costly to reverse, or contradicts the ticket text or an owner-confirmed answer'
 const CO_AUTHOR = 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'
@@ -69,6 +71,7 @@ const rulesCore = repoDir => `- No human is in the loop. Never ask anyone anythi
 const rulesCode = repoDir => `- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
 - Run only the tests related to your change. The full suite is the last stage's job.`
 const rulesDecisions = () => `- adr: true ONLY when ${ADR_WHEN} Only adr makes an ADR file, so be strict.
+- A choice made during or after implement that fits the adr rule is still returned with adr: true; the script lists it for the owner and writes no file.
 - needs_review: true ONLY when the decision ${NEEDS_REVIEW_WHEN}. needs_review asks the owner to look at the decision before the merge; it makes no ADR file, so be strict. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false, even when you are unsure (set confidence low then). It is still recorded as a decision.
 - owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has adr: true (adr wins); the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
@@ -391,14 +394,23 @@ function takeDecisions(ticket, stage, res) {
     if (!d || typeof d !== 'object') continue
     const flagged = !!(d.contradicts_confirmed || d.dangerous)
     const title = str(d.title)   // only the agent labels a decision Boundary; a skip for another reason keeps its own title
+    // A late call records its own label: an agent there cannot claim an early stage and get a file.
+    const recStage = EARLY_STAGES.includes(stage) ? (d.stage || stage) : stage
+    const options = Array.isArray(d.options) && d.options.length ? d.options : ['n/a']
+    const adr = d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX)
+    const ownerConfirmed = !flagged && d.owner_confirmed === true
+    // A late adr decision gets no file (write_adrs.py), so the owner must see it, unless the owner already confirmed it.
+    const late = adr && !ownerConfirmed && !EARLY_STAGES.includes(String(recStage).trim()) &&
+      options.filter(o => !['', 'n/a'].includes(String(o).trim().toLowerCase())).length >= 2 &&
+      !/^uat not run/i.test(title.trim())
     decisions.push({
-      ticket, stage: d.stage || stage, title, context: str(d.context),
-      options: Array.isArray(d.options) && d.options.length ? d.options : ['n/a'],
+      ticket, stage: recStage, title, context: str(d.context),
+      options,
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
-      needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
-      adr: d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX),
-      owner_confirmed: !flagged && d.owner_confirmed === true,
+      needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || late,
+      adr,
+      owner_confirmed: ownerConfirmed,
       boundary: title.startsWith(BOUNDARY_PREFIX),
       ...(flagged ? { flagged: true } : {}),   // the ticket gate never lets the advisor judge a flagged decision
       decided_by: `claude (ship workflow: ${stage})`,
@@ -1881,7 +1893,7 @@ async function stageAdr(finalPr, bodyTemplate) {
   const prompt = `${w.setup}${RULES_LITE}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
-    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true and two or more options, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
+    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true, two or more options and a stage before implement (${EARLY_STAGES.join(', ')}); a later one stays a table row, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
     `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json\n` +
     `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
