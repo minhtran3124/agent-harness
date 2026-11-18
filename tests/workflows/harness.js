@@ -2186,7 +2186,7 @@ test('pf6: finish setup is aimed at the fallback worktree, never at impl.worktre
   assert(!f.prompt.includes('in /wt/1, run these setup'), 'setup aimed at impl.worktree')
   const m = f.prompt.match(/work in (\S+) \(git fetch/)
   assert(m, 'no fallback dir')
-  assert(f.prompt.includes(`only if you just created ${m[1]} (not when you reused it): in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
+  assert(f.prompt.includes(`Then, in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
 })
 
 test('pf7: a decision passed on a ticket cannot clear needs_review, ask for an ADR file or change its ticket', async () => {

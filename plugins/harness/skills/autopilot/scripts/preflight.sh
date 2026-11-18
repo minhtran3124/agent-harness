@@ -33,11 +33,11 @@ for tool in git gh jq python3; do
 done
 
 if command -v gh >/dev/null 2>&1; then
-  gh auth status >/dev/null 2>&1 || miss 'gh auth'
+  gh auth status --hostname github.com >/dev/null 2>&1 || miss 'gh auth'
 fi
 
 if command -v git >/dev/null 2>&1; then
-  git -C "$dir" check-ignore -q specs/x 2>/dev/null
+  git -C "$dir" check-ignore -q --no-index specs/x 2>/dev/null
   case $? in
     0) ;;
     1) miss 'specs/ ignore' ;;

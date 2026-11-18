@@ -266,11 +266,13 @@ const RULES = `${rulesCommon(repoDir)}\n- Harness files (skills/, agents/, scrip
 const RULES_LITE = `Core rules (all of them apply):\n${rulesCore(repoDir)}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
-// Commands a new worktree runs once, right after git worktree add creates it (profile key worktreeSetup).
-// Empty or missing: no setup text, so every prompt stays as it was.
+// Commands a stage runs once in its worktree, right after git worktree add (profile key worktreeSetup). A retry that
+// reuses the directory runs them again, because the earlier attempt may have stopped halfway through them.
+// Empty or missing: no setup text, so every prompt stays as it was. The failure text is inline: a read-only
+// stage does not get the dependency rule of rulesCore.
 const SETUP = args.worktreeSetup || []
 const setupBlock = dir => (SETUP.length
-  ? `Then, only if you just created ${dir} (not when you reused it): in ${dir}, run these setup commands once, in order, before any other work:\n${SETUP.join('\n')}\nIf one of them fails, follow the dependency rule.\n\n`
+  ? `Then, in ${dir}, run these setup commands once, in order, before any other work (also when you reused ${dir}):\n${SETUP.join('\n')}\nIf one fails because a system tool or system package is missing, stop and return blocked with its name; never run sudo.\n\n`
   : '')
 const tickets = args.tickets
 const single = tickets.length === 1
