@@ -1083,7 +1083,7 @@ async function stageGate(t, fin, impl, branch) {
     if (intent.fixRound) review.unreviewedFix = true
   }
   let reviewG = judgeReview(review)
-  const intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+  let intentG = { ok: intent.verdict === 'match', text: intent.verdict }
   let failed = []
   if (!reviewG.ok) failed.push({ gate: 'review', detail: reviewG.text })
   if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
@@ -1108,8 +1108,7 @@ async function stageGate(t, fin, impl, branch) {
   //   finding scoring FIX_THRESHOLD or more, from a review that ran) or needs_review; CI is green, intent is match, the
   //   security gate did not fail (runTicket already stops on a blocking security finding; this check is defensive) and no
   //   decision of the ticket is dangerous or contradicts_confirmed. One advisor call and at most one fix round per ticket.
-  // Does not verify: that an accepted finding is harmless, or that intent still matches after the advisor fix (intent
-  //   review does not run again). An accepted needs_review decision keeps its flag, so the final PR stays a human merge;
+  // Does not verify: that an accepted finding is harmless. Intent review runs again after an advisor fix. An accepted needs_review decision keeps its flag, so the final PR stays a human merge;
   //   an accepted review finding does not, so the final PR into a base that is not protected may auto-merge when its own
   //   gates pass. The owner reads '## Accepted by advisor' in the final PR body before the merge into main.
   let advised = null
@@ -1165,6 +1164,10 @@ async function stageGate(t, fin, impl, branch) {
           if (again.notRun) review.reReviewNotRun = again.notRun
           else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
           fixTip = res.commit
+          // The advisor fix changed the diff: intent must still match.
+          intent = await stageIntentReview([{ n: t.n }], ctx)
+          intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+          if (intent.fixRound) review.unreviewedFix = true
         }
       }
       // Judge the gate with the accepted items set aside. They are recorded only when the whole gate then passes.
@@ -1174,11 +1177,11 @@ async function stageGate(t, fin, impl, branch) {
         accepted: [...(review.accepted || []), ...acceptedR] }
       const rG = judgeReview(stripped)
       if (fixes.length) {
-        if (rG.ok) await runCi(fixTip)   // the fix moved the branch tip: CI must be green there
-        else { ciG = { ok: false, text: 'not checked (the review after the advisor fix failed)' }; head = '' }
+        if (rG.ok && intentG.ok) await runCi(fixTip)   // the fix moved the branch tip: CI must be green there
+        else { ciG = { ok: false, text: `not checked (the ${rG.ok ? 'intent' : 'review'} after the advisor fix failed)` }; head = '' }
       }
       const nrLeft = openNr().filter(d => !acceptedD.includes(d))
-      if (rG.ok && ciG.ok && nrLeft.length === 0) {
+      if (rG.ok && intentG.ok && ciG.ok && nrLeft.length === 0) {
         Object.assign(review, stripped)
         for (const i of accepts) {
           if (i.kind === 'D') i.d.advisor_accepted = true
@@ -1201,6 +1204,7 @@ async function stageGate(t, fin, impl, branch) {
       nrG = nrOf(openNr())
       failed = []
       if (!reviewG.ok) failed.push({ gate: 'review', detail: `${reviewG.text}; advisor: ${said}` })
+      if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
       if (reviewG.ok && !ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
       if (!nrG.ok) failed.push({ gate: 'needs_review', detail: `${nrG.text}; advisor: ${said}` })
     }

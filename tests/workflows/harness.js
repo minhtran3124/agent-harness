@@ -2602,6 +2602,18 @@ test('gav8: the deferred CI run on the advisor path expects the intent-fix tip, 
   assert.strictEqual(t1(r).status, 'blocked')
 })
 
+test('gav9: intent review runs again after an advisor fix, and a drift it finds blocks the ticket', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(gaCalls(ctl.calls, /^gintent:1$/), 2, labelsOf(ctl.calls).join())
+  let n = 0
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gintent:1') return n++ === 0 ? { verdict: 'match', findings: [] } : { verdict: 'drift found', findings: [{ kind: 'excess', clause: 'c', detail: 'd' }] }
+  }))
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.includes('intent'), t1(r).reason)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
