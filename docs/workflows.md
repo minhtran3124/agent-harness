@@ -85,6 +85,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
+   Every review call (run review, per-ticket gate review, fix-range re-review) reads `REVIEW.md` from the diff base with `git show <base>:REVIEW.md`, never from the worktree, so the PR cannot edit its own rules. Without a `REVIEW.md` on the base the review runs as before.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
 6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
    FE+BE tickets (local mode skips it with a log line). A `docs` ticket (docs, config, CLI, scripts, plugin
