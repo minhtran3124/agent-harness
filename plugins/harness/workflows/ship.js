@@ -513,6 +513,7 @@ function stageQaRepair(t, qa, problems, where) {
     `Stage: qa repair. Act as the QA writer (${pluginDir}/agents/qa-writer.md) in repair mode and stay blind: read no application source and no plan.\n` +
     `The branch is already checked out in ${where.dir}. Fix only the flaws named below in the tests under ${qa.dir}/. Commit with the exact subject ${QA_SUBJECT(t.n)}. Never push, never force.\n` +
     `Flaws:\n${problems}\n` +
+    (where.remove ? `After the commit, remove this worktree so the implement stage can check out the branch: run \`git -C ${repoDir} worktree remove --force ${where.dir}\` from outside it.\n` : '') +
     `Return ready, dir, files and tests (name and covers).${advice}`, where.dir)
   return runStage(t, 'qa repair', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
 }
@@ -1003,7 +1004,7 @@ async function runTicket(t) {
     if (qa) {
       let c = await check(branch)
       if (problemsOf(c).length) {
-        await repair(problemsOf(c).join('\n'), newWt(`qa-repair-${t.n}`, branch, null, true))
+        await repair(problemsOf(c).join('\n'), { ...newWt(`qa-repair-${t.n}`, branch, null, true), remove: true })
         c = await check(branch)
         if (problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', problemsOf(c))
       }

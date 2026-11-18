@@ -2070,6 +2070,14 @@ test('qt8: the second qa check runs in a different worktree than the first', asy
   assert(dirOf(cs[0]) && dirOf(cs[1]) && dirOf(cs[0]) !== dirOf(cs[1]), `${dirOf(cs[0])} vs ${dirOf(cs[1])}`)
 })
 
+test('qt9: the pre-implement qa repair removes its worktree so implement can use the branch', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['x'] } : undefined))
+  const rp = named(calls, /^qa repair:1/)[0]
+  assert(rp && /worktree remove/.test(rp.prompt), 'the repair prompt must tell the agent to remove its worktree')
+})
+
 test('qt3: a Flawed acceptance test decision from implement gives one qa repair and one more implement call', async () => {
   let n = 0
   const { calls } = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label)
