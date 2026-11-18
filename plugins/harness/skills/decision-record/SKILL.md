@@ -27,8 +27,9 @@ One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/
    item with the highest `confidence` (high, then medium, then low; a tie keeps the first); if any
    merged item has `adr` true, keep the highest-confidence `adr` true item whole. `needs_review`
    is OR-ed; `owner_confirmed` is AND-ed.
-2. Write a file only if `adr: true` and `options` lists two real options.
-   `adr` wins over `owner_confirmed`; `needs_review` and `confidence` never make a file.
+2. Write a file only if `adr: true`, `options` lists two real options, and `stage` is a stage
+   before implement (else it is late: `references/late-decisions.md`). `adr` wins over
+   `owner_confirmed`; `needs_review` and `confidence` never make a file.
 3. Always born `accepted`. An ADR in the folder for the same numeric ticket with the same
    title slug or context makes the decision `already recorded (ADR NNNN)`: no second file.
 4. Every decision is one row in the `## Decisions` PR table (`ADR file`, `owner-confirmed`,
