@@ -2584,6 +2584,13 @@ test('gav6: a plain-text advisor answer is parsed per line; ADVICE-TEXT gives ow
   assert.strictEqual(gaAccepted(o.calls), null)
 })
 
+// ---- #650 review fixes ----
+test('gav7: an advisor id in lowercase in a structured answer still gets its verdict', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver({ items: [{ id: 'r1', verdict: 'accept', reason: 'LOWER-REASON' }] }))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('LOWER-REASON')))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {

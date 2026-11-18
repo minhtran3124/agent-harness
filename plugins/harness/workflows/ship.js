@@ -514,7 +514,7 @@ async function askGate(t, fin, items) {
   const got = new Map()
   const put = (id, verdict, reason) => {
     const v = String(verdict || '').toLowerCase()
-    if (typeof id === 'string' && !got.has(id.trim()) && GATE_VERDICTS.includes(v)) got.set(id.trim(), { verdict: v, reason: capSummary(reason) || '(no reason given)' })
+    if (typeof id === 'string' && !got.has(id.trim().toUpperCase()) && GATE_VERDICTS.includes(v)) got.set(id.trim().toUpperCase(), { verdict: v, reason: capSummary(reason) || '(no reason given)' })
   }
   if (ans && typeof ans === 'object' && Array.isArray(ans.items)) {
     for (const x of ans.items) if (x && typeof x === 'object') put(x.id, x.verdict, x.reason)
