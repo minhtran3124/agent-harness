@@ -471,7 +471,7 @@ async function askRecovery(t, stage, res, model) {
   }
   const text = typeof ans === 'string' ? ans : ''
   const first = text.split('\n').find(l => l.trim()) || ''
-  const m = first.match(/^\s*(retry|owner)\b\s*[:\-]?\s*(.*)$/i)
+  const m = first.match(/^\s*(retry|owner)\s*:\s*(.*)$/i)
   if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
 }

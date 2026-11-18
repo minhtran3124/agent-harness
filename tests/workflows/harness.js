@@ -2347,6 +2347,13 @@ test('rx5: a stage that runs twice in one ticket gets one recovery in total', as
   assert.strictEqual(result.tickets[0].reason, 'implement: cannot build')
 })
 
+test('rx6: free text that starts with the word retry but has no colon counts as owner', async () => {
+  const { result, calls } = await run({}, rcOver('Retry will not help here', () => rcBlocked()))
+  assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0)
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert(result.tickets[0].reason.includes('advisor (owner)'), result.tickets[0].reason)
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
