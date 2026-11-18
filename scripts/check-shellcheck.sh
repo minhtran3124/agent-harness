@@ -3,7 +3,7 @@
 #
 # Verifies:        shellcheck exits 0 for plugins/harness/hooks/*.sh, plugins/harness/scripts/*.sh,
 #                  the three scripts/check-plugin-*.sh, and scripts/release.sh, scripts/release-tag.sh
-#                  and scripts/release-guard.sh, and plugins/harness/skills/autopilot/scripts/board-start.sh.
+#                  and scripts/release-guard.sh, and autopilot scripts/board-start.sh and scripts/preflight.sh.
 # Does not verify: any other shell file, or the shell inside skill markdown (see
 #                  lint-skill-bash.sh).
 #
@@ -26,4 +26,5 @@ shellcheck --version
 shellcheck plugins/harness/hooks/*.sh plugins/harness/scripts/*.sh \
   scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh \
   scripts/release.sh scripts/release-tag.sh scripts/release-guard.sh \
-  plugins/harness/skills/autopilot/scripts/board-start.sh
+  plugins/harness/skills/autopilot/scripts/board-start.sh \
+  plugins/harness/skills/autopilot/scripts/preflight.sh
