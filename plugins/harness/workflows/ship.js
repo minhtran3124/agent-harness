@@ -269,7 +269,7 @@ const NO_ASK = args.noAsk === true
 // Commands each new worktree runs once, after git worktree add (profile key worktreeSetup). Empty: no setup text.
 const SETUP = args.worktreeSetup || []
 const setupBlock = dir => (SETUP.length
-  ? `Then, in ${dir}, run these setup commands once, in order, before any other work:\n${SETUP.join('\n')}\nIf one fails, follow the dependency rule.\n\n`
+  ? `Then, in ${dir}, run these setup commands once, in order, before any other work (skip them if the directory already existed before this stage: an earlier attempt already ran them):\n${SETUP.join('\n')}\nIf one fails, follow the dependency rule.\n\n`
   : '')
 const tickets = args.tickets
 const single = tickets.length === 1

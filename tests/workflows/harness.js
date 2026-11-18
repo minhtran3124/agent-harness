@@ -2190,3 +2190,10 @@ test('pf6: finish setup runs only in the fallback worktree, never in impl.worktr
   assert(/^[^\n]*Only if you created [^\n]*run these setup/.test(gone), 'setup is not tied to the fallback worktree sentence')
   assert(gone.includes(`in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
 })
+
+test('pf7: the setup block tells a retry that reuses an existing worktree to skip setup', async () => {
+  const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
+  const wt = calls.filter(c => c.prompt.includes('run these setup commands'))
+  assert(wt.length > 0, 'no setup block')
+  for (const c of wt) assert(c.prompt.includes('skip them if the directory already existed'), `${c.label}: no skip rule`)
+})
