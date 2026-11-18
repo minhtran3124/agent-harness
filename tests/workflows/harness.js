@@ -2362,9 +2362,9 @@ test('rx7: the recovery retry prompt tells the stage to reuse work the first run
 
 test('rx8: decisions from the blocked first run are kept when the retry succeeds', async () => {
   const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
-  const { result } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : undefined)))
-  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
-  assert(allDecisions(result).some(d => d.title === 'FIRST-RUN-DECISION'))
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : undefined)))
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+  assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
 })
 
 ;(async () => {
