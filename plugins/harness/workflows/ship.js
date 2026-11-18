@@ -1023,7 +1023,7 @@ function judgeReview(rv) {
   if (!rv || rv.status !== 'ran') return { ok: false, text: `not run${rv && rv.reason ? ` (${rv.reason})` : ''}` }
   const notFixed = (rv.notFixed || []).length, left = (rv.leftover || []).filter(f => f.score >= FIX_THRESHOLD).length
   if (rv.reReviewNotRun) return { ok: false, text: `re-review not run (${rv.reReviewNotRun})` }
-  if (rv.unreviewedFix) return { ok: false, text: 'the intent fix commits were not reviewed' }
+  if (rv.unreviewedFix) return { ok: false, text: 'fix commits were not reviewed' }
   if (notFixed || left) return { ok: false, text: `${notFixed} not fixed, ${left} left at score ${FIX_THRESHOLD} or more` }
   const acc = (rv.accepted || []).length
   return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left${acc ? `, ${acc} accepted by advisor` : ''}` }
@@ -1061,6 +1061,28 @@ async function humanMergeBlock(n, r) {
     mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, open: { ok: true, text: 'none' } }))
 }
 
+// Reviews the commits a fix landed after the main review. With no range the fix is unreviewed, and the gate fails on it.
+async function reviewFixRange(ctx, review, what, range) {
+  if (!range) { review.unreviewedFix = true; return }
+  const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · ${what}`, review.level, range,
+    `This is a review of the ${what} commits only, range ${range}. Review that diff and nothing else.\n`, ctx)
+  if (again.notRun) review.reReviewNotRun = again.notRun
+  else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
+}
+// Intent review of the ticket. Code an intent fix lands is reviewed; a second intent fix is never reviewed, so it fails the
+// gate. Returns the intent result and the tip the intent fix moved the branch to ('' when it made none).
+async function intentWithReview(t, ctx, review) {
+  let intent = await stageIntentReview([{ n: t.n }], ctx)
+  let tip = ''
+  if (intent.fixRound) {
+    tip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
+    await reviewFixRange(ctx, review, 'intent fix', intent.fixRange)
+    intent = await stageIntentReview([{ n: t.n }], ctx)
+    if (intent.fixRound) review.unreviewedFix = true
+  }
+  return { intent, tip }
+}
+
 async function stageGate(t, fin, impl, branch) {
   const fail = (gates, extra) => ({ pass: false, failed: gates, ...extra })
   if (!(fin && fin.pr > 0)) return fail([{ gate: 'pr', detail: 'no PR number was returned' }])
@@ -1068,20 +1090,7 @@ async function stageGate(t, fin, impl, branch) {
   const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
     wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
   const review = await reviewLoop(ctx, ctx.target)
-  let intent = await stageIntentReview([{ n: t.n }], ctx)
-  let intentFixTip = ''
-  if (intent.fixRound) {
-    intentFixTip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
-    // Code the intent fix landed has not been reviewed. Review that range; a second fix round is never reviewed, so it fails the gate.
-    if (intent.fixRange) {
-      const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
-        `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, ctx)
-      if (again.notRun) review.reReviewNotRun = again.notRun
-      else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
-    } else review.unreviewedFix = true
-    intent = await stageIntentReview([{ n: t.n }], ctx)
-    if (intent.fixRound) review.unreviewedFix = true
-  }
+  let { intent, tip: intentFixTip } = await intentWithReview(t, ctx, review)
   let reviewG = judgeReview(review)
   let intentG = { ok: intent.verdict === 'match', text: intent.verdict }
   let failed = []
@@ -1098,7 +1107,8 @@ async function stageGate(t, fin, impl, branch) {
     await runCi(intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || '')
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
-  const openNr = () => decisions.filter(d => d.ticket === t.n && d.needs_review && !d.advisor_accepted)
+  // An advisor-accepted or advisor-fixed decision keeps needs_review (the final PR stays a human merge); only this gate sets it aside.
+  const openNr = () => decisions.filter(d => d.ticket === t.n && d.needs_review && !d.advisor_accepted && !d.advisor_fixed)
   const nrOf = nr => ({ ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' })
   let nrG = nrOf(openNr())
   if (!nrG.ok) failed.push({ gate: 'needs_review', detail: nrG.text })
@@ -1108,8 +1118,9 @@ async function stageGate(t, fin, impl, branch) {
   //   finding scoring FIX_THRESHOLD or more, from a review that ran) or needs_review; CI is green, intent is match, the
   //   security gate did not fail (runTicket already stops on a blocking security finding; this check is defensive) and no
   //   decision of the ticket is dangerous or contradicts_confirmed. One advisor call and at most one fix round per ticket.
-  // Does not verify: that an accepted finding is harmless. Intent review runs again after an advisor fix. An accepted needs_review decision is cleared like an accepted review finding, so the final PR into a base
-  //   that is not protected may auto-merge when its own gates pass; a protected base stays a human merge. The owner reads '## Accepted by advisor' in the final PR body before the merge into main.
+  //   Code an advisor fix lands is reviewed, and intent review runs again on it.
+  // Does not verify: that an accepted item is harmless. An accepted or fixed needs_review decision keeps needs_review, so
+  //   the final PR stays a human merge; the owner reads '## Accepted by advisor' in its body before the merge.
   let advised = null
   const eligible = /^feat\//.test(base) && failed.length > 0 && failed.every(f => f.gate === 'review' || f.gate === 'needs_review') &&
     review.status === 'ran' && !review.reReviewNotRun && !review.unreviewedFix && intent.verdict === 'match' &&
@@ -1153,36 +1164,20 @@ async function stageGate(t, fin, impl, branch) {
           const r = per.get(i.id); return r && r.fix_status === 'fixed' && r.commit
         })
         if (fixedIds.length) {
-          // The branch moved even when the agent returned no range: without one the fix is unreviewed, and the gate fails on it.
-          const lastCommit = res.commit || fixedIds.map(i => (per.get(i.id) || {}).commit).filter(Boolean).slice(-1)[0] || ''
-          const range = res.base_sha && res.commit ? `${res.base_sha}..${res.commit}` : ''
-          let again = { notRun: '' }
-          if (range) again = await reviewWithRetry(`${ctx.labelPrefix}code-review · advisor fix`, review.level, range,
-            `This is a re-review of the advisor fix commits only, range ${range}. Review that diff and nothing else; ignore the rest of the branch.\n`, ctx)
-          else review.unreviewedFix = true
+          // The fix agent's last commit is the new tip. Without a range its commits are unreviewed, and the gate fails on them.
+          const lastCommit = (res && res.commit) || ''
           for (const i of fixedIds) {
-            if (i.kind === 'D') { i.d.needs_review = false; i.d.advisor_fixed = true; continue }
+            if (i.kind === 'D') { i.d.advisor_fixed = true; continue }
             review.notFixed = review.notFixed.filter(f => f !== i.f)
             review.leftover = review.leftover.filter(f => f !== i.f)
             review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || lastCommit })
           }
-          if (again.notRun) review.reReviewNotRun = again.notRun
-          else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
-          fixTip = lastCommit
+          // After the fixed items leave the lists: a finding the re-review reports again is a new leftover.
+          await reviewFixRange(ctx, review, 'advisor fix', res.base_sha && res.commit ? `${res.base_sha}..${res.commit}` : '')
           // The advisor fix changed the diff: intent must still match.
-          intent = await stageIntentReview([{ n: t.n }], ctx)
-          if (intent.fixRound) {
-            // An intent fix after the advisor fix moves the tip again: review its range and let CI expect the new tip.
-            fixTip = (intent.fixRange && intent.fixRange.split('..')[1]) || fixTip
-            if (intent.fixRange) {
-              const more = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
-                `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, ctx)
-              if (more.notRun) review.reReviewNotRun = more.notRun
-              else review.leftover = [...review.leftover, ...((more.res && more.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
-            } else review.unreviewedFix = true
-            intent = await stageIntentReview([{ n: t.n }], ctx)
-            if (intent.fixRound) review.unreviewedFix = true
-          }
+          const again = await intentWithReview(t, ctx, review)
+          intent = again.intent
+          fixTip = again.tip || lastCommit
           intentG = { ok: intent.verdict === 'match', text: intent.verdict }
         }
       }
@@ -1200,7 +1195,7 @@ async function stageGate(t, fin, impl, branch) {
       if (rG.ok && intentG.ok && ciG.ok && nrLeft.length === 0) {
         Object.assign(review, stripped)
         for (const i of accepts) {
-          if (i.kind === 'D') { i.d.advisor_accepted = true; i.d.needs_review = false }
+          if (i.kind === 'D') i.d.advisor_accepted = true
           const reason = v(i).reason
           addDecision(t.n, 'advisor gate', {
             title: `Accepted by advisor: #${t.n} ${capSummary(i.summary)}`,

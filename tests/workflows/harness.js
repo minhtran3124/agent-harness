@@ -2542,27 +2542,28 @@ test('gav2: an advisor fix that the re-review does not pass blocks the ticket an
   assert.strictEqual(gaAccepted(r.calls), null)
 })
 
-test('gav3: an accepted needs_review decision passes the ticket gate and is cleared, so it does not make the final PR a human merge', async () => {
+test('gav3: an accepted needs_review decision passes the ticket gate but keeps needs_review, so the final PR stays a human merge', async () => {
   const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'accept', reason: 'REASON-D1' }] } }, { decisions: [gavD] })
   assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
   assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
   assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, 'CI already ran green; it must not run twice')
   const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
-  assert(d && d.needs_review === false, JSON.stringify(d))
+  assert(d && d.needs_review === true && d.advisor_accepted === true, JSON.stringify(d))
   const body = gavBody(r.calls)
-  assert(!/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), body)
+  assert(/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), 'the owner must still see the decision')
   assert((gaAccepted(r.calls) || []).some(l => l.includes('REASON-D1')))
-  assert(!body.includes('gate open decisions failed'), body)
+  assert.strictEqual(r.result.final.merged, false, JSON.stringify(r.result.final))
 })
 
-test('gav4: fix on a needs_review decision runs one advisor fix round, clears the decision and the ticket passes', async () => {
+test('gav4: fix on a needs_review decision runs one advisor fix round; the ticket passes and the decision keeps needs_review', async () => {
   const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] } }, { decisions: [gavD] })
   assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
   assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
   assert(/SKILL-DECISION/.test(named(r.calls, /^gfix:1:adv$/)[0].prompt))
   assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
   const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
-  assert(d && d.needs_review === false, JSON.stringify(d))
+  assert(d && d.needs_review === true && d.advisor_fixed === true, JSON.stringify(d))
+  assert.strictEqual(r.result.final.merged, false, JSON.stringify(r.result.final))
 })
 
 test('gav5: a dangerous decision from a gate fix agent gets no advisor gate call and the ticket blocks', async () => {

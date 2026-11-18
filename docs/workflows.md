@@ -38,7 +38,9 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
   advisor once (`#<n> advisor gate`) for a verdict per item: `accept`, `fix` or `owner`. `owner` on any item blocks the ticket as above. `fix`, on a review finding or a decision, runs one more fix round and one re-review, then CI again, with no second advisor
   call. All other items accepted: the gate passes, each item is recorded as an `Accepted by advisor: ` decision, and the
   final PR body lists it under `## Accepted by advisor`. The call fails closed: no answer, or an unclear one, means `owner`.
-  An accepted item, a `needs_review` decision or a review finding, does not block the final PR; only a protected base keeps it a human merge.
+  An accepted or fixed `needs_review` decision keeps `needs_review`: the ticket PR may merge into `feat/<slug>`, but the
+  final PR stays a human merge and lists the decision under `## Needs your decision`. An accepted review finding does not
+  block the final PR by itself; a protected base keeps it a human merge.
 - **Guard**: the `merge-guard.sh` PreToolUse hook blocks any merge whose PR base is not `feat/*`; it fails closed
   (`docs/hooks.md`). A workflow or subagent never merges into base; only the owner, approving one PR in the session prompt, does. Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
   a nested Workflow), so `/harness:setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
