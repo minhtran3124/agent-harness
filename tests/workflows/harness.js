@@ -259,6 +259,68 @@ test('d3: review stage prompts require the Skill tool and forbid a self-made rev
   assert(p.includes("skill 'code-review'") && p.includes('Do not substitute your own review') && p.includes('reading the diff yourself does not count') && p.includes('skill_invoked: false'))
 })
 
+test('rv1: the review prompt reads REVIEW.md from the diff base with git show', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^review:r0$/)[0].prompt
+  assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
+})
+
+test('rv2: the review prompt never points at REVIEW.md inside the worktree', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^review:r0$/)[0].prompt
+  const dir = p.match(/Run it from (\S+) /)[1]
+  assert(!p.includes(`${dir}/REVIEW.md`), `worktree path ${dir}/REVIEW.md found`)
+})
+
+test('rv3: the per-ticket gate review reads REVIEW.md from the integration branch', async () => {
+  const r = await gateFlow({})
+  const p = named(r.calls, /^greview:1:r0$/)[0].prompt
+  assert(p.includes('show origin/feat/ms:REVIEW.md'), p)
+})
+
+test('rv4: the fix-range re-review carries the same instruction', async () => {
+  const { calls } = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [{ id: 'f', path: 'a.js', summary: 'S-f', score: 80 }], skill_invoked: true }) : undefined))
+  const p = named(calls, /^review:r1$/)[0].prompt
+  assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
+})
+
+test('rv9: a review that reports review_md missing makes the workflow log "review: no REVIEW.md on <base>"', async () => {
+  const miss = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'missing' }) : undefined))
+  assert(miss.logs.includes('review: no REVIEW.md on origin/v5.0.0'), miss.logs.join('\n'))
+  const read = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'read' }) : undefined))
+  assert(!read.logs.some(l => l.startsWith('review: no REVIEW.md')), read.logs.join('\n'))
+  assert(named(read.calls, /^review:r0$/)[0].prompt.includes('return review_md: missing'))
+})
+
+test('rv10: a missing REVIEW.md is logged once per base; a git show error is logged as such', async () => {
+  const miss = await run({}, c => (/^review:r\d$/.test(c.label) ? ok({ findings: c.label === 'review:r0' ? [{ id: 'f', path: 'a.js', summary: 'S-f', score: 80 }] : [], skill_invoked: true, review_md: 'missing' }) : undefined))
+  assert(named(miss.calls, /^review:r1$/).length === 1, labelsOf(miss.calls).join())
+  assert.strictEqual(miss.logs.filter(l => l === 'review: no REVIEW.md on origin/v5.0.0').length, 1, miss.logs.join('\n'))
+  const err = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'error', skill_error: 'invalid object name' }) : undefined))
+  assert(err.logs.some(l => l.startsWith('review: could not read REVIEW.md on origin/v5.0.0') && l.includes('invalid object name')), err.logs.join('\n'))
+  assert(named(err.calls, /^review:r0$/)[0].prompt.includes('Return every finding the REVIEW.md rules above leave in'))
+})
+
+test('rv8: the reviewNote gate statement has a Verifies and Does not verify split naming CLAUDE.md and .claude/rules/', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
+  const c = src.slice(src.indexOf('// Gate statement:'), src.indexOf('const reviewMdNote'))
+  assert(/Verifies:/.test(c) && /Does not verify:/.test(c) && c.includes('CLAUDE.md') && c.includes('.claude/rules/') && /PR worktree/.test(c), c)
+})
+
+const REVIEW_MD = fs.readFileSync(path.join(__dirname, '..', '..', 'REVIEW.md'), 'utf8')
+
+test('rv5: REVIEW.md caps Nits at five per review', () => {
+  assert(/at most five Nits per review/i.test(REVIEW_MD) && !/at most 3 Nits/i.test(REVIEW_MD))
+})
+
+test('rv6: REVIEW.md defines Important as breaking a hook, ship.js or the merge rule, or weakening a test', () => {
+  assert(/breaks the behavior of a hook, of `?ship\.js`? or of the merge rule, or that weakens a test/.test(REVIEW_MD))
+})
+
+test('rv7: REVIEW.md excludes what CI checks and the run output directories', () => {
+  for (const t of ['shellcheck', 'claude plugin validate --strict', 'STE lint', 'specs/', 'tests/evals/*/runs/']) assert(REVIEW_MD.includes(t), t)
+})
+
 test('d4: code-review not run: one retry with the error, then NOT RUN, a needs_review decision, no fix', async () => {
   const { result, calls } = await run({}, c => {
     if (c.label === 'review:r0') return ok({ findings: [{ id: 'x', summary: 's', score: 90 }], skill_invoked: false, skill_error: 'Skill tool unavailable' })

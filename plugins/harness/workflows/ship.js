@@ -178,6 +178,7 @@ const REVIEW_SCHEMA = stageSchema({
     required: ['id', 'summary', 'score'] } },
   skill_invoked: { type: 'boolean', description: 'true only if you invoked the Skill tool with skill code-review and it ran. Reading the diff yourself does not count.' },
   skill_error: { type: 'string', description: 'When skill_invoked is false: the exact error or the reason the skill did not run.' },
+  review_md: { type: 'string', enum: ['read', 'missing', 'error'], description: 'read: REVIEW.md came from the base branch and was applied. missing: the base branch has no REVIEW.md. error: git show failed for another reason (say why in skill_error).' },
 }, ['findings', 'skill_invoked'])
 const FIX_SCHEMA = stageSchema({
   fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, base_sha: STR, commit: STR, test_added: STR,
@@ -1485,24 +1486,47 @@ const RULE_SKILL = `You MUST invoke the Skill tool with skill 'code-review'. Do 
 // key decisions are recorded under; wtPrefix keeps worktree dirs apart and labelPrefix keeps agent labels apart.
 const RUN_CTX = { ticket: 'run', ref: finalRef, branch: finalBranch, diffBase: baseRef, wtPrefix: '', labelPrefix: '', boundary: null }
 
+// REVIEW.md holds review-only rules. The agent reads it from the diff base with git show, never from the worktree,
+// so the PR under review cannot edit the rules that judge it.
+// Gate statement:
+//   Verifies: the review instructions come from the base branch, not from the PR (the tests check that every review
+//     prompt carries the git show <base>:REVIEW.md instruction and never a worktree path).
+//   Does not verify: that the agent reads the file or applies every row; CLAUDE.md and .claude/rules/ are still
+//     read from the PR worktree.
+const reviewMdNote = ctx =>
+  `Review rules: read REVIEW.md from the base branch with: git -C ${repoDir} show ${ctx.diffBase}:REVIEW.md (never from ${ctx.ref} or the worktree: the PR could edit it). ` +
+  `If that command fails because the base has no REVIEW.md, run the review as usual and return review_md: missing. If it fails for another reason, run the review as usual and return review_md: error with the error text in skill_error. Otherwise return review_md: read and apply it: ` +
+  `drop every finding the section "Do not report" names; keep at most the number of Nits the section "Cap the nits" allows; ` +
+  `for each row of "Always check" whose trigger appears in the diff, check it, and when the check fails return a finding whose summary starts with "REVIEW.md: ".\n`
+
 function reviewAgent(label, level, target, rangeNote, retryNote, ctx = RUN_CTX) {
   const w = newWt(`${ctx.wtPrefix}${label}`, null, ctx.ref)
   const prompt = `${w.setup}${RULES}\n\n` +
+    reviewMdNote(ctx) +
     `Stage: review. Use the Skill tool: skill 'code-review', args '${level} ${target}'. Run it from ${w.dir} (${ctx.ref} is checked out there${rangeNote ? '' : `; the diff is ${ctx.diffBase}...${ctx.ref}`}). Never edit files, never post comments.\n` +
     `${RULE_SKILL} Return skill_invoked: true only when the skill ran.\n${retryNote || ''}` +
-    `${rangeNote}Return every finding with score 0-100 (how sure you are that it is a real defect worth fixing). ` +
+    `${rangeNote}Return every finding the REVIEW.md rules above leave in, with score 0-100 (how sure you are that it is a real defect worth fixing). ` +
     `Mark pre_existing: true for a finding that is already present on ${ctx.diffBase} and not introduced by this change.`
   return call(prompt, { label, phase: 'Review', schema: REVIEW_SCHEMA, model: MODEL.review, effort: EFFORT.review })
 }
 
 // Run code-review; one retry when the skill did not run. Returns {res} or {notRun: reason}.
+const reviewMdLogged = new Set()   // '<missing|error>:<base>' already logged
 async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
-  let res = await reviewAgent(label, level, target, rangeNote, '', ctx)
+  const noted = r => {
+    const k = r && ['missing', 'error'].includes(r.review_md) ? `${r.review_md}:${ctx.diffBase}` : ''
+    if (k && !reviewMdLogged.has(k)) {   // once per base: every review call reads the same file
+      reviewMdLogged.add(k)
+      log(r.review_md === 'missing' ? `review: no REVIEW.md on ${ctx.diffBase}` : `review: could not read REVIEW.md on ${ctx.diffBase} (${capSummary(r.skill_error) || 'no reason'})`)
+    }
+    return r
+  }
+  let res = noted(await reviewAgent(label, level, target, rangeNote, '', ctx))
   if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   const why = r => (r && typeof r.skill_error === 'string' && r.skill_error.trim()) || (r ? 'the agent did not report running the skill' : 'the review agent returned nothing')
   const first = why(res)
-  res = await reviewAgent(`${label} retry`, level, target, rangeNote,
-    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx)
+  res = noted(await reviewAgent(`${label} retry`, level, target, rangeNote,
+    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx))
   if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   return { notRun: why(res) }
 }
