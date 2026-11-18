@@ -61,6 +61,26 @@ def test_bad_values_exit_2(tmp_path):
         assert r.returncode == 2 and msg in r.stderr, (bad, r.stderr)
 
 
+def test_worktree_setup_list_is_passed_on(tmp_path):
+    override(tmp_path, {"worktreeSetup": ["npm ci", "uv sync"]})
+    r = run(tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout)["worktreeSetup"] == ["npm ci", "uv sync"]
+
+
+def test_default_has_no_worktree_setup():
+    assert "worktreeSetup" not in json.loads(DEFAULT.read_text())
+
+
+def test_bad_worktree_setup_exits_2(tmp_path):
+    for i, bad in enumerate(["npm ci", [""], ["  "], [3], ["npm ci\nrm -rf x"]]):
+        sub = tmp_path / f"w{i}"
+        sub.mkdir()
+        override(sub, {"worktreeSetup": bad})
+        r = run(sub)
+        assert r.returncode == 2 and "worktreeSetup must be" in r.stderr, (bad, r.stderr)
+
+
 def test_bad_json_exits_2(tmp_path):
     override(tmp_path, "nope")
     r = run(tmp_path)

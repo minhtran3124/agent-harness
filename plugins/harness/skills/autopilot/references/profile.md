@@ -23,6 +23,11 @@ exit 2 it names the bad file and key.
 | `intake` | `haiku`, `sonnet`, `opus` | Step 2: `model` of the intake agent |
 | `advisor` | `opus`, `fable` | Step 2 advisor call, and `advisorModel` in step 8 |
 | `stages` | `{ "<stage>": { "model": ..., "effort": ... } }` | Step 8: `profile: { stages }` |
+| `worktreeSetup` | list of one-line command strings, for example `["npm ci"]` | Step 8: `worktreeSetup` arg |
+
+`worktreeSetup` is optional and the default profile does not set it. Each stage that creates a
+worktree runs the commands once, in order, right after `git worktree add`. A stage whose setup
+fails, or that misses a system package, returns blocked with the name; no agent runs `sudo`.
 
 ## Orchestrator check
 

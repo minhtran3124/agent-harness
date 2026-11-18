@@ -48,6 +48,11 @@ def check(profile, source):
                     raise ValueError(f"{source}: stages.{stage}.model must be one of {sorted(STAGE_MODELS)}")
                 if "effort" in cfg and cfg["effort"] not in EFFORTS:
                     raise ValueError(f"{source}: stages.{stage}.effort must be one of {sorted(EFFORTS)}")
+        elif key == "worktreeSetup":
+            # Each command is pasted into a prompt as one line: no line breaks, no empty entries.
+            if not isinstance(value, list) or not all(
+                    isinstance(c, str) and c.strip() and "\n" not in c and "\r" not in c for c in value):
+                raise ValueError(f"{source}: worktreeSetup must be a list of one-line command strings")
         elif key in ROLE_MODELS:
             if value not in ROLE_MODELS[key]:
                 raise ValueError(f"{source}: {key} must be one of {sorted(ROLE_MODELS[key])}")

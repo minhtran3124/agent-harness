@@ -10,14 +10,19 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 { repo: "owner/name", repoDir: "/abs/path", pluginDir: "<plugin directory>", remote: "origin", base: "<base>",
   slug: "<milestone-or-ticket slug>",
   tickets: [ { n: 346, title: "...", depth: "S|M|L", group: 1, deps: [345],
-               confirmed: "owner-confirmed decisions text incl. the Verify: row, may be empty" } ],
+               confirmed: "owner-confirmed decisions text incl. the Verify: row, may be empty",
+               verifyDrafted: false } ],
   testCmd: "<related-tests command or template>", lintCmd: "<lint command>",
   fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false,
-  profile: { stages: { review: { model: "opus", effort: "high" } } } }
+  profile: { stages: { review: { model: "opus", effort: "high" } } }, worktreeSetup: ["npm ci"] }
 ```
 
 - `advisorModel` is the profile's `advisor`. `profile` is optional and holds the profile's `stages`
   (see `profile.md`). Leave it out when `stages` is empty.
+- `worktreeSetup` is the profile's `worktreeSetup`, top-level. Leave it out when the list is empty or
+  absent. Each worktree-creating stage runs it once.
+- `verifyDrafted: true` marks a ticket whose `Verify:` row step 6 drafted. With `noAsk: true` the
+  workflow records one `needs_review` decision for it, so that ticket is not auto-merged.
 
 - Take `testCmd`, `lintCmd` and `fullTestCmd` from `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only.
 - `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
