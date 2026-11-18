@@ -2111,7 +2111,12 @@ test('pf1: with worktreeSetup [npm ci], every prompt that has worktree add has n
   assert(wt.some(c => /^qa:1$/.test(c.label)) && wt.some(c => /^finish:/.test(c.label)), labelsOf(wt).join())
   for (const c of wt) {
     const parts = c.prompt.split('worktree add').slice(1)
-    parts.forEach((p, i) => assert(p.includes('npm ci'), `${c.label}: no npm ci after worktree add #${i + 1}`))
+    parts.forEach((p, i) => {
+      assert(p.includes('npm ci'), `${c.label}: no npm ci after worktree add #${i + 1}`)
+      const m = p.match(/in (\S+), run these setup commands/)
+      assert(m, `${c.label}: no setup block after worktree add #${i + 1}`)
+      assert(p.split('\n')[0].includes(m[1]), `${c.label}: setup aimed at ${m[1]}, not the worktree just added`)
+    })
   }
   const plain = await run({ tickets: pfTickets() }, null)
   assert(!plain.calls.some(c => c.prompt.includes('npm ci')), 'npm ci without worktreeSetup')
