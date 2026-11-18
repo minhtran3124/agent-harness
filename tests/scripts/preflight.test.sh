@@ -78,6 +78,28 @@ if [ "$rc" = 2 ]; then ok "no --repo-dir -> exit 2"; else bad "no --repo-dir -> 
 runpre 0 --repo-dir "$work/does-not-exist"
 if [ "$rc" = 2 ]; then ok "--repo-dir that does not exist -> exit 2"; else bad "--repo-dir that does not exist -> exit 2" "rc=$rc out=$out"; fi
 
+# hostcase <name> <origin url|''> <host the fake gh accepts>: gh auth status exits 0 only for that --hostname.
+hostcase() {
+  mkenv "$1" 1 1
+  # shellcheck disable=SC2016  # the stub expands its own arguments
+  printf '#!%s\n[ "$1 $2" = "auth status" ] || exit 0\n[ "$3 $4" = "--hostname %s" ] && exit 0\nexit 1\n' "$bash_bin" "$3" > "$bin/gh"
+  [ -n "$2" ] && "$git_bin" -C "$repo" remote add origin "$2"
+  runpre 0 --repo-dir "$repo"
+}
+for c in 'ghe-https|https://ghe.example.com/o/r.git|ghe.example.com' \
+         'ghe-ssh|git@ghe.example.com:o/r.git|ghe.example.com' \
+         'ghe-sshurl|ssh://git@ghe.example.com:2222/o/r.git|ghe.example.com' \
+         'gh-https|https://github.com/o/r.git|github.com' \
+         'no-origin||github.com'; do
+  IFS='|' read -r name url host <<<"$c"
+  hostcase "$name" "$url" "$host"
+  if [ "$rc" = 0 ] && [ "$out" = 'preflight: ok' ]; then ok "$name: gh auth checked on $host -> exit 0"
+  else bad "$name: gh auth checked on $host -> exit 0" "rc=$rc out=$out"; fi
+done
+hostcase ghe-wronghost 'https://ghe.example.com/o/r.git' github.com
+if [ "$rc" = 1 ] && [ "$out" = 'missing: gh auth' ]; then ok "origin on ghe.example.com, login only on github.com -> 'missing: gh auth'"
+else bad "origin on ghe.example.com, login only on github.com -> 'missing: gh auth'" "rc=$rc out=$out"; fi
+
 echo
 if [ "$fails" -eq 0 ]; then echo "preflight.test.sh: ok"; exit 0; fi
 echo "preflight.test.sh: FAILED ($fails)"; exit 1

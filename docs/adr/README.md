@@ -30,7 +30,7 @@ Only a decision made before implement gets a file: its `stage` must be exactly `
 exists explains the code instead of guiding it. A decision that meets the rest of the rule but
 comes from a later stage (`qa`, `implement`, `review`, a `-fix` stage, ...) or has no `stage` is a
 late decision: no file, the table row `late decision, no file`, and `needs_review` forced true
-(except an `owner_confirmed` one), so the PR body lists it under `## Needs your decision`. In
+(also for an `owner_confirmed` one), so the PR body lists it under `## Needs your decision`. In
 `ship.js` a late call records its own stage label, so its agent cannot claim an early stage. For a
 manual run, `--needs-out FILE` writes that list. When duplicates merge, an early `adr` item wins
 over a later one.

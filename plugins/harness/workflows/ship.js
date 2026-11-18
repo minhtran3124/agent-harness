@@ -564,8 +564,8 @@ async function runStage(t, stage, build, schema, opts) {
   if (res && res.needs_advisor) {
     let advice = ''
     try { advice = await askAdvisor(t, stage, res.advisor_question, res.summary) } catch (e) { log(`#${t.n} ${stage}: advisor call failed (${e && e.message}); retrying without advice`) }
-    earlier = ADVICE_HEADING + advice
     advised = advice.trim() !== ''
+    earlier = advised ? ADVICE_HEADING + advice : ''   // no empty heading when the advisor failed or said nothing
     res = await call(build(earlier), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
@@ -1521,15 +1521,17 @@ const RULE_SKILL = `You MUST invoke the Skill tool with skill 'code-review'. Do 
 // key decisions are recorded under; wtPrefix keeps worktree dirs apart and labelPrefix keeps agent labels apart.
 const RUN_CTX = { ticket: 'run', ref: finalRef, branch: finalBranch, diffBase: baseRef, wtPrefix: '', labelPrefix: '', boundary: null }
 
-// REVIEW.md holds review-only rules. The agent reads it from the diff base with git show, never from the worktree,
-// so the PR under review cannot edit the rules that judge it.
+// REVIEW.md holds review-only rules. The agent reads it from the run's base branch (baseRef) with git show, never
+// from the worktree and never from the integration branch: the PR under review cannot edit the rules that judge it,
+// and a ticket merged into feat/<slug> earlier in the run cannot change the rules for a later ticket's gate.
 // Gate statement:
-//   Verifies: the review instructions come from the base branch, not from the PR (the tests check that every review
-//     prompt carries the git show <base>:REVIEW.md instruction and never a worktree path).
+//   Verifies: the review instructions come from the run's base branch, not from the PR or the integration branch (the
+//     tests check that every review prompt, the per-ticket gate included, carries git show <baseRef>:REVIEW.md and
+//     never a worktree path or the integration ref).
 //   Does not verify: that the agent reads the file or applies every row; CLAUDE.md and .claude/rules/ are still
 //     read from the PR worktree.
 const reviewMdNote = ctx =>
-  `Review rules: read REVIEW.md from the base branch with: git -C ${repoDir} show ${ctx.diffBase}:REVIEW.md (never from ${ctx.ref} or the worktree: the PR could edit it). ` +
+  `Review rules: read REVIEW.md from the base branch with: git -C ${repoDir} show ${baseRef}:REVIEW.md (never from ${ctx.ref}, the worktree or the integration branch: an earlier change could edit it). ` +
   `If that command fails because the base has no REVIEW.md, run the review as usual and return review_md: missing. If it fails for another reason, run the review as usual and return review_md: error with the error text in skill_error. Otherwise return review_md: read and apply it: ` +
   `drop every finding the section "Do not report" names; keep at most the number of Nits the section "Cap the nits" allows; ` +
   `for each row of "Always check" whose trigger appears in the diff, check it, and when the check fails return a finding whose summary starts with "REVIEW.md: ".\n`
@@ -1549,10 +1551,10 @@ function reviewAgent(label, level, target, rangeNote, retryNote, ctx = RUN_CTX) 
 const reviewMdLogged = new Set()   // '<missing|error>:<base>' already logged
 async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
   const noted = r => {
-    const k = r && ['missing', 'error'].includes(r.review_md) ? `${r.review_md}:${ctx.diffBase}` : ''
-    if (k && !reviewMdLogged.has(k)) {   // once per base: every review call reads the same file
+    const k = r && ['missing', 'error'].includes(r.review_md) ? `${r.review_md}:${baseRef}` : ''
+    if (k && !reviewMdLogged.has(k)) {   // once per run: every review call reads the same file from baseRef
       reviewMdLogged.add(k)
-      log(r.review_md === 'missing' ? `review: no REVIEW.md on ${ctx.diffBase}` : `review: could not read REVIEW.md on ${ctx.diffBase} (${capSummary(r.skill_error) || 'no reason'})`)
+      log(r.review_md === 'missing' ? `review: no REVIEW.md on ${baseRef}` : `review: could not read REVIEW.md on ${baseRef} (${capSummary(r.skill_error) || 'no reason'})`)
     }
     return r
   }

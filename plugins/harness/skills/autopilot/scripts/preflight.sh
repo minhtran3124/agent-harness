@@ -4,7 +4,7 @@
 #
 # Usage: preflight.sh --repo-dir <checkout dir>
 #
-# Verifies:        git, gh, jq and python3 are in PATH; gh auth status exits 0; specs/ is ignored in
+# Verifies:        git, gh, jq and python3 are in PATH; gh auth status exits 0 for the origin host (github.com without origin); specs/ is ignored in
 #                  the checkout (git check-ignore). A missing tool skips the check that needs it.
 # Does not verify: a system package that only a build shows as missing, or a tool's version.
 #
@@ -32,8 +32,21 @@ for tool in git gh jq python3; do
   command -v "$tool" >/dev/null 2>&1 || miss "$tool"
 done
 
+# The gh host comes from the origin remote, so a GitHub Enterprise checkout checks its own host; no origin or
+# an unparsed URL falls back to github.com.
+gh_host() {
+  local url host
+  url=$(git -C "$dir" remote get-url origin 2>/dev/null) || url=''
+  case $url in
+    *://*) host=${url#*://}; host=${host#*@}; host=${host%%/*}; host=${host%%:*} ;;
+    *@*:*) host=${url#*@}; host=${host%%:*} ;;
+    *) host='' ;;
+  esac
+  printf '%s\n' "${host:-github.com}"
+}
+
 if command -v gh >/dev/null 2>&1; then
-  gh auth status --hostname github.com >/dev/null 2>&1 || miss 'gh auth'
+  gh auth status --hostname "$(gh_host)" >/dev/null 2>&1 || miss 'gh auth'
 fi
 
 if command -v git >/dev/null 2>&1; then
