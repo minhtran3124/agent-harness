@@ -91,6 +91,7 @@ function defaults(c, st) {
   if (l.startsWith('verify-comment:')) return ok()
   if (l.startsWith('qa:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
   if (l.startsWith('qa check:')) return { uncovered: [], unmapped: [], invented: [] }
+  if (l.startsWith('qa repair cleanup:')) return ok()
   if (l.startsWith('qa repair:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
   if (l.startsWith('acceptance-test check:')) return { commits: [{ sha: 'qa1', subject: `Add acceptance tests for #${n}` }] }
   if (l.startsWith('security gate:')) return { why_risky: 'touches secrets', risk_note: 'NOTE', findings: [], followups: [] }
@@ -2058,6 +2059,55 @@ test('qt2: a qa check result with one invented test gives one qa repair and a se
     ? { uncovered: [], unmapped: [], invented: ['guards against a future .py file'] } : undefined))
   assert.strictEqual(named(calls, /^qa repair:1/).length, 1, labelsOf(calls).join())
   assert.strictEqual(named(calls, /^qa check:1/).length, 2, labelsOf(calls).join())
+})
+
+test('qt8: the second qa check runs in a different worktree than the first', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['x'] } : undefined))
+  const cs = named(calls, /^qa check:1/)
+  assert.strictEqual(cs.length, 2, labelsOf(calls).join())
+  const dirOf = c => (c.prompt.match(/worktree add --detach (\S+)/) || [])[1]
+  assert(dirOf(cs[0]) && dirOf(cs[1]) && dirOf(cs[0]) !== dirOf(cs[1]), `${dirOf(cs[0])} vs ${dirOf(cs[1])}`)
+})
+
+test('qt9: the pre-implement qa repair removes its worktree so implement can use the branch', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['x'] } : undefined))
+  const rp = named(calls, /^qa repair:1/)[0]
+  assert(rp, 'no qa repair')
+  const cl = named(calls, /^qa repair cleanup:1/)
+  assert.strictEqual(cl.length, 1, labelsOf(calls).join())
+  assert(/worktree remove --force/.test(cl[0].prompt), 'the script must remove the repair worktree')
+  assert(calls.indexOf(cl[0]) < calls.indexOf(named(calls, /^implement:1(:|$)/)[0]), 'cleanup must come before implement')
+})
+
+test('qt11: the repair worktree is removed when the repair returns no ready tests', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label)) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa repair cleanup:1/).length, 1, labelsOf(r.calls).join())
+})
+
+test('qt12: a repair result dir that is a worktree path does not replace the tests dir', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label) && ++n === 1) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: true, dir: '/wt/qa-repair-1/tests/acceptance', files: ['a.spec.js'], tests: [] })
+  })
+  const g = named(calls, /^acceptance-test check:1/)[0]
+  assert(g && !g.prompt.includes('/wt/qa-repair-1'), 'the guard must use the original tests dir')
+})
+
+test('qt10: a pre-implement repair with no ready tests gives no second qa check', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label)) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa check:1/).length, 1, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
 })
 
 test('qt3: a Flawed acceptance test decision from implement gives one qa repair and one more implement call', async () => {

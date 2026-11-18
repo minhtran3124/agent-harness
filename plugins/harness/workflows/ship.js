@@ -516,8 +516,10 @@ function stageQa(t, intent, design, branch) {
 // Gate statement for `qa check`. Verifies: every criterion has at least one test and every test names one criterion.
 // Does not verify: that a test catches every defect, or that the criterion itself is right.
 // Read-only: Opus reads the ticket text, the criteria and the committed test files; never the plan or the application source.
+const qaCheckRuns = {}   // a re-check needs a fresh worktree: a reused dir would hold the pre-repair tests
 function stageQaCheck(t, intent, qa, tip) {
-  const w = newWt(`qa-check-${t.n}`, null, tip)
+  qaCheckRuns[t.n] = (qaCheckRuns[t.n] || 0) + 1
+  const w = newWt(`qa-check-${t.n}-${qaCheckRuns[t.n]}`, null, tip)
   const criteria = (intent.acceptance || []).map((a, i) => `AC${i + 1}: ${a}`).join('\n') || '(none listed: use the ticket text)'
   const build = advice => w.setup + head(t, null,
     `Stage: qa check. Read-only: edit nothing, commit nothing. Read no plan and no application source.\n` +
@@ -534,6 +536,14 @@ function stageQaRepair(t, qa, problems, where) {
     `Flaws:\n${problems}\n` +
     `Return ready, dir, files and tests (name and covers).${advice}`, where.dir)
   return runStage(t, 'qa repair', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// The script, not the repair agent, frees the branch for implement: it runs on the failure and not-ready paths too.
+async function stageQaRepairCleanup(t, dir) {
+  try {
+    await call(`git -C ${repoDir} worktree remove --force ${dir}\n\n${notCwd()}\nRun the command above from outside ${dir}. If ${dir} does not exist, do nothing. Edit nothing else.`,
+      { label: lbl(`#${t.n} qa repair cleanup`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`#${t.n} qa repair cleanup: skipped (${e && e.message ? e.message : String(e)})`) }
 }
 
 // The implementer must not touch the acceptance tests. Only commits with the QA subject may; any other commit is a violation.
@@ -1013,10 +1023,15 @@ async function runTicket(t) {
       repairUsed = true
       try {
         const r = await stageQaRepair(t, qa, problems, where)
-        if (r && r.ready && r.dir) { qa = spec.qa = r; return true }
+        if (r && r.ready && r.dir) {
+          // dir is repo-relative; a repair worktree path must never become the tests' location
+          qa = spec.qa = where.remove ? { ...r, dir: qa.dir } : r
+          return true
+        }
         log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)
         return false
-      } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false }
+      } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false
+      } finally { if (where.remove) await stageQaRepairCleanup(t, where.dir) }
     }
     const flawDecision = (title, problems) => addDecision(t.n, 'qa', {
       title, context: `The blind acceptance tests still have flaws after the one repair: ${problems.join('; ')}.`,
@@ -1025,8 +1040,8 @@ async function runTicket(t) {
     if (qa) {
       let c = await check(branch)
       if (problemsOf(c).length) {
-        await repair(problemsOf(c).join('\n'), newWt(`qa-repair-${t.n}`, branch, null, true))
-        c = await check(branch)
+        const repaired = await repair(problemsOf(c).join('\n'), { ...newWt(`qa-repair-${t.n}`, branch, null, true), remove: true })
+        if (repaired) c = await check(branch)
         if (problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', problemsOf(c))
       }
     }
