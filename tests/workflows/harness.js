@@ -284,6 +284,12 @@ test('rv4: the fix-range re-review carries the same instruction', async () => {
   assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
 })
 
+test('rv8: the reviewNote gate statement has a Verifies and Does not verify split naming CLAUDE.md and .claude/rules/', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
+  const c = src.slice(src.indexOf('// Gate statement:'), src.indexOf('const reviewMdNote'))
+  assert(/Verifies:/.test(c) && /Does not verify:/.test(c) && c.includes('CLAUDE.md') && c.includes('.claude/rules/') && /PR worktree/.test(c), c)
+})
+
 const REVIEW_MD = fs.readFileSync(path.join(__dirname, '..', '..', 'REVIEW.md'), 'utf8')
 
 test('rv5: REVIEW.md caps Nits at five per review', () => {
