@@ -4,7 +4,7 @@ Review-only rules for the `code-review` stages of `ship.js`. The review agent re
 
 ## What Important means here
 
-A finding is Important when it breaks a gate, a hook, a script run on both ubuntu and macOS, or lets a check pass while the property it names is false. Style, naming and wording are not Important.
+Important is a finding that breaks the behavior of a hook, of `ship.js` or of the merge rule, or that weakens a test. Style, naming and wording are not Important.
 
 ## Cap the nits
 

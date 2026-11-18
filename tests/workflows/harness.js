@@ -290,6 +290,10 @@ test('rv5: REVIEW.md caps Nits at five per review', () => {
   assert(/at most five Nits per review/i.test(REVIEW_MD) && !/at most 3 Nits/i.test(REVIEW_MD))
 })
 
+test('rv6: REVIEW.md defines Important as breaking a hook, ship.js or the merge rule, or weakening a test', () => {
+  assert(/breaks the behavior of a hook, of `?ship\.js`? or of the merge rule, or that weakens a test/.test(REVIEW_MD))
+})
+
 test('d4: code-review not run: one retry with the error, then NOT RUN, a needs_review decision, no fix', async () => {
   const { result, calls } = await run({}, c => {
     if (c.label === 'review:r0') return ok({ findings: [{ id: 'x', summary: 's', score: 90 }], skill_invoked: false, skill_error: 'Skill tool unavailable' })
