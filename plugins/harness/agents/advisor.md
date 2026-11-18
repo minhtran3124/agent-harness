@@ -34,4 +34,4 @@ with reasons. Your final message is the whole deliverable.
 ## Model note
 
 The caller runs you on Opus by default. For special cases the caller may run you on
-`claude-fable-5-1` instead. The orchestrator decides; you do not change your own model.
+`claude-fable-5-2` instead. The orchestrator decides; you do not change your own model.
