@@ -2354,6 +2354,12 @@ test('rx6: free text that starts with the word retry but has no colon counts as 
   assert(result.tickets[0].reason.includes('advisor (owner)'), result.tickets[0].reason)
 })
 
+test('rx7: the recovery retry prompt tells the stage to reuse work the first run left', async () => {
+  const { calls } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  const p = named(calls, /^implement:1:retry$/)[0].prompt
+  assert(p.includes('RETRY-HINT') && p.includes('Reuse it') && p.includes('never open a second pull request'), p.slice(-600))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {

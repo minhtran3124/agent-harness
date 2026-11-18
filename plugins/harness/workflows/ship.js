@@ -476,6 +476,9 @@ async function askRecovery(t, stage, res, model) {
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
 }
 
+// Added to the retry prompt of a blocked stage: the first run may have left work behind.
+const RETRY_REUSE = '\n\nThis is a retry of a blocked run. Before you create anything, check for work the first run left (the worktree directory, the branch, commits, a pushed branch, an open pull request). Reuse it: if a worktree or branch already exists, cd into it and continue; never recreate it and never open a second pull request.'
+
 const recovered = new Set()   // "<ticket>:<stage>" that already used its one blocked-stage recovery
 
 // One ticket stage: run it; on needs_advisor ask once and re-run once; on a block ask the advisor once for
@@ -505,7 +508,7 @@ async function runStage(t, stage, build, schema, opts) {
     }
     log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
     suffix = `; advisor (retry failed): ${v.reason}`
-    res = await call(build(ADVICE_HEADING + v.text), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+    res = await call(build(ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
   takeDecisions(t.n, stage, res)
