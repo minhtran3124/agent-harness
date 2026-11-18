@@ -1108,9 +1108,8 @@ async function stageGate(t, fin, impl, branch) {
   //   finding scoring FIX_THRESHOLD or more, from a review that ran) or needs_review; CI is green, intent is match, the
   //   security gate did not fail (runTicket already stops on a blocking security finding; this check is defensive) and no
   //   decision of the ticket is dangerous or contradicts_confirmed. One advisor call and at most one fix round per ticket.
-  // Does not verify: that an accepted finding is harmless. Intent review runs again after an advisor fix. An accepted needs_review decision keeps its flag, so the final PR stays a human merge;
-  //   an accepted review finding does not, so the final PR into a base that is not protected may auto-merge when its own
-  //   gates pass. The owner reads '## Accepted by advisor' in the final PR body before the merge into main.
+  // Does not verify: that an accepted finding is harmless. Intent review runs again after an advisor fix. An accepted needs_review decision is cleared like an accepted review finding, so the final PR into a base
+  //   that is not protected may auto-merge when its own gates pass; a protected base stays a human merge. The owner reads '## Accepted by advisor' in the final PR body before the merge into main.
   let advised = null
   const eligible = /^feat\//.test(base) && failed.length > 0 && failed.every(f => f.gate === 'review' || f.gate === 'needs_review') &&
     review.status === 'ran' && !review.reReviewNotRun && !review.unreviewedFix && intent.verdict === 'match' &&
@@ -1199,13 +1198,13 @@ async function stageGate(t, fin, impl, branch) {
       if (rG.ok && intentG.ok && ciG.ok && nrLeft.length === 0) {
         Object.assign(review, stripped)
         for (const i of accepts) {
-          if (i.kind === 'D') i.d.advisor_accepted = true
+          if (i.kind === 'D') { i.d.advisor_accepted = true; i.d.needs_review = false }
           const reason = v(i).reason
           addDecision(t.n, 'advisor gate', {
             title: `Accepted by advisor: #${t.n} ${capSummary(i.summary)}`,
             context: `The merge gate for #${t.n} failed on this item (${i.text}). The run base ${base} matches feat/*, so the advisor judged it.`,
             decision: 'accept', why: reason,
-            consequences: i.kind === 'D' ? 'The ticket PR may merge into the integration branch; the decision stays open for the owner on the final PR.'
+            consequences: i.kind === 'D' ? 'The ticket PR may merge into the integration branch; the final PR body lists it under Accepted by advisor.'
               : 'The ticket PR may merge into the integration branch with this finding; the final PR body lists it under Accepted by advisor.',
             how_to_reverse: `Fix the item on ${integBranch} before the final merge, or revert the ticket's merge commit.`,
             needs_review: false, adr: false,

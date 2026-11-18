@@ -2542,18 +2542,17 @@ test('gav2: an advisor fix that the re-review does not pass blocks the ticket an
   assert.strictEqual(gaAccepted(r.calls), null)
 })
 
-test('gav3: an accepted needs_review decision passes the ticket gate but stays open, so the final PR is a human merge', async () => {
+test('gav3: an accepted needs_review decision passes the ticket gate and is cleared, so it does not make the final PR a human merge', async () => {
   const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'accept', reason: 'REASON-D1' }] } }, { decisions: [gavD] })
   assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
   assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
   assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, 'CI already ran green; it must not run twice')
   const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
-  assert(d && d.needs_review === true, JSON.stringify(d))
+  assert(d && d.needs_review === false, JSON.stringify(d))
   const body = gavBody(r.calls)
-  assert(/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), body)
+  assert(!/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), body)
   assert((gaAccepted(r.calls) || []).some(l => l.includes('REASON-D1')))
-  assert(body.includes('Merge: human'), body)
-  assert.strictEqual(r.result.final.merged, false)
+  assert(!body.includes('gate open decisions failed'), body)
 })
 
 test('gav4: fix on a needs_review decision counts as owner: no advisor fix and the ticket blocks', async () => {
