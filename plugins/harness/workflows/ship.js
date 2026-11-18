@@ -139,6 +139,13 @@ const UAT_SCHEMA = stageSchema({
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
+// The advisor's answer on a blocked stage: a verdict the script acts on, not free text.
+const RECOVERY_SCHEMA = { type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['retry', 'owner'], description: 'retry: one more run of the stage with your advice can unblock it. owner: only the owner can unblock it.' },
+    reason: { type: 'string', description: 'One sentence: why this verdict.' },
+    advice: { type: 'string', description: 'For retry: what the stage must do differently. It goes into the retry prompt.' } },
+  required: ['verdict', 'reason'] }
 // The spec writer lists each file the Write tool refused, so the main session can write it from the run result.
 const SPECS_SCHEMA = stageSchema({ refused: { type: 'array', items: STR, description: 'absolute path of each file the Write tool refused to write' } })
 const MERGE_SCHEMA = stageSchema({
@@ -331,8 +338,8 @@ const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== 
 // ran how often and on which model and effort, before deciding which stage to cut or to upgrade. There is no
 // timing: a workflow script must stay deterministic (no Date, no Math.random), so a resumed run replays the same.
 const callStats = []
-// "#3 intent · Title" -> "intent"; "#3 gate code-review · round 1" -> "gate code-review"; "fix r1.2 · file" -> "fix".
-const stageKey = label => String(label || 'unlabelled').replace(/^#\d+\s+/, '').split(' · ')[0].replace(/\s+r\d+(\.\d+)?$/, '').replace(/\s+retry$/, '')
+// "#3 intent · Title" -> "intent"; "#3 advisor recovery plan · Title" -> "advisor recovery"; "#3 gate code-review · round 1" -> "gate code-review"; "fix r1.2 · file" -> "fix".
+const stageKey = label => String(label || 'unlabelled').replace(/^#\d+\s+/, '').split(' · ')[0].replace(/^advisor recovery\b.*$/, 'advisor recovery').replace(/\s+r\d+(\.\d+)?$/, '').replace(/\s+retry$/, '')
 function statsOut() {
   const byStage = {}
   for (const c of callStats) {
@@ -429,6 +436,8 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
+const ADVICE_HEADING = '\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n'
+
 async function askAdvisor(t, stage, question, state) {
   const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nQuestion: ${question || '(the stage gave no question; review its work)'}\n` +
@@ -440,20 +449,67 @@ async function askAdvisor(t, stage, question, state) {
   return typeof advice === 'string' ? advice : ''
 }
 
-// One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
+// The advisor's verdict on a blocked stage. Only an explicit retry gives retry; a failed call, an empty or
+// unparseable answer, or owner gives owner, so on any doubt the ticket blocks as it did before recovery existed.
+async function askRecovery(t, stage, res, model) {
+  const why = (res && (res.blocked_reason || res.summary)) || '(the agent returned nothing)'
+  const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
+    `${notCwd()}\nThe stage is blocked. Decide if one more run of the stage can unblock it.\n` +
+    `Blocked reason: ${why}\nStage summary: ${capSummary(res && res.summary) || '(none)'}\n` +
+    `Work from the first run may already exist (worktree, commits, a pushed branch, an open pull request); a retry must check for it and reuse it, never redo it.\n` +
+    `Answer with verdict retry (and advice: what the stage must do differently) or verdict owner (only the owner can unblock it), and a one-sentence reason. ` +
+    `If your answer is plain text, its first line must be exactly \`retry: <what the stage must do differently>\` or \`owner: <why only the owner can unblock this>\`. ` +
+    `Read only what you need. Do not edit anything.`
+  let ans = null
+  try {
+    ans = await call(prompt, { label: lbl(`#${t.n} advisor recovery ${stage}`, t.title), phase: 'Tickets', schema: RECOVERY_SCHEMA, model, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+      `${pluginDir}/agents/advisor.md`)
+  } catch (e) { log(`#${t.n} ${stage}: advisor recovery failed (${e && e.message}); the ticket goes to the owner`) }
+  if (ans && typeof ans === 'object') {
+    const reason = capSummary(ans.reason) || capSummary(ans.advice) || '(no reason given)'
+    return ans.verdict === 'retry' ? { verdict: 'retry', reason, text: (typeof ans.advice === 'string' && ans.advice.trim()) || reason } : { verdict: 'owner', reason }
+  }
+  const text = typeof ans === 'string' ? ans : ''
+  const first = text.split('\n').find(l => l.trim()) || ''
+  const m = first.match(/^\s*(retry|owner)\b\s*[:\-]?\s*(.*)$/i)
+  if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
+  return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
+}
+
+const recovered = new Set()   // "<ticket>:<stage>" that already used its one blocked-stage recovery
+
+// One ticket stage: run it; on needs_advisor ask once and re-run once; on a block ask the advisor once for
+// a recovery (retry or owner); collect decisions; stop on a block.
 async function runStage(t, stage, build, schema, opts) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
   if (res && res.needs_advisor) {
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
-    res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
-      { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+    res = await call(build(ADVICE_HEADING + advice), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
-  if (!res) throw new Blocked(`${stage}: the agent returned nothing`)
+  // Gate: blocked-stage recovery.
+  // Verifies: a stage gets at most one recovery per ticket (the recovered set, keyed by ticket and stage), and a
+  //   result with a dangerous or contradicts_confirmed decision gets none: it goes to the owner as before.
+  // Does not verify: that the advisor's advice is right. The retry result passes the same checks as any result.
+  let suffix = ''
+  const flagged = ((res && res.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
+  if ((!res || res.status === 'blocked') && !flagged && !recovered.has(`${t.n}:${stage}`)) {
+    recovered.add(`${t.n}:${stage}`)
+    // Fable only after an Opus stage: the Opus work did not unblock it (CLAUDE.md, Models).
+    const v = await askRecovery(t, stage, res, rest.model === 'opus' ? 'fable' : advisorModel)
+    if (v.verdict !== 'retry') {
+      if (res) takeDecisions(t.n, stage, res)
+      throw new Blocked(`${stage}: ${(res && (res.blocked_reason || res.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
+    }
+    log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
+    suffix = `; advisor (retry failed): ${v.reason}`
+    res = await call(build(ADVICE_HEADING + v.text), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+  }
+  if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
   takeDecisions(t.n, stage, res)
-  if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}`)
+  if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}${suffix}`)
   const bad = (res.decisions || []).find(d => d.contradicts_confirmed || d.dangerous)
   if (bad) throw new Blocked(`${stage}: question for the owner: ${bad.title} (${bad.contradicts_confirmed ? 'contradicts an owner-confirmed answer' : 'dangerous'})`)
   return res
@@ -1526,7 +1582,7 @@ async function stageUat(delivered) {
         (tried ? `Earlier fix rounds (their code is already in your checkout):\n${tried}\n` : '') +
         `Fix the code so the owner's request holds. ${qa ? 'For a docs, config or script change, edit the file the AC names.' : 'Console errors are report-only: do not fix them unless a failing AC needs it.'}` +
         (accept ? `\nNever edit the acceptance tests under ${accept.dir}/.` : '') +
-        (advice ? `\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}` : '')
+        (advice ? ADVICE_HEADING + advice : '')
       let fix = null
       try { fix = await fixAgent(lbl(`#${t.n} ${NAME} fix${sfx}`, t.title), text, '', 'UAT', `${W}-${t.n}${key}`, RUN_CTX, false, { docs: qa }) }
       catch (e) { log(`${NAME} #${t.n}: fix round ${k} failed (${e && e.message})`) }

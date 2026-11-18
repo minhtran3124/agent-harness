@@ -1455,7 +1455,7 @@ test('s2: blocked, merge-blocked and skipped tickets get spec files with their r
   const p = named(calls, /^specs$/)[0].prompt
   const sum = path => (result.specFiles.find(f => f.path === path) || {}).text || ''
   assert.strictEqual(result.specFiles.length, 4, result.specFiles.map(f => f.path).join())
-  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
+  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build; advisor (owner): ADVICE-TEXT)'), 'blocked ticket')
   assert(sum('/repo/specs/3-ticket-3/summary.md').includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
   assert(sum('/repo/specs/4-ticket-4/summary.md').includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
   assert(p.includes('FULL-BODY-1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket body as the request')
@@ -1469,7 +1469,7 @@ test('s3: when no ticket is delivered the spec files are still written', async (
   assert.strictEqual(w.length, 1, labelsOf(calls).join())
   assert(w[0].prompt.includes('=== /repo/specs/1-add-the-thing/intent.md') && !w[0].prompt.includes('summary.md'))
   assert.strictEqual(result.specFiles.length, 1)
-  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope)') && result.specFiles[0].text.includes('code review: not run'))
+  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope; advisor (owner): ADVICE-TEXT)') && result.specFiles[0].text.includes('code review: not run'))
 })
 
 test('s4: early spec writes happen after the intent and plan stages, before implement, in the main checkout', async () => {
@@ -2297,6 +2297,54 @@ test('rc5: a stage result with a dangerous decision gets no recovery call', asyn
   assert.strictEqual(result.tickets[0].status, 'blocked')
   assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 0)
   assert(!('advisor recovery' in result.stats.byStage), Object.keys(result.stats.byStage).join())
+})
+
+test('rx1: a stage that returns nothing gets a recovery call that says so', async () => {
+  const { result, calls } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? null : undefined)))
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  assert(named(calls, /^advisor:recovery implement:1$/)[0].prompt.includes('(the agent returned nothing)'))
+  const retry = named(calls, /^implement:1:retry$/)[0]
+  assert(retry.prompt.includes('## Advisor advice') && retry.prompt.includes('RETRY-HINT'))
+})
+
+test('rx2: a structured retry verdict puts its advice in the retry prompt; a failed retry carries the reason', async () => {
+  const v = { verdict: 'retry', reason: 'RX-REASON', advice: 'RX-ADVICE' }
+  const a = await run({}, rcOver(v, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  assert.strictEqual(a.result.tickets[0].status, 'done')
+  assert(named(a.calls, /^implement:1:retry$/)[0].prompt.includes('RX-ADVICE'))
+  assert(named(a.calls, /^advisor:recovery implement:1$/)[0].schema, 'recovery call has a schema')
+  const b = await run({}, rcOver(v, () => rcBlocked()))
+  assert.strictEqual(b.result.tickets[0].reason, 'implement: cannot build; advisor (retry failed): RX-REASON')
+})
+
+test('rx3: a free-form advisor answer and a failed advisor call both count as owner', async () => {
+  const md = await run({}, rcOver('1. **Recommendation** - retry: do it again', () => rcBlocked()))
+  assert.strictEqual(rcCalls(md.calls, /^implement:1:retry$/), 0)
+  assert(md.result.tickets[0].reason.includes('advisor (owner)'), md.result.tickets[0].reason)
+  const err = await run({}, rcOver(new Error('no such model'), () => rcBlocked()))
+  assert.strictEqual(err.result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(err.calls, /^implement:1:retry$/), 0)
+  assert(err.result.tickets[0].reason.endsWith('advisor (owner): (no advisor answer)'), err.result.tickets[0].reason)
+})
+
+test('rx4: the recovery advisor runs on advisorModel after a Sonnet stage and on fable after an Opus stage', async () => {
+  const s = await run({ advisorModel: 'opus' }, rcOver('owner: x', () => rcBlocked()))
+  assert.strictEqual(named(s.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+  const l = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, rcOver('owner: x', () => rcBlocked()))
+  assert.strictEqual(named(l.calls, /^implement:1$/)[0].opts.model, 'opus')
+  assert.strictEqual(named(l.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'fable')
+})
+
+test('rx5: a stage that runs twice in one ticket gets one recovery in total', async () => {
+  let n = 0
+  const { result, calls } = await run({ tickets: mTicket() }, c => {
+    if (c.label === 'advisor:recovery implement:1') return 'retry: RETRY-HINT'
+    if (/^implement:1(:retry)?$/.test(c.label)) { n++; return n === 1 ? rcBlocked() : n === 2 ? { ...implOk(), decisions: [FLAWED] } : rcBlocked() }
+  })
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3, labelsOf(calls).join())
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 1, labelsOf(calls).join())
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.tickets[0].reason, 'implement: cannot build')
 })
 
 ;(async () => {
