@@ -461,18 +461,23 @@ async function askRecovery(t, stage, res, model) {
     `If your answer is plain text, its first line must be exactly \`retry: <what the stage must do differently>\` or \`owner: <why only the owner can unblock this>\`. ` +
     `Read only what you need. Do not edit anything.`
   let ans = null
-  try {
-    ans = await call(prompt, { label: lbl(`#${t.n} advisor recovery ${stage}`, t.title), phase: 'Tickets', schema: RECOVERY_SCHEMA, model, effort: EFFORT.advisor, agentType: 'harness:advisor' },
-      `${pluginDir}/agents/advisor.md`)
-  } catch (e) { log(`#${t.n} ${stage}: advisor recovery failed (${e && e.message}); the ticket goes to the owner`) }
+  const ask = m => call(prompt, { label: lbl(`#${t.n} advisor recovery ${stage}`, t.title), phase: 'Tickets', schema: RECOVERY_SCHEMA, model: m, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+    `${pluginDir}/agents/advisor.md`)
+  try { ans = await ask(model) } catch (e) {
+    log(`#${t.n} ${stage}: advisor recovery on ${model} failed (${e && e.message})`)
+    // A model the account cannot use (for example fable) falls back once to the profile's advisor.
+    if (model !== advisorModel) { try { ans = await ask(advisorModel) } catch (e2) { log(`#${t.n} ${stage}: advisor recovery on ${advisorModel} failed (${e2 && e2.message})`) } }
+  }
+  if (!ans) log(`#${t.n} ${stage}: no advisor recovery answer; the ticket goes to the owner`)
   if (ans && typeof ans === 'object') {
     const reason = capSummary(ans.reason) || capSummary(ans.advice) || '(no reason given)'
     return ans.verdict === 'retry' ? { verdict: 'retry', reason, text: (typeof ans.advice === 'string' && ans.advice.trim()) || reason } : { verdict: 'owner', reason }
   }
   const text = typeof ans === 'string' ? ans : ''
   const first = text.split('\n').find(l => l.trim()) || ''
-  // The verdict word, optionally in markdown emphasis, then a colon or a dash. Prose such as "Retry will not help" is no verdict.
-  const m = first.match(/^\s*[*_`]*\s*(retry|owner)\s*[*_`]*\s*[:\-\u2013\u2014]\s*(.*)$/i)
+  // The verdict word, optionally in markdown emphasis, then a colon, or a dash with a space after it. Prose such as
+  // "Retry will not help" or "Retry-safe? No" is no verdict.
+  const m = first.match(/^\s*[*_`]*\s*(retry|owner)[*_`]*(?:\s*:|\s*[-\u2013\u2014]\s)\s*(.*)$/i)
   if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text }
   return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
 }
@@ -488,9 +493,11 @@ async function runStage(t, stage, build, schema, opts) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
+  let earlier = ''   // advice from the needs_advisor call; a recovery retry keeps it
   if (res && res.needs_advisor) {
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
-    res = await call(build(ADVICE_HEADING + advice), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+    earlier = ADVICE_HEADING + advice
+    res = await call(build(earlier), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
   // Gate: blocked-stage recovery.
@@ -510,7 +517,10 @@ async function runStage(t, stage, build, schema, opts) {
     log(`#${t.n} ${stage}: blocked; the advisor says retry (${v.reason})`)
     suffix = `; advisor (retry failed): ${v.reason}`
     // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
-    res = await call(build(ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+    const first = res
+    res = await call(build(earlier + ADVICE_HEADING + v.text + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+    // A retry that returns nothing leaves only the blocked run's record: keep its decisions.
+    if (!res && first) takeDecisions(t.n, stage, first)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
   takeDecisions(t.n, stage, res)

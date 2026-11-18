@@ -2389,10 +2389,42 @@ test('rx10: a free-text verdict may use markdown emphasis and a colon or a dash'
     const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
     assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 1, ans)
   }
-  for (const ans of ['Retry will not help here', 'retrying is pointless: owner', 'owner - needs a human']) {
+  for (const ans of ['Retry will not help here', 'retrying is pointless: owner', 'owner - needs a human', 'Retry-safe? No - only the owner can']) {
     const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
     assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0, ans)
   }
+})
+
+test('rx11: a failed fable recovery call falls back once to advisorModel', async () => {
+  const r = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? new Error('unknown model fable') : 'retry: use the other way'
+    if (c.label === 'implement:1') return rcBlocked()
+    return undefined
+  })
+  const models = named(r.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model)
+  assert(models.includes('fable') && models[models.length - 1] === 'opus', models.join())
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+})
+
+test('rx12: a recovery retry keeps the advice of the earlier needs_advisor call', async () => {
+  let n = 0
+  const { calls } = await run({}, c => {
+    if (c.label === 'advisor:implement:1') return 'EARLIER-ADVICE'
+    if (c.label === 'advisor:recovery implement:1') return 'retry: RETRY-HINT'
+    if (c.label === 'implement:1') return { ...implOk(), status: 'ok', needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
+    return undefined
+  })
+  const retries = named(calls, /^implement:1:retry$/)
+  assert.strictEqual(retries.length, 2, labelsOf(calls).join())
+  assert(retries[1].prompt.includes('EARLIER-ADVICE') && retries[1].prompt.includes('RETRY-HINT'), retries[1].prompt.slice(-800))
+})
+
+test('rx13: a recovery retry that returns nothing keeps the blocked run decisions', async () => {
+  const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : null)))
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+  assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
 })
 
 ;(async () => {
