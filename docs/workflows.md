@@ -32,6 +32,14 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
   head the gate judged. There is no conflict path: a conflict or any failure changes nothing, and the ticket stays open.
 - **A ticket that fails a gate** is `blocked` ("human merge: gate <names> failed"), keeps its PR, and gets a `needs_review`
   decision with the exact command `gh pr merge <pr> --repo R --merge`. It is missing from the final PR and its dependents are skipped.
+- **Advisor on a failed gate** (base `feat/*` only): when the run's base matches `feat/*` and the gate failed only on
+  review findings (not fixed, or left at score 50 or more) or on open `needs_review` decisions, with CI green, intent
+  `match`, no failed security gate and no `dangerous` or `contradicts_confirmed` decision on the ticket, the gate asks the
+  advisor once (`#<n> advisor gate`) for a verdict per item: `accept`, `fix` or `owner`. `owner` on any item, or `fix` on a
+  decision, blocks the ticket as above. `fix` runs one more fix round and one re-review, then CI again, with no second advisor
+  call. All other items accepted: the gate passes, each item is recorded as an `Accepted by advisor: ` decision, and the
+  final PR body lists it under `## Accepted by advisor`. The call fails closed: no answer, or an unclear one, means `owner`.
+  An accepted `needs_review` decision keeps its flag, so the final PR stays a human merge; an accepted review finding does not.
 - **Guard**: the `merge-guard.sh` PreToolUse hook blocks any merge whose PR base is not `feat/*`; it fails closed
   (`docs/hooks.md`). A workflow or subagent never merges into base; only the owner, approving one PR in the session prompt, does. Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
   a nested Workflow), so `/harness:setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
