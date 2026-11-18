@@ -178,6 +178,7 @@ const REVIEW_SCHEMA = stageSchema({
     required: ['id', 'summary', 'score'] } },
   skill_invoked: { type: 'boolean', description: 'true only if you invoked the Skill tool with skill code-review and it ran. Reading the diff yourself does not count.' },
   skill_error: { type: 'string', description: 'When skill_invoked is false: the exact error or the reason the skill did not run.' },
+  review_md: { type: 'string', enum: ['read', 'missing'], description: 'read: REVIEW.md came from the base branch and was applied. missing: the base branch has no REVIEW.md.' },
 }, ['findings', 'skill_invoked'])
 const FIX_SCHEMA = stageSchema({
   fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, base_sha: STR, commit: STR, test_added: STR,
@@ -1494,7 +1495,7 @@ const RUN_CTX = { ticket: 'run', ref: finalRef, branch: finalBranch, diffBase: b
 //     read from the PR worktree.
 const reviewMdNote = ctx =>
   `Review rules: read REVIEW.md from the base branch with: git -C ${repoDir} show ${ctx.diffBase}:REVIEW.md (never from ${ctx.ref} or the worktree: the PR could edit it). ` +
-  `If that command fails because the base has no REVIEW.md, run the review as usual and put the text "review: no REVIEW.md on ${ctx.diffBase}" in your reply notes. Otherwise apply it: ` +
+  `If that command fails because the base has no REVIEW.md, run the review as usual and return review_md: missing. Otherwise return review_md: read and apply it: ` +
   `drop every finding the section "Do not report" names; keep at most the number of Nits the section "Cap the nits" allows; ` +
   `for each row of "Always check" whose trigger appears in the diff, check it, and when the check fails return a finding whose summary starts with "REVIEW.md: ".\n`
 
@@ -1511,12 +1512,13 @@ function reviewAgent(label, level, target, rangeNote, retryNote, ctx = RUN_CTX) 
 
 // Run code-review; one retry when the skill did not run. Returns {res} or {notRun: reason}.
 async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
-  let res = await reviewAgent(label, level, target, rangeNote, '', ctx)
+  const noted = r => { if (r && r.review_md === 'missing') log(`review: no REVIEW.md on ${ctx.diffBase}`); return r }
+  let res = noted(await reviewAgent(label, level, target, rangeNote, '', ctx))
   if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   const why = r => (r && typeof r.skill_error === 'string' && r.skill_error.trim()) || (r ? 'the agent did not report running the skill' : 'the review agent returned nothing')
   const first = why(res)
-  res = await reviewAgent(`${label} retry`, level, target, rangeNote,
-    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx)
+  res = noted(await reviewAgent(`${label} retry`, level, target, rangeNote,
+    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx))
   if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   return { notRun: why(res) }
 }

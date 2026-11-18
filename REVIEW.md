@@ -4,7 +4,7 @@ Review-only rules for the `code-review` stages of `ship.js`. The review agent re
 
 ## What Important means here
 
-Important is a finding that breaks the behavior of a hook, of `ship.js` or of the merge rule, or that weakens a test. Style, naming and wording are not Important.
+Important is a finding that breaks the behavior of a hook, of `ship.js` or of the merge rule, or that weakens a test. Naming, style and wording are Nit at most.
 
 ## Cap the nits
 
@@ -12,7 +12,6 @@ Report at most five Nits per review. Keep the five most useful and drop the rest
 
 ## Do not report
 
-- Wording or formatting of prose in `docs/` or `SKILL.md` files, unless it changes what an agent does.
 - Anything CI already checks: shellcheck (`bash scripts/check-shellcheck.sh`), `claude plugin validate --strict` and the STE lint.
 - Files under `specs/` (local scratch, gitignored) and `tests/evals/*/runs/`.
 

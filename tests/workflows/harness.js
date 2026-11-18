@@ -284,6 +284,14 @@ test('rv4: the fix-range re-review carries the same instruction', async () => {
   assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
 })
 
+test('rv9: a review that reports review_md missing makes the workflow log "review: no REVIEW.md on <base>"', async () => {
+  const miss = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'missing' }) : undefined))
+  assert(miss.logs.includes('review: no REVIEW.md on origin/v5.0.0'), miss.logs.join('\n'))
+  const read = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'read' }) : undefined))
+  assert(!read.logs.some(l => l.startsWith('review: no REVIEW.md')), read.logs.join('\n'))
+  assert(named(read.calls, /^review:r0$/)[0].prompt.includes('return review_md: missing'))
+})
+
 test('rv8: the reviewNote gate statement has a Verifies and Does not verify split naming CLAUDE.md and .claude/rules/', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
   const c = src.slice(src.indexOf('// Gate statement:'), src.indexOf('const reviewMdNote'))
