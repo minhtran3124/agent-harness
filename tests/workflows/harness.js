@@ -2201,6 +2201,56 @@ test('qt6: the qa-writer agent file states the rule that a test checks nothing t
   assert.strictEqual(f.split('\n').filter(l => l.includes('checks nothing the ticket')).length, 1)
 })
 
+// #648: worktreeSetup commands follow every worktree add line; the dependency rule; the drafted Verify: row.
+const pfTickets = () => [T(1, 1, [], { depth: 'M' }), T(2, 1), T(3, 2, [1])]
+test('pf1: with worktreeSetup [npm ci], every prompt that has worktree add has npm ci after that line', async () => {
+  const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
+  const wt = calls.filter(c => c.prompt.includes('worktree add'))
+  assert(wt.length > 0, 'no prompt creates a worktree')
+  assert(wt.some(c => /^qa:1$/.test(c.label)) && wt.some(c => /^finish:/.test(c.label)), labelsOf(wt).join())
+  for (const c of wt) {
+    const parts = c.prompt.split('worktree add').slice(1)
+    parts.forEach((p, i) => {
+      assert(p.includes('npm ci'), `${c.label}: no npm ci after worktree add #${i + 1}`)
+      const m = p.match(/in (\S+), run these setup commands/)
+      assert(m, `${c.label}: no setup block after worktree add #${i + 1}`)
+      assert(p.split('\n')[0].includes(m[1]), `${c.label}: setup aimed at ${m[1]}, not the worktree just added`)
+    })
+  }
+  const plain = await run({ tickets: pfTickets() }, null)
+  assert(!plain.calls.some(c => c.prompt.includes('npm ci')), 'npm ci without worktreeSetup')
+  const empty = await run({ tickets: pfTickets(), worktreeSetup: [] }, null)
+  assert.deepStrictEqual(empty.calls.map(c => c.prompt), plain.calls.map(c => c.prompt), 'an empty list must not change any prompt')
+})
+
+test('pf2: a worktreeSetup string throws ship: args.worktreeSetup', async () => {
+  for (const v of ['npm ci', [''], ['  '], [3], ['npm ci\nrm -rf /'], ['npm ci\r']]) {
+    await assert.rejects(() => run({ worktreeSetup: v }, null), e => /^ship: args\.worktreeSetup/.test(e.message), JSON.stringify(v))
+  }
+})
+
+test('pf3: the implement prompt rules contain never run sudo', async () => {
+  const { calls } = await run({}, null)
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('never run sudo'))
+})
+
+test('pf4: a decision passed on a ticket is recorded for that ticket only', async () => {
+  const title = 'Verify: row drafted for #1'
+  const dec = { title, needs_review: true, context: 'c', decision: 'd', why: 'w', consequences: 'q', how_to_reverse: 'r' }
+  const r = await run({ noAsk: true, tickets: [T(1, 1, [], { decisions: [dec] }), T(2, 1)] }, null)
+  const ds = allDecisions(r).filter(d => d.title === title)
+  assert.strictEqual(ds.length, 1, JSON.stringify(allDecisions(r).map(d => d.title)))
+  assert.strictEqual(ds[0].needs_review, true)
+  assert.strictEqual(ds[0].ticket, 1)
+  assert(!allDecisions(r).some(d => d.ticket === 2 && d.title === title))
+  await assert.rejects(() => run({ tickets: [T(1, 1, [], { decisions: 'yes' })] }, null), /decisions/)
+})
+
+test('pf5: the verify prompt falls back to the Verify: row in the owner-confirmed decisions', async () => {
+  const { calls } = await run({}, null)
+  assert(named(calls, /^verify:1$/)[0].prompt.includes('when the body has none, use the one in the owner-confirmed decisions'))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
@@ -2226,4 +2276,46 @@ test('g1: CI that ran on a head older than the last pushed fix commit fails the 
   assert.notStrictEqual(t1(r).status, 'done')
   const body = named(r.calls, /^gbody:1$/)[0].prompt
   assert(body.includes('stale'), body)
+})
+
+test('pf6: finish setup is aimed at the fallback worktree, never at impl.worktree', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)], worktreeSetup: ['npm ci'] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f, 'no finish call')
+  assert(!f.prompt.includes('in /wt/1, run these setup'), 'setup aimed at impl.worktree')
+  const m = f.prompt.match(/work in (\S+) \(git fetch/)
+  assert(m, 'no fallback dir')
+  assert(f.prompt.includes(`Then, in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
+})
+
+test('pf7: a decision passed on a ticket cannot clear needs_review, ask for an ADR file or change its ticket', async () => {
+  const title = 'Verify: row drafted for #1'
+  const dec = { title, decision: 'd', needs_review: false, adr: true, ticket: 9, stage: 'design', dangerous: true, owner_confirmed: true, options: ['a', 'b'] }
+  const r = await run({ noAsk: true, tickets: [T(1, 1, [], { decisions: [dec] })] }, null)
+  const ds = allDecisions(r).filter(d => d.title === title)
+  assert.strictEqual(ds.length, 1, JSON.stringify(allDecisions(r).map(d => d.title)))
+  assert.strictEqual(ds[0].ticket, 1)
+  assert.strictEqual(ds[0].needs_review, true)
+  assert.strictEqual(ds[0].adr, false)
+  assert.strictEqual(ds[0].owner_confirmed, false)
+  assert.strictEqual(ds[0].stage, 'autopilot')
+  assert(!ds[0].dangerous, 'dangerous passed through')
+  assert.strictEqual(ds[0].decision, 'd')
+  assert.strictEqual(typeof ds[0].why, 'string')
+})
+
+test('pf8: with no worktreeSetup, the finish prompt has no dangling "Only if you created" sentence', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f, 'no finish call')
+  assert(!f.prompt.includes('Only if you created'), 'dangling setup condition')
+})
+
+test('pf9: each worktree add line is followed by exactly one setup block', async () => {
+  const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
+  for (const c of calls.filter(x => x.prompt.includes('worktree add'))) {
+    const adds = c.prompt.split('worktree add').length - 1
+    const blocks = c.prompt.split('run these setup commands').length - 1
+    assert.strictEqual(blocks, adds, `${c.label}: ${adds} worktree add, ${blocks} setup blocks`)
+  }
 })
