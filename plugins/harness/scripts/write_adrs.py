@@ -147,7 +147,7 @@ def _fits_adr_rule(d: dict) -> bool:
 
 
 def is_early(d: dict) -> bool:
-    return str(d.get("stage") or "").strip() in EARLY_STAGES
+    return str(d.get("stage") or "").strip().lower() in EARLY_STAGES
 
 
 def needs_adr(d: dict) -> bool:
@@ -354,10 +354,10 @@ def dedupe(decisions: list) -> list:
     return merged
 
 
-def force_late_review(merged: list) -> list:
-    """A late decision goes to the owner: needs_review true, unless the owner already confirmed it."""
+def force_late_review(merged: list, skip=frozenset()) -> list:
+    """A late decision goes to the owner: needs_review true, even when it restates an owner-confirmed answer (#653)."""
     for d in merged:
-        if is_late(d) and d.get("owner_confirmed") is not True:
+        if is_late(d) and id(d) not in skip:
             d["needs_review"] = True
     return merged
 
@@ -523,9 +523,16 @@ def main() -> int:
             raise BadInput(f"cannot read input: {e}")
         adr_dir = Path(args.adr_dir)
         template = prepare_template(load_template(adr_dir))   # a broken template fails before any work
-        merged = force_late_review(dedupe(validate(data)))
+        merged = dedupe(validate(data))
         keys = existing_keys(adr_dir)
         recorded = {}
+        # A late restatement of a decision docs/adr already holds is that record, not a new choice for the owner.
+        for d in merged:
+            if is_late(d):
+                m = recorded_match(d, keys)
+                if m and m[1]:
+                    recorded[id(d)] = m[0]
+        merged = force_late_review(merged, frozenset(recorded))
         repair = {}   # old number -> new number, for a supersede a failed mark left unfinished
         kept = []
         for d in merged:

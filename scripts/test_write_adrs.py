@@ -750,14 +750,14 @@ def test_late_missing_stage_is_late(tmp_path):
     assert "late decision, no file" in table.read_text()
 
 
-def test_owner_confirmed_late_decision_is_not_forced_to_needs_review(tmp_path):
+def test_owner_confirmed_late_decision_is_still_forced_to_needs_review(tmp_path):
     adr, inp = setup(tmp_path, [dec(stage="review", needs_review=False, owner_confirmed=True)], existing=())
     table, needs = tmp_path / "t.md", tmp_path / "n.md"
     r = run(adr, inp, "--table-out", str(table), "--needs-out", str(needs))
     assert r.returncode == 0, r.stderr
     assert md_files(adr) == []
     assert "late decision, no file" in table.read_text()
-    assert needs.read_text() == ""
+    assert "## Needs your decision" in needs.read_text()
 
 
 def test_merge_keeps_the_early_item_over_a_late_restatement(tmp_path):
@@ -772,8 +772,33 @@ def test_merge_keeps_the_early_item_over_a_late_restatement(tmp_path):
 
 def test_stage_match_is_exact_for_the_early_list():
     w = wa()
-    for s in ("intake", "grilling", "intent", "research", "design", "plan", "plan-review", " plan "):
+    for s in ("intake", "grilling", "intent", "research", "design", "plan", "plan-review", " plan ", "Design"):
         assert w.needs_adr(dec(stage=s)), s
-    for s in ("implement", "review", "review-fix", "intent-fix", "qa", "setup", "adr", "", "Design"):
+    for s in ("implement", "review", "review-fix", "intent-fix", "qa", "setup", "adr", ""):
         assert not w.needs_adr(dec(stage=s)) and w.is_late(dec(stage=s)), s
     assert not w.is_late(dec(stage="review", adr=False))
+
+
+def test_recorded_adr_restated_late_is_already_recorded(tmp_path):
+    adr, inp = setup(tmp_path, [dec(needs_review=False)], existing=())
+    assert run(adr, inp).returncode == 0   # the design-stage decision gets ADR 0001
+    inp.write_text(json.dumps({"run": "r", "decisions": [dec(stage="review-fix", needs_review=False)]}))
+    table, needs = tmp_path / "t.md", tmp_path / "n.md"
+    r = run(adr, inp, "--table-out", str(table), "--needs-out", str(needs))
+    assert r.returncode == 0, r.stderr
+    assert md_files(adr) == ["0001-use-a-queue.md"]
+    assert "already recorded (ADR 0001)" in table.read_text()
+    assert needs.read_text() == ""
+
+
+def test_stage_match_ignores_case_and_spaces():
+    w = wa()
+    assert w.is_early(dec(stage=" Design ")) and not w.is_late(dec(stage=" Design "))
+
+
+def test_stage_lists_match_in_ship_js_and_write_adrs():
+    import re
+    src = (SCRIPT.parent.parent / "workflows/ship.js").read_text()
+    m = re.search(r"const EARLY_STAGES = \[([^\]]*)\]", src)
+    assert m, "EARLY_STAGES not found in ship.js"
+    assert tuple(re.findall(r"'([^']+)'", m.group(1))) == wa().EARLY_STAGES

@@ -395,12 +395,15 @@ function takeDecisions(ticket, stage, res) {
     const flagged = !!(d.contradicts_confirmed || d.dangerous)
     const title = str(d.title)   // only the agent labels a decision Boundary; a skip for another reason keeps its own title
     // A late call records its own label: an agent there cannot claim an early stage and get a file.
-    const recStage = EARLY_STAGES.includes(stage) ? (d.stage || stage) : stage
+    const norm = v => String(v || '').trim().toLowerCase()
+    const recStage = EARLY_STAGES.includes(norm(stage)) ? (norm(d.stage) || stage) : stage
     const options = Array.isArray(d.options) && d.options.length ? d.options : ['n/a']
     const adr = d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX)
     const ownerConfirmed = !flagged && d.owner_confirmed === true
-    // A late adr decision gets no file (write_adrs.py), so the owner must see it, unless the owner already confirmed it.
-    const late = adr && !ownerConfirmed && !EARLY_STAGES.includes(String(recStage).trim()) &&
+    // A late adr decision gets no file (write_adrs.py), so the owner must see it (#653: no exception).
+    // A late restatement of an early adr decision of this ticket is that decision: it does not go to the owner again.
+    const restated = decisions.some(x => x.ticket === ticket && x.adr && EARLY_STAGES.includes(norm(x.stage)) && norm(x.title) === norm(title))
+    const late = adr && !restated && !EARLY_STAGES.includes(norm(recStage)) &&
       options.filter(o => !['', 'n/a'].includes(String(o).trim().toLowerCase())).length >= 2 &&
       !/^uat not run/i.test(title.trim())
     decisions.push({

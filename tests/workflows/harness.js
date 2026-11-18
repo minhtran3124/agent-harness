@@ -2748,6 +2748,17 @@ test('ad1: a review-stage adr decision reaches the ADR input with stage review a
   assert(p.includes('stage before implement'), 'the ADR stage prompt does not say only an early decision gets a file')
 })
 
+test('ad2: a late restatement of an early adr decision does not send it to the owner; a new late one does', async () => {
+  const d = { title: 'Use a queue', context: 'c', options: ['a', 'b'], decision: 'a', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false, adr: true }
+  const r = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => {
+    if (c.label === 'plan:1') return ok({ plan_md: 'p', decisions: [d] })
+    if (c.label === 'implement:1') return { ...implOk(), decisions: [d, { ...d, title: 'Pick a cache' }] }
+  })
+  const ds = allDecisions(r)
+  assert(!ds.some(x => x.title === 'Use a queue' && x.needs_review), JSON.stringify(ds.filter(x => x.title === 'Use a queue')))
+  assert(ds.some(x => x.title === 'Pick a cache' && x.needs_review), JSON.stringify(ds.map(x => [x.title, x.stage, x.needs_review])))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {

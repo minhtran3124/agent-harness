@@ -29,11 +29,11 @@ decided on 2026-11-18 that an ADR file is created only before a ticket is implem
 ## Decision
 
 An ADR file is written only for a decision with `adr: true`, two or more real options and a `stage`
-that exactly matches one of the early stages. A decision that meets the rest of the rule but has
+that matches one of the early stages exactly, ignoring case and surrounding spaces. A decision that meets the rest of the rule but has
 another stage, or no stage, is a late decision: no file, the `## Decisions` table row says
 `late decision, no file`, and `needs_review` is forced true, so the PR body lists it under
-`## Needs your decision`. An `owner_confirmed` late decision is not forced to `needs_review`, because the
-owner already approved it. When duplicates merge, an early `adr` item wins over a later one.
+`## Needs your decision`. This holds for an `owner_confirmed` late decision too: the ticket allows no
+exception. When duplicates merge, an early `adr` item wins over a later one.
 
 In `ship.js`, a call whose stage label is not early records its own label as the decision's stage,
 so an agent in a late call cannot claim an early stage. `ADR_WHEN` and the stage rules state the
