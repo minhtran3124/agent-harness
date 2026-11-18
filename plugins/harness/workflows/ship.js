@@ -266,15 +266,12 @@ const RULES = `${rulesCommon(repoDir)}\n- Harness files (skills/, agents/, scrip
 const RULES_LITE = `Core rules (all of them apply):\n${rulesCore(repoDir)}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
-// Commands each new worktree runs once, after git worktree add (profile key worktreeSetup). Empty: no setup text.
+// Commands a new worktree runs once, right after git worktree add creates it (profile key worktreeSetup).
+// Empty or missing: no setup text, so every prompt stays as it was.
 const SETUP = args.worktreeSetup || []
-// lead opens the block: 'Then, ' after a worktree add, a condition in the finish stage. A marker file in the
-// worktree's git dir records that setup finished, so a retry after a failed or partial setup runs it again.
-const setupBlock = (dir, lead = 'Then, ') => {
-  if (!SETUP.length) return ''
-  const marker = `"$(git -C ${dir} rev-parse --git-dir)/ship-setup-done"`
-  return `${lead}in ${dir}, run these setup commands once, in order, before any other work (skip them only if the file ${marker} exists: an earlier attempt finished them):\n${SETUP.join('\n')}\nWhen all of them succeed, run: touch ${marker}\nIf one fails, follow the dependency rule.\n\n`
-}
+const setupBlock = dir => (SETUP.length
+  ? `Then, only if you just created ${dir} (not when you reused it): in ${dir}, run these setup commands once, in order, before any other work:\n${SETUP.join('\n')}\nIf one of them fails, follow the dependency rule.\n\n`
+  : '')
 const tickets = args.tickets
 const single = tickets.length === 1
 
@@ -380,6 +377,12 @@ function takeDecisions(ticket, stage, res) {
   }
 }
 
+const SKILL_DECISION_TEXT = ['title', 'context', 'decision', 'why', 'consequences', 'how_to_reverse']
+function skillDecision(d) {
+  const out = { options: ['n/a'], confidence: 'medium', needs_review: true, adr: false, owner_confirmed: false, decided_by: 'claude (autopilot skill)' }
+  for (const k of SKILL_DECISION_TEXT) out[k] = typeof d[k] === 'string' ? d[k] : ''
+  return out
+}
 function addDecision(ticket, stage, d) {
   decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, adr: false, decided_by: `claude (ship workflow: ${stage})`, ...d })
 }
@@ -697,8 +700,7 @@ function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
   const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
   const dir = impl.worktree || fw.dir
-  const finishSetup = setupBlock(fw.dir, `Only if you created ${fw.dir} just now: `)
-  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first). ${finishSetup}`.trimEnd() + '\n'
+  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n${setupBlock(fw.dir)}`
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines), contains this merge-policy block exactly once, unchanged, and ends with the footer line. Return the PR number as pr and its url.\n${single ? mergeBlock({ mode: 'human', why: `the PR targets ${base}` }) : mergeBlock({ mode: 'pending' })}\n`
@@ -965,8 +967,9 @@ async function stageGate(t, fin, impl, branch) {
 async function runTicket(t) {
   const branch = ticketBranch(t)
   const spec = specs[t.n] = {}
-  // Decisions the autopilot skill passed with the ticket (for example a drafted Verify: row under --no-ask).
-  for (const d of t.decisions || []) addDecision(t.n, 'autopilot', d)
+  // Decisions the autopilot skill passed with the ticket (a drafted Verify: row under --no-ask). Only the text
+  // fields are taken; the script sets the rest, so an entry can never clear needs_review or ask for an ADR file.
+  for (const d of t.decisions || []) addDecision(t.n, 'autopilot', skillDecision(d))
   try {
     const intent = spec.intent = await stageIntent(t)
     boundaries[t.n] = boundaryOf(intent)
