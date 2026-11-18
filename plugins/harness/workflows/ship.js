@@ -1119,7 +1119,7 @@ async function stageGate(t, fin, impl, branch) {
     !decisions.some(d => d.ticket === t.n && (d.flagged || d.dangerous || d.contradicts_confirmed))
   if (eligible && ciG === CI_SKIPPED) {
     // CI is skipped once review failed. It must be green before the advisor is asked, so read it now.
-    await runCi(((review.fixed || []).slice(-1)[0] || {}).commit || '')
+    await runCi(intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || '')
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
   if (eligible && ciG.ok) {

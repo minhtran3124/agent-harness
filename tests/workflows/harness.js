@@ -2591,6 +2591,17 @@ test('gav7: an advisor id in lowercase in a structured answer still gets its ver
   assert((gaAccepted(r.calls) || []).some(l => l.includes('LOWER-REASON')))
 })
 
+test('gav8: the deferred CI run on the advisor path expects the intent-fix tip, so a stale head blocks before any advisor call', async () => {
+  let n = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept'), c => {
+    if (c.label === 'gintent:1') return n++ === 0 ? gaps : { verdict: 'match', findings: [] }
+    if (c.label === 'gintent-fix:1') return ok({ fix_status: 'fixed', base_sha: 'ib0', commit: 'intentfixtip' })   // CI runs on the last review-fix commit, not on this tip
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'blocked')
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
