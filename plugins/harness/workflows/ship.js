@@ -1166,8 +1166,19 @@ async function stageGate(t, fin, impl, branch) {
           fixTip = res.commit
           // The advisor fix changed the diff: intent must still match.
           intent = await stageIntentReview([{ n: t.n }], ctx)
+          if (intent.fixRound) {
+            // An intent fix after the advisor fix moves the tip again: review its range and let CI expect the new tip.
+            fixTip = (intent.fixRange && intent.fixRange.split('..')[1]) || fixTip
+            if (intent.fixRange) {
+              const more = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
+                `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, ctx)
+              if (more.notRun) review.reReviewNotRun = more.notRun
+              else review.leftover = [...review.leftover, ...((more.res && more.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
+            } else review.unreviewedFix = true
+            intent = await stageIntentReview([{ n: t.n }], ctx)
+            if (intent.fixRound) review.unreviewedFix = true
+          }
           intentG = { ok: intent.verdict === 'match', text: intent.verdict }
-          if (intent.fixRound) review.unreviewedFix = true
         }
       }
       // Judge the gate with the accepted items set aside. They are recorded only when the whole gate then passes.

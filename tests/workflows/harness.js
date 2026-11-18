@@ -2614,6 +2614,20 @@ test('gav9: intent review runs again after an advisor fix, and a drift it finds 
   assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
 })
 
+test('gav10: an intent fix after the advisor fix is code-reviewed, and CI expects its tip', async () => {
+  let n = 0, ci = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gci:1' && ++ci === 2) return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'intentfixtip' }
+    if (c.label === 'gintent:1') { n++; return n === 2 ? gaps : { verdict: 'match', findings: [] } }
+    if (c.label === 'gintent-fix:1') return ok({ fix_status: 'fixed', base_sha: 'ib1', commit: 'intentfixtip' })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^greview:1:rif$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const m = named(r.calls, /^merge:/)[0]
+  assert(m && /PR 101 head intentfixtip\b/.test(m.prompt), m && m.prompt)
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
