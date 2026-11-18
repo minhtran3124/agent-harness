@@ -26,7 +26,7 @@ exit 2 it names the bad file and key.
 | `worktreeSetup` | list of one-line command strings, for example `["npm ci"]` | Step 8: `worktreeSetup` arg |
 
 `worktreeSetup` is optional and the default profile does not set it. Each stage that creates a
-worktree runs the commands once, in order, right after `git worktree add`. A stage whose setup
+worktree runs the commands once, in order, right after it creates the worktree. A stage whose setup
 fails, or that misses a system package, returns blocked with the name; no agent runs `sudo`.
 
 ## Orchestrator check
