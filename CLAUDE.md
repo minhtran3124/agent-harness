@@ -25,11 +25,11 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 - Coding: Sonnet 5.5 (`implementer` agent). Testing: Haiku 5.5
   (`test-runner`). Research and search: Haiku 5.5 (`researcher`). Intent review: Sonnet 5.5
   (`intent-reviewer`). Checking a ticket with no app: Sonnet 5.5 (`qa-verifier`).
-- Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.1 only when the Opus advice did not
+- Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.2 only when the Opus advice did not
   unblock the work, for a high-stakes architecture decision, or when the owner asks.
 - The orchestrator chooses the model and the effort for each subagent and each workflow agent,
   based on how hard the task is. It thinks for itself; the models above are defaults, not fixed
-  assignments, and it may raise or lower the model or the effort. Effort is not fixed. The Fable 5.1
+  assignments, and it may raise or lower the model or the effort. Effort is not fixed. The Fable 5.2
   conditions and the depth L rule below are hard limits.
 - Effort levels differ by model. Sonnet 5.5: `medium` for well-specified work, `high` for harder or
   longer work; `low` can skip verification, so use it only for mechanical stages. Opus 5.5: start at
@@ -38,12 +38,12 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 - When tasks are independent, the orchestrator spawns subagents in parallel (several `Agent` calls
   in one message, or a workflow `parallel()`), not one after another. It runs tasks in sequence
   only when one needs the result of another.
-- Workflow design and plan stages use Opus 5.5 at depth L; there is no plan stage at depth M and S:
-  the implement agent writes the plan itself at depth M. Depth L is the difficulty signal, so this fixed rule is an intentional exception to the flexible rule above.
+- Workflow `intent`, `plan` and `qa` stages use Opus 5.5 at `medium` at every depth (a profile entry can override each). Depth M has its own plan stage, fed by the intent only; depth S has no plan stage. Design runs on Opus 5.5 at depth L: depth L is the difficulty signal, so that fixed rule is an intentional exception to the flexible rule above.
 - Call the advisor when:
   - the ticket depth is L, or the ticket is important (design or plan review, before implement);
   - the same check fails twice after a fix;
   - an agent reports BLOCKED or low confidence;
+  - a `ship.js` stage returns blocked or nothing: one recovery per stage per ticket, in at most two rounds, each with the verdict `retry` (one more run with the advice) or `owner`; none for a `dangerous` or `contradicts_confirmed` decision; Opus first; Fable 5.2 only when the stage is still blocked after Opus advice (the `needs_advisor` call or the Opus round);
   - a decision would become an ADR with `needs_review`;
   - a grilling session reaches a deep design tree.
 - Workflow agents cannot spawn agents, so the script or the main session calls the advisor.
@@ -91,6 +91,7 @@ Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.
 ## Knowledge
 
 - One store per record type: decisions in `docs/adr/`, lessons in `docs/solutions/`. `docs/solutions/` holds solved problems and patterns. Start at `docs/solutions/INDEX.md`; read `docs/solutions/critical-patterns.md` when you plan. Entries carry `confirmed_at`: treat an entry older than 30 days as possibly stale.
+- `REVIEW.md` holds review-only rules that `ship.js` review stages read from the base branch. An agent never edits it inside a ticket PR; a new row needs the same miss in two PRs and owner approval in its own PR.
 - `docs/adr/` holds durable decisions and depth-L designs (an ADR with `stage: design`).
 - `specs/` is local scratch and is gitignored. Every ticket gets `specs/<slug>/` with five flow files: `intent.md`, `design.md`, `decision.md`, `plan.md`, `summary.md` (contract: `plugins/harness/templates/structure/specs-README.md`). A durable design or decision also goes to `docs/adr/`. Do not commit under `specs/`.
 

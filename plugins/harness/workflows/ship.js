@@ -9,16 +9,16 @@ export const meta = {
     { title: 'Intent review', detail: 'plan-blind check of the final diff against the original request' },
     { title: 'UAT', detail: 'plan-blind acceptance test of the running app against the original request (FE, BE, FE+BE)' },
     { title: 'Testing', detail: 'full test suite once, on the final branch' },
-    { title: 'Decisions', detail: 'artifact, ADR files, final PR body' },
+    { title: 'Decisions', detail: 'ADR files, final PR body' },
   ],
 }
 
 // ---------------------------------------------------------------------------
 // Constants. Models and effort are chosen here, per stage, never inside a stage.
 // ---------------------------------------------------------------------------
-const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
+const MODEL = { intent: 'opus', research: 'haiku', design: 'sonnet', plan: 'opus', implement: 'sonnet',
   verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku',
-  qa: 'sonnet', qaVerify: 'sonnet', security: 'opus', finish: 'sonnet' }
+  qa: 'opus', qaVerify: 'sonnet', security: 'opus', finish: 'sonnet' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
   verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high', qa: 'medium', qaVerify: 'medium', security: 'high', finish: 'medium' }
 // args.profile.stages (from the autopilot profile) may override MODEL and EFFORT per stage, any stage.
@@ -45,7 +45,9 @@ const RISK_TEXT = /\b(log ?in|log ?out|sign[- ]?in|sign[- ]?up|password|passwd|a
 const QA_SUBJECT = n => `Add acceptance tests for #${n}`   // the only commit subject allowed to touch the acceptance tests
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
 // The one wording of the ADR gate (adr flag), used by the stage rules, the decision schema and the decision-record skill.
-const ADR_WHEN = "the decision (a) changes harness behavior, a data or config contract, or how users work, and (b) had at least two viable options, listed in options. A scope note (Boundary), a 'UAT not run' event, and a decision flagged dangerous or contradicts_confirmed are never adr: they get a table row and needs_review, no ADR file."
+const ADR_WHEN = "the decision (a) changes harness behavior, a data or config contract, or how users work, and (b) had at least two viable options, listed in options. A scope note (Boundary), a 'UAT not run' event, and a decision flagged dangerous or contradicts_confirmed are never adr: they get a table row and needs_review, no ADR file. Only a decision from a stage before implement (intake, grilling, intent, research, design, plan, plan-review) gets a file."
+// The stages before implement (exact labels). Only their adr decisions get a file; write_adrs.py holds the same list.
+const EARLY_STAGES = ['intake', 'grilling', 'intent', 'research', 'design', 'plan', 'plan-review']
 // The wording of the owner-ask flag (needs_review): the owner must look at it before the merge. It makes no file.
 const NEEDS_REVIEW_WHEN = 'affects another ticket, a public contract or interface, stored data, security or cost, or is a trade-off that is costly to reverse, or contradicts the ticket text or an owner-confirmed answer'
 const CO_AUTHOR = 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'
@@ -64,10 +66,12 @@ const rulesCore = repoDir => `- No human is in the loop. Never ask anyone anythi
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
-- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
+- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.
+- Dependencies: when a project dependency is missing, install it with the project's own package manager inside your worktree and go on. When a system tool or system package is missing, stop and return blocked with its name; never run sudo.`
 const rulesCode = repoDir => `- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
 - Run only the tests related to your change. The full suite is the last stage's job.`
 const rulesDecisions = () => `- adr: true ONLY when ${ADR_WHEN} Only adr makes an ADR file, so be strict.
+- A choice made during or after implement that fits the adr rule is still returned with adr: true; the script lists it for the owner and writes no file.
 - needs_review: true ONLY when the decision ${NEEDS_REVIEW_WHEN}. needs_review asks the owner to look at the decision before the merge; it makes no ADR file, so be strict. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false, even when you are unsure (set confidence low then). It is still recorded as a decision.
 - owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has adr: true (adr wins); the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
@@ -114,8 +118,6 @@ const DESIGN_SCHEMA = stageSchema({ design_md: STR }, ['design_md'])
 const PLAN_SCHEMA = stageSchema({ plan_md: STR, plan_steps: { type: 'array', items: STEP } }, ['plan_md'])
 const IMPLEMENT_SCHEMA = stageSchema({
   worktree: STR, branch: STR, files: strList,
-  plan_md: { type: 'string', description: 'Depth M only: the full plan text you wrote before the first edit, in the shape of the plan template. Leave out when the prompt gave you the plan.' },
-  plan_steps: { type: 'array', items: STEP, description: 'Depth M only: the steps of that plan.' },
   commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } },
   verify: { type: 'array', items: { type: 'object', properties: { command: STR, exit: NUM, notes: STR, covers: strList }, required: ['command', 'exit'] } },
 }, ['worktree', 'branch'])
@@ -140,6 +142,23 @@ const UAT_SCHEMA = stageSchema({
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
+// The advisor's answer on a blocked stage: a verdict the script acts on, not free text.
+const RECOVERY_SCHEMA = { type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['retry', 'owner'], description: 'retry: one more run of the stage with your advice can unblock it. owner: only the owner can unblock it.' },
+    reason: { type: 'string', description: 'One sentence: why this verdict.' },
+    advice: { type: 'string', description: 'For retry: what the stage must do differently. It goes into the retry prompt.' } },
+  required: ['verdict', 'reason'] }
+// The advisor's answer on a failed ticket gate: one verdict per item id.
+const ADVISOR_GATE_SCHEMA = { type: 'object',
+  properties: {
+    items: { type: 'array', items: { type: 'object',
+      properties: {
+        id: { type: 'string', description: 'the item id from the prompt, for example R1 or D1' },
+        verdict: { type: 'string', enum: ['accept', 'fix', 'owner'], description: 'accept: the item may stay as it is. fix: one more fix round can fix it (a review finding, or a decision the code can make unnecessary). owner: only the owner can decide it.' },
+        reason: { type: 'string', description: 'One sentence: why this verdict.' } },
+      required: ['id', 'verdict', 'reason'] } } },
+  required: ['items'] }
 // The spec writer lists each file the Write tool refused, so the main session can write it from the run result.
 const SPECS_SCHEMA = stageSchema({ refused: { type: 'array', items: STR, description: 'absolute path of each file the Write tool refused to write' } })
 const MERGE_SCHEMA = stageSchema({
@@ -162,6 +181,7 @@ const REVIEW_SCHEMA = stageSchema({
     required: ['id', 'summary', 'score'] } },
   skill_invoked: { type: 'boolean', description: 'true only if you invoked the Skill tool with skill code-review and it ran. Reading the diff yourself does not count.' },
   skill_error: { type: 'string', description: 'When skill_invoked is false: the exact error or the reason the skill did not run.' },
+  review_md: { type: 'string', enum: ['read', 'missing', 'error'], description: 'read: REVIEW.md came from the base branch and was applied. missing: the base branch has no REVIEW.md. error: git show failed for another reason (say why in skill_error).' },
 }, ['findings', 'skill_invoked'])
 const FIX_SCHEMA = stageSchema({
   fix_status: { type: 'string', enum: ['fixed', 'skipped', 'failed'] }, base_sha: STR, commit: STR, test_added: STR,
@@ -175,6 +195,12 @@ const QA_SCHEMA = stageSchema({
   files: strList,
   tests: { type: 'array', items: { type: 'object', properties: { name: STR, covers: STR }, required: ['name', 'covers'] } },
 }, ['ready'])
+const QACHECK_SCHEMA = { type: 'object',
+  properties: {
+    uncovered: { ...strList, description: 'Acceptance criteria (by id) that no test covers.' },
+    unmapped: { ...strList, description: 'Tests (by name) that match no criterion.' },
+    invented: { ...strList, description: 'Tests (by name) that check something the ticket text and criteria do not state.' } },
+  required: ['uncovered', 'unmapped', 'invented'] }
 const TESTGUARD_SCHEMA = { type: 'object',
   properties: { commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } } },
   required: ['commits'] }
@@ -199,7 +225,6 @@ const INTENT_REVIEW_SCHEMA = { type: 'object',
 const SUITE_SCHEMA = { type: 'object',
   properties: { passed: NUM, failed: NUM, skipped: NUM, failing: strList, exit_code: NUM, tail: STR },
   required: ['passed', 'failed', 'skipped', 'failing'] }
-const ARTIFACT_SCHEMA = { type: 'object', properties: { created: BOOL, url: STR, fallback: STR }, required: ['created'] }
 const ADR_SCHEMA = stageSchema({
   adrs: { type: 'array', items: { type: 'object',
     properties: { number: NUM, path: STR, needs_review: BOOL, ticket: STR, title: STR }, required: ['number', 'path', 'needs_review'] } },
@@ -224,6 +249,12 @@ function validateArgs(a) {
     if (!['S', 'M', 'L'].includes(t.depth)) throw new Error(`ship: ticket #${t.n} depth must be S, M or L`)
     if (!Number.isInteger(t.group)) throw new Error(`ship: ticket #${t.n} needs an integer group`)
     if (t.deps !== undefined && !Array.isArray(t.deps)) throw new Error(`ship: ticket #${t.n} deps must be an array`)
+    if (t.decisions !== undefined && (!Array.isArray(t.decisions) || t.decisions.some(d => !d || typeof d.title !== 'string' || !d.title))) throw new Error(`ship: ticket #${t.n} decisions must be an array of decisions that each have a title`)
+  }
+  // Each entry is pasted into a prompt as one line, so a line break is rejected.
+  if (a.worktreeSetup !== undefined && (!Array.isArray(a.worktreeSetup) ||
+    !a.worktreeSetup.every(c => typeof c === 'string' && c.trim() && !/[\r\n]/.test(c)))) {
+    throw new Error('ship: args.worktreeSetup must be a list of command strings')
   }
   validateProfile(a.profile)
 }
@@ -255,6 +286,14 @@ const RULES = `${rulesCommon(repoDir)}\n- Harness files (skills/, agents/, scrip
 const RULES_LITE = `Core rules (all of them apply):\n${rulesCore(repoDir)}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
+// Commands a stage runs once in its worktree, right after git worktree add (profile key worktreeSetup). A retry that
+// reuses the directory runs them again, because the earlier attempt may have stopped halfway through them.
+// Empty or missing: no setup text, so every prompt stays as it was. The failure text is inline: a read-only
+// stage does not get the dependency rule of rulesCore.
+const SETUP = args.worktreeSetup || []
+const setupBlock = dir => (SETUP.length
+  ? `Then, in ${dir}, run these setup commands once, in order, before any other work (also when you reused ${dir}):\n${SETUP.join('\n')}\nIf one fails because a system tool or system package is missing, stop and return blocked with its name; never run sudo. If one fails for another reason, stop and return blocked with the command and its last error line.\n\n`
+  : '')
 const tickets = args.tickets
 const single = tickets.length === 1
 
@@ -272,6 +311,15 @@ const finalRef = single ? (LOCAL ? finalBranch : `${remote}/${finalBranch}`) : i
 const trimmed = repoDir.replace(/\/+$/, '')
 const parentDir = trimmed.split('/').slice(0, -1).join('/')
 const wtRoot = `${parentDir}/.ship-${trimmed.split('/').pop()}/${slugOf(slug)}`
+// A path an agent reports may be absolute: inside one of this run's worktrees (<wtRoot>/<name>/...) or in repoDir.
+// Keep only the repo-relative part, so a prompt or a git log never names another checkout.
+const repoRel = p => {
+  if (typeof p !== 'string') return p
+  const s = p.replace(/\/+$/, '')
+  if (s.startsWith(`${wtRoot}/`)) return s.slice(wtRoot.length + 1).split('/').slice(1).join('/')
+  if (s.startsWith(`${trimmed}/`)) return s.slice(trimmed.length + 1)
+  return s
+}
 const worktrees = new Set()   // every dir the script told an agent to create; the owner removes them
 const notCwd = dir => `Your session working directory is NOT the target repo. Run every command with \`git -C <path>\` or after \`cd ${dir || repoDir}\`; never edit ${repoDir} itself.`
 // branch: create it; null: detached checkout of `from` (an existing ref). existing: check out the branch that already exists (the QA writer made it).
@@ -281,7 +329,7 @@ function newWt(name, branch, from, existing) {
   const add = existing ? `${dir} ${branch}` : `${branch ? `-b ${branch} ` : '--detach '}${dir} ${from}`
   return { dir, setup:
     `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} worktree add ${add}\n\n` +
-    `Run the two commands above first, in that order. If ${dir} already exists (an earlier attempt of this stage), do not recreate it: cd into it and continue. Your worktree is ${dir}. ${notCwd(dir)}\n\n` }
+    `Run the two commands above first, in that order. If ${dir} already exists (an earlier attempt of this stage), do not recreate it: cd into it and continue. Your worktree is ${dir}. ${notCwd(dir)}\n\n` + setupBlock(dir) }
 }
 // Publish the current HEAD to an existing branch (fast-forward only).
 const land = branch => (LOCAL
@@ -303,8 +351,8 @@ const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== 
 // ran how often and on which model and effort, before deciding which stage to cut or to upgrade. There is no
 // timing: a workflow script must stay deterministic (no Date, no Math.random), so a resumed run replays the same.
 const callStats = []
-// "#3 intent · Title" -> "intent"; "#3 gate code-review · round 1" -> "gate code-review"; "fix r1.2 · file" -> "fix".
-const stageKey = label => String(label || 'unlabelled').replace(/^#\d+\s+/, '').split(' · ')[0].replace(/\s+r\d+(\.\d+)?$/, '').replace(/\s+retry$/, '')
+// "#3 intent · Title" -> "intent"; "#3 advisor recovery plan · Title" -> "advisor recovery"; "#3 gate code-review · round 1" -> "gate code-review"; "fix r1.2 · file" -> "fix".
+const stageKey = label => String(label || 'unlabelled').replace(/^#\d+\s+/, '').split(' · ')[0].replace(/^advisor recovery\b.*$/, 'advisor recovery').replace(/\s+r\d+(\.\d+)?$/, '').replace(/\s+retry$/, '')
 function statsOut() {
   const byStage = {}
   for (const c of callStats) {
@@ -346,20 +394,39 @@ function takeDecisions(ticket, stage, res) {
     if (!d || typeof d !== 'object') continue
     const flagged = !!(d.contradicts_confirmed || d.dangerous)
     const title = str(d.title)   // only the agent labels a decision Boundary; a skip for another reason keeps its own title
+    // A late call records its own label: an agent there cannot claim an early stage and get a file.
+    const norm = v => String(v || '').trim().toLowerCase()
+    const recStage = EARLY_STAGES.includes(norm(stage)) ? (norm(d.stage) || stage) : stage
+    const options = Array.isArray(d.options) && d.options.length ? d.options : ['n/a']
+    const adr = d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX)
+    const ownerConfirmed = !flagged && d.owner_confirmed === true
+    // A late adr decision gets no file (write_adrs.py), so the owner must see it (#653: no exception).
+    // A late restatement of an early adr decision of this ticket is that decision: it does not go to the owner again.
+    const restated = decisions.some(x => x.ticket === ticket && x.adr && EARLY_STAGES.includes(norm(x.stage)) && norm(x.title) === norm(title))
+    const late = adr && !restated && !EARLY_STAGES.includes(norm(recStage)) &&
+      options.filter(o => !['', 'n/a'].includes(String(o).trim().toLowerCase())).length >= 2 &&
+      !/^uat not run/i.test(title.trim())
     decisions.push({
-      ticket, stage: d.stage || stage, title, context: str(d.context),
-      options: Array.isArray(d.options) && d.options.length ? d.options : ['n/a'],
+      ticket, stage: recStage, title, context: str(d.context),
+      options,
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
-      needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
-      adr: d.adr === true && !flagged && !title.startsWith(BOUNDARY_PREFIX),
-      owner_confirmed: !flagged && d.owner_confirmed === true,
+      needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || late,
+      adr,
+      owner_confirmed: ownerConfirmed,
       boundary: title.startsWith(BOUNDARY_PREFIX),
+      ...(flagged ? { flagged: true } : {}),   // the ticket gate never lets the advisor judge a flagged decision
       decided_by: `claude (ship workflow: ${stage})`,
     })
   }
 }
 
+const SKILL_DECISION_TEXT = ['title', 'context', 'decision', 'why', 'consequences', 'how_to_reverse']
+function skillDecision(d) {
+  const out = { options: ['n/a'], confidence: 'medium', needs_review: true, adr: false, owner_confirmed: false, decided_by: 'claude (autopilot skill)' }
+  for (const k of SKILL_DECISION_TEXT) out[k] = typeof d[k] === 'string' ? d[k] : ''
+  return out
+}
 function addDecision(ticket, stage, d) {
   decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, adr: false, decided_by: `claude (ship workflow: ${stage})`, ...d })
 }
@@ -395,6 +462,8 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
+const ADVICE_HEADING = '\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n'
+
 async function askAdvisor(t, stage, question, state) {
   const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nQuestion: ${question || '(the stage gave no question; review its work)'}\n` +
@@ -406,21 +475,140 @@ async function askAdvisor(t, stage, question, state) {
   return typeof advice === 'string' ? advice : ''
 }
 
-// One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
+// The advisor's verdict on a blocked stage. Only an explicit retry gives retry; a failed call, an empty or
+// unparseable answer, or owner gives owner, so on any doubt the ticket blocks as it did before recovery existed.
+// opts.tried: advice an earlier round gave that did not unblock the stage. opts.noFallback: an escalation round does not
+// fall back to advisorModel (that would repeat the round before it).
+async function askRecovery(t, stage, res, model, opts = {}) {
+  const why = (res && (res.blocked_reason || res.summary)) || '(the agent returned nothing)'
+  const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
+    `${notCwd()}\nThe stage is blocked. Decide if one more run of the stage can unblock it.\n` +
+    `Blocked reason: ${why}\nStage summary: ${capSummary(res && res.summary) || '(none)'}\n` +
+    `Work from the first run may already exist (worktree, commits, a pushed branch, an open pull request); a retry must check for it and reuse it, never redo it.\n` +
+    (opts.tried ? `Advice already tried, and the stage is still blocked after it (give different advice, or owner):\n${opts.tried}\n` : '') +
+    `Answer with verdict retry (and advice: what the stage must do differently) or verdict owner (only the owner can unblock it), and a one-sentence reason. ` +
+    `If your answer is plain text, its first line must be exactly \`retry: <what the stage must do differently>\` or \`owner: <why only the owner can unblock this>\`. ` +
+    `Read only what you need. Do not edit anything.`
+  let ans = null
+  let used = model
+  const ask = m => call(prompt, { label: lbl(`#${t.n} advisor recovery ${stage}`, t.title), phase: 'Tickets', schema: RECOVERY_SCHEMA, model: m, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+    `${pluginDir}/agents/advisor.md`)
+  try { ans = await ask(model) } catch (e) {
+    log(`#${t.n} ${stage}: advisor recovery on ${model} failed (${e && e.message})`)
+    // A model the account cannot use (for example fable) falls back once to the profile's advisor.
+    if (model !== advisorModel && !opts.noFallback) { used = advisorModel; try { ans = await ask(advisorModel) } catch (e2) { log(`#${t.n} ${stage}: advisor recovery on ${advisorModel} failed (${e2 && e2.message})`) } }
+  }
+  if (!ans) log(`#${t.n} ${stage}: no advisor recovery answer; the ticket goes to the owner`)
+  if (ans && typeof ans === 'object') {
+    const reason = capSummary(ans.reason) || capSummary(ans.advice) || '(no reason given)'
+    return ans.verdict === 'retry' ? { verdict: 'retry', reason, text: (typeof ans.advice === 'string' && ans.advice.trim()) || reason, model: used } : { verdict: 'owner', reason }
+  }
+  const text = typeof ans === 'string' ? ans : ''
+  const first = text.split('\n').find(l => l.trim()) || ''
+  // The verdict word, optionally in markdown emphasis, then a colon, or a dash with a space after it. Prose such as
+  // "Retry will not help" or "Retry-safe? No" is no verdict.
+  const m = first.match(/^\s*[*_`]*\s*(retry|owner)[*_`]*(?:\s*:|\s*[-\u2013\u2014]\s)\s*(.*)$/i)
+  if (m && m[1].toLowerCase() === 'retry') return { verdict: 'retry', reason: capSummary(m[2]) || '(no reason given)', text, model: used }
+  return { verdict: 'owner', reason: (m ? capSummary(m[2]) : capSummary(first)) || '(no advisor answer)' }
+}
+
+// The advisor's verdict on each item of a failed ticket gate. Only an explicit accept or fix counts; a failed call, an
+// answer that is not an object or a clear text list, a missing id or an unknown verdict gives owner for that item.
+const GATE_VERDICTS = ['accept', 'fix', 'owner']
+async function askGate(t, fin, items, wt) {
+  const prompt = `${RULES_LITE}\n\nTicket #${t.n}: ${t.title}, ticket PR ${fin.pr} in ${repo}, run base ${base}.\n` +
+    `${notCwd()}\nThe merge gate of this ticket failed only on the items below. Give one verdict per item id:\n` +
+    `- accept: the item may stay as it is and the ticket PR may merge into ${integBranch}. The final PR body lists every accepted item; an accepted decision keeps the final PR a human merge, an accepted review finding does not by itself.\n` +
+    `- fix: one more fix round can fix it: a review finding, or a decision the code can make unnecessary.\n` +
+    `- owner: only the owner can decide it.\n\n` +
+    `Items:\n${items.map(i => `${i.id}: ${i.text}`).join('\n')}\n\n` +
+    `Return items: one entry per id with verdict and a one-sentence reason. ` +
+    `If your answer is plain text, write exactly one line per id in the form \`R1: accept: <reason>\` (verdict accept, fix or owner). ` +
+    `You cannot run commands. ${wt ? `To check an item against the code, Read the files it names under ${wt} (the ticket branch as the implement stage left it; later fix commits may be missing there). ` : ''}Read only what you need. Do not edit anything.`
+  let ans = null
+  try {
+    ans = await call(prompt, { label: lbl(`#${t.n} advisor gate`, t.title), phase: 'Gate', schema: ADVISOR_GATE_SCHEMA, model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+      `${pluginDir}/agents/advisor.md`)
+  } catch (e) { log(`#${t.n} advisor gate failed (${e && e.message}); every item goes to the owner`) }
+  const got = new Map()
+  const put = (id, verdict, reason) => {
+    const v = String(verdict || '').toLowerCase()
+    if (typeof id === 'string' && !got.has(id.trim().toUpperCase()) && GATE_VERDICTS.includes(v)) got.set(id.trim().toUpperCase(), { verdict: v, reason: capSummary(reason) || '(no reason given)' })
+  }
+  if (ans && typeof ans === 'object' && Array.isArray(ans.items)) {
+    for (const x of ans.items) if (x && typeof x === 'object') put(x.id, x.verdict, x.reason)
+  } else if (typeof ans === 'string') {
+    for (const line of ans.split('\n')) {
+      const m = line.match(/^\s*[-*]?\s*[*_`]*\s*([RD]\d+)\s*[*_`]*\s*:\s*[*_`]*(accept|fix|owner)[*_`]*\s*:\s*(.*)$/i)
+      if (m) put(m[1].toUpperCase(), m[2], m[3])
+    }
+  }
+  const out = new Map()
+  for (const i of items) out.set(i.id, got.get(i.id) || { verdict: 'owner', reason: ans ? '(no verdict for this item)' : '(no advisor answer)' })
+  return out
+}
+
+// Added to the retry prompt of a blocked stage: the first run may have left work behind.
+const RETRY_REUSE = '\n\nThis is a retry of a blocked run. Before you create anything, check for work the first run left (the worktree directory, the branch, commits, a pushed branch, an open pull request). Reuse it: if a worktree or branch already exists, cd into it and continue; never recreate it and never open a second pull request.'
+
+const recovered = new Set()   // "<ticket>:<stage>" that already used its one blocked-stage recovery
+
+// One ticket stage: run it; on needs_advisor ask once and re-run once; on a block ask the advisor once for
+// a recovery (retry or owner); collect decisions; stop on a block.
 async function runStage(t, stage, build, schema, opts) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
+  let earlier = ''   // advice from the needs_advisor call; a recovery retry keeps it
+  let advised = false   // the needs_advisor call returned real advice
   if (res && res.needs_advisor) {
-    const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
-    res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
-      { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+    let advice = ''
+    try { advice = await askAdvisor(t, stage, res.advisor_question, res.summary) } catch (e) { log(`#${t.n} ${stage}: advisor call failed (${e && e.message}); retrying without advice`) }
+    earlier = ADVICE_HEADING + advice
+    advised = advice.trim() !== ''
+    res = await call(build(earlier), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
-  if (!res) throw new Blocked(`${stage}: the agent returned nothing`)
+  // Gate: blocked-stage recovery.
+  // Verifies: a stage gets at most one recovery per ticket (the recovered set, keyed by ticket and stage), with at most
+  //   two rounds: the profile's advisor, then, when that advisor is Opus and its advice did not unblock the stage, Fable
+  //   (owner, 2026-11-18: Fable only after Opus advice failed). A result with a dangerous or contradicts_confirmed
+  //   decision gets no round: it goes to the owner as before.
+  // Does not verify: that the advisor's advice is right. Each retry result passes the same checks as any result.
+  let suffix = ''
+  const flaggedOf = r => ((r && r.decisions) || []).some(d => d && (d.contradicts_confirmed || d.dangerous))
+  const blockedOf = r => !r || r.status === 'blocked'
+  if (blockedOf(res) && !flaggedOf(res) && !recovered.has(`${t.n}:${stage}`)) {
+    recovered.add(`${t.n}:${stage}`)
+    // Fable only when Opus advice already failed to unblock this stage (CLAUDE.md, Models). Real Opus advice from the
+    // needs_advisor call counts as one failed round, so the recovery starts on Fable; otherwise Opus first, then Fable.
+    const opusAdviceFailed = advised && advisorModel === 'opus'
+    const rounds = opusAdviceFailed ? ['fable'] : (advisorModel === 'opus' ? ['opus', 'fable'] : [advisorModel])
+    let advice = earlier   // every round keeps the advice of the rounds before it
+    let tried = ''         // the recovery advice the rounds before this one gave
+    let lastRun = res      // the last run that returned something: its reason and decisions stand when a retry returns nothing
+    for (const [i, model] of rounds.entries()) {
+      if (i > 0 && (!blockedOf(res) || flaggedOf(res))) break
+      const v = await askRecovery(t, stage, lastRun, model, i > 0 ? { tried, noFallback: true } : {})
+      if (v.verdict !== 'retry') {
+        if (lastRun) takeDecisions(t.n, stage, lastRun)
+        throw new Blocked(`${stage}: ${(lastRun && (lastRun.blocked_reason || lastRun.summary)) || 'the agent returned nothing'}; advisor (owner): ${v.reason}`)
+      }
+      log(`#${t.n} ${stage}: blocked; the advisor (${v.model}) says retry (${v.reason})`)
+      suffix = `; advisor (retry failed): ${v.reason}`
+      advice += ADVICE_HEADING + v.text
+      tried += `${tried ? '\n' : ''}${v.text}`
+      // As on the needs_advisor path, only the retry's decisions are recorded: the retry redoes the stage's work.
+      res = await call(build(advice + RETRY_REUSE), { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
+      if (res) lastRun = res
+    }
+    // A last retry that returns nothing leaves only the last run's record: keep its decisions.
+    if (!res && lastRun) takeDecisions(t.n, stage, lastRun)
+  }
+  if (!res) throw new Blocked(`${stage}: the agent returned nothing${suffix}`)
   takeDecisions(t.n, stage, res)
-  if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}`)
-  const bad = (res.decisions || []).find(d => d.contradicts_confirmed || d.dangerous)
+  if (res.status === 'blocked') throw new Blocked(`${stage}: ${res.blocked_reason || res.summary}${suffix}`)
+  const bad = flaggedOf(res) && res.decisions.find(d => d && (d.contradicts_confirmed || d.dangerous))
   if (bad) throw new Blocked(`${stage}: question for the owner: ${bad.title} (${bad.contradicts_confirmed ? 'contradicts an owner-confirmed answer' : 'dangerous'})`)
   return res
 }
@@ -469,13 +657,6 @@ function stagePlan(t, intent, extra) {
   return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan })
 }
 
-// Depth M: the prompt text that tells the implement agent to write the plan itself before it codes.
-function foldedPlanText(intent) {
-  return `Plan: no plan exists yet and no other agent writes one. Before your first edit, read ${pluginDir}/skills/writing-plans/SKILL.md and write the plan for this ticket with it, in Mode: auto, ` +
-    `in the shape of ${pluginDir}/templates/specs/plan.md. Return the full plan text as plan_md and its steps as plan_steps (the script saves plan_md as specs/<slug>/plan.md). Then take the steps one at a time.\n` +
-    `Intent: ${JSON.stringify(intent)}`
-}
-
 // A depth-L ticket gets one advisor look at its design and plan before any code is written.
 async function advisePlan(t, design, plan) {
   return askAdvisor(t, 'plan-review', 'Is this design and plan sound and complete enough to implement? Name what to change.',
@@ -495,6 +676,39 @@ function stageQa(t, intent, design, branch) {
   return runStage(t, 'qa', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
 }
 
+// Gate statement for `qa check`. Verifies: every criterion has at least one test and every test names one criterion.
+// Does not verify: that a test catches every defect, or that the criterion itself is right.
+// Read-only: Opus reads the ticket text, the criteria and the committed test files; never the plan or the application source.
+const qaCheckRuns = {}   // a re-check needs a fresh worktree: a reused dir would hold the pre-repair tests
+function stageQaCheck(t, intent, qa, tip) {
+  qaCheckRuns[t.n] = (qaCheckRuns[t.n] || 0) + 1
+  const w = newWt(`qa-check-${t.n}-${qaCheckRuns[t.n]}`, null, tip)
+  const criteria = (intent.acceptance || []).map((a, i) => `AC${i + 1}: ${a}`).join('\n') || '(none listed: use the ticket text)'
+  const build = advice => w.setup + head(t, null,
+    `Stage: qa check. Read-only: edit nothing, commit nothing. Read no plan and no application source.\n` +
+    `Read only the committed acceptance tests (${(qa.files || []).join(', ')} under ${qa.dir}/) in your worktree, and compare them with the ticket text and these criteria:\n${criteria}\n` +
+    `Return uncovered (criteria with no test), unmapped (tests that match no criterion) and invented (tests that check something the ticket text and criteria do not state, for example a guard against a future file, function or tool, or a path the ticket does not name). Empty lists when all is well.${advice}`, w.dir)
+  return call(build(''), { label: lbl(`#${t.n} qa check`, t.title), phase: 'Tickets', schema: QACHECK_SCHEMA, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// One repair of the blind tests, by the qa-writer, on the existing ticket branch. where: { dir, setup } of a worktree with that branch checked out.
+function stageQaRepair(t, qa, problems, where) {
+  const build = advice => where.setup + head(t, null,
+    `Stage: qa repair. Act as the QA writer (${pluginDir}/agents/qa-writer.md) in repair mode and stay blind: read no application source and no plan.\n` +
+    `The branch is already checked out in ${where.dir}. Fix only the flaws named below in the tests under ${qa.dir}/. Commit with the exact subject ${QA_SUBJECT(t.n)}. Never push, never force.\n` +
+    `Flaws:\n${problems}\n` +
+    `Return ready, dir, files and tests (name and covers).${advice}`, where.dir)
+  return runStage(t, 'qa repair', build, QA_SCHEMA, { agentType: 'harness:qa-writer', roleFile: `${pluginDir}/agents/qa-writer.md`, model: MODEL.qa, effort: EFFORT.qa })
+}
+
+// The script, not the repair agent, frees the branch for implement: it runs on the failure and not-ready paths too.
+async function stageQaRepairCleanup(t, dir) {
+  try {
+    await call(`git -C ${repoDir} worktree remove --force ${dir}\n\n${notCwd()}\nRun the command above from outside ${dir}. If ${dir} does not exist, do nothing. Edit nothing else.`,
+      { label: lbl(`#${t.n} qa repair cleanup`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`#${t.n} qa repair cleanup: skipped (${e && e.message ? e.message : String(e)})`) }
+}
+
 // The implementer must not touch the acceptance tests. Only commits with the QA subject may; any other commit is a violation.
 async function stageTestGuard(t, impl, qa) {
   const tb = impl.branch
@@ -505,6 +719,7 @@ async function stageTestGuard(t, impl, qa) {
 }
 
 const securityNotes = {}   // ticket number -> the gate result, for the PR body
+const advisorAccepted = []   // { n, item, reason } per gate item the advisor accepted, for the final PR body
 function isRisky(t, intent, impl) {
   const text = [t.title, t.confirmed, intent && intent.goal, ...((intent && intent.acceptance) || [])].filter(Boolean).join('\n')
   const paths = ((impl && impl.files) || []).filter(f => RISKY_PATH.test(f))
@@ -544,7 +759,7 @@ function stageVerify(t, impl, mode) {
   const w = base ? newWt(`verify-base-${t.n}`, null, integRef) : null
   const dir = base ? w.dir : impl.worktree
   const build = advice => (base ? w.setup : '') + head(t, null,
-    `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above. ` +
+    `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above; when the body has none, use the one in the owner-confirmed decisions. ` +
     (base
       ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
       : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
@@ -661,7 +876,7 @@ function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
   const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
   const dir = impl.worktree || fw.dir
-  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n`
+  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n${setupBlock(fw.dir)}`
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines), contains this merge-policy block exactly once, unchanged, and ends with the footer line. Return the PR number as pr and its url.\n${single ? mergeBlock({ mode: 'human', why: `the PR targets ${base}` }) : mergeBlock({ mode: 'pending' })}\n`
@@ -844,9 +1059,10 @@ function judgeReview(rv) {
   if (!rv || rv.status !== 'ran') return { ok: false, text: `not run${rv && rv.reason ? ` (${rv.reason})` : ''}` }
   const notFixed = (rv.notFixed || []).length, left = (rv.leftover || []).filter(f => f.score >= FIX_THRESHOLD).length
   if (rv.reReviewNotRun) return { ok: false, text: `re-review not run (${rv.reReviewNotRun})` }
-  if (rv.unreviewedFix) return { ok: false, text: 'the intent fix commits were not reviewed' }
+  if (rv.unreviewedFix) return { ok: false, text: 'fix commits were not reviewed' }
   if (notFixed || left) return { ok: false, text: `${notFixed} not fixed, ${left} left at score ${FIX_THRESHOLD} or more` }
-  return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left` }
+  const acc = (rv.accepted || []).length
+  return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left${acc ? `, ${acc} accepted by advisor` : ''}` }
 }
 
 function stageCi(t, fin, ctx, label) {
@@ -881,66 +1097,196 @@ async function humanMergeBlock(n, r) {
     mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, open: { ok: true, text: 'none' } }))
 }
 
+// Reviews the commits a fix landed after the main review. With no range the fix is unreviewed, and the gate fails on it.
+async function reviewFixRange(ctx, review, what, range) {
+  if (!range) { review.unreviewedFix = true; return }
+  const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · ${what}`, review.level, range,
+    `This is a review of the ${what} commits only, range ${range}. Review that diff and nothing else.\n`, ctx)
+  if (again.notRun) review.reReviewNotRun = again.notRun
+  else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
+}
+// Intent review of the ticket. Code an intent fix lands is reviewed; a second intent fix is never reviewed, so it fails the
+// gate. Returns the intent result and the tip the intent fix moved the branch to ('' when it made none).
+async function intentWithReview(t, ctx, review) {
+  let intent = await stageIntentReview([{ n: t.n }], ctx)
+  let tip = ''
+  if (intent.fixRound) {
+    tip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
+    await reviewFixRange(ctx, review, 'intent fix', intent.fixRange)
+    intent = await stageIntentReview([{ n: t.n }], ctx)
+    if (intent.fixRound) review.unreviewedFix = true
+  }
+  return { intent, tip }
+}
+
 async function stageGate(t, fin, impl, branch) {
   const fail = (gates, extra) => ({ pass: false, failed: gates, ...extra })
   if (!(fin && fin.pr > 0)) return fail([{ gate: 'pr', detail: 'no PR number was returned' }])
   const tb = impl.branch || branch
   const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
     wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
-  const failed = []
   const review = await reviewLoop(ctx, ctx.target)
-  let intent = await stageIntentReview([{ n: t.n }], ctx)
-  let intentFixTip = ''
-  if (intent.fixRound) {
-    intentFixTip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
-    // Code the intent fix landed has not been reviewed. Review that range; a second fix round is never reviewed, so it fails the gate.
-    if (intent.fixRange) {
-      const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
-        `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, ctx)
-      if (again.notRun) review.reReviewNotRun = again.notRun
-      else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
-    } else review.unreviewedFix = true
-    intent = await stageIntentReview([{ n: t.n }], ctx)
-    if (intent.fixRound) review.unreviewedFix = true
-  }
-  const reviewG = judgeReview(review)
-  const intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+  let { intent, tip: intentFixTip } = await intentWithReview(t, ctx, review)
+  let reviewG = judgeReview(review)
+  let intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+  let failed = []
   if (!reviewG.ok) failed.push({ gate: 'review', detail: reviewG.text })
   if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
-  let ciG, head = ''
-  if (failed.length) ciG = { ok: false, text: 'not checked (an earlier gate failed)' }
-  else {
+  const CI_SKIPPED = { ok: false, text: 'not checked (an earlier gate failed)' }
+  let ciG = CI_SKIPPED, head = ''
+  // The fallback head CI must have run on when it reports no branch tip: the intent-fix tip, else the last review fix.
+  const expectTip = () => intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || ''
+  const runCi = async (expect) => {
     const res = await stageCi(t, fin, ctx, `${ctx.labelPrefix}CI checks`)
-    const lastFix = intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || ''
-    ciG = judgeCi(res, lastFix)
+    ciG = judgeCi(res, expect)
     head = ciG.ok ? res.headRefOid.trim() : ''
+  }
+  if (!failed.length) {
+    await runCi(expectTip())
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
-  const nr = decisions.filter(d => d.ticket === t.n && d.needs_review)
-  const nrG = { ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' }
+  // An advisor-accepted or advisor-fixed decision keeps needs_review (the final PR stays a human merge); only this gate sets it aside.
+  const openNr = () => decisions.filter(d => d.ticket === t.n && d.needs_review && !d.advisor_accepted && !d.advisor_fixed)
+  const nrOf = nr => ({ ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' })
+  let nrG = nrOf(openNr())
   if (!nrG.ok) failed.push({ gate: 'needs_review', detail: nrG.text })
+
+  // Gate: advisor judges a failed ticket gate.
+  // Verifies: the run's base matches feat/*, and every failed gate reason is review (a not-fixed finding, or a leftover
+  //   finding scoring FIX_THRESHOLD or more, from a review that ran) or needs_review; CI is green, intent is match, the
+  //   security gate did not fail (runTicket already stops on a blocking security finding; this check is defensive) and no
+  //   decision of the ticket is dangerous or contradicts_confirmed. One advisor call and at most one fix round per ticket.
+  //   Code an advisor fix lands is reviewed, and intent review runs again on it.
+  // Does not verify: that an accepted item is harmless. An accepted or fixed needs_review decision keeps needs_review, so
+  //   the final PR stays a human merge; the owner reads '## Accepted by advisor' in its body before the merge.
+  let advised = null
+  const eligible = /^feat\//.test(base) && failed.length > 0 && failed.every(f => f.gate === 'review' || f.gate === 'needs_review') &&
+    review.status === 'ran' && !review.reReviewNotRun && !review.unreviewedFix && intent.verdict === 'match' &&
+    !(securityNotes[t.n] && securityNotes[t.n].blocking.length) &&
+    !decisions.some(d => d.ticket === t.n && (d.flagged || d.dangerous || d.contradicts_confirmed))
+  if (eligible && ciG === CI_SKIPPED) {
+    // CI is skipped once review failed. It must be green before the advisor is asked, so read it now.
+    await runCi(expectTip())
+    if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
+  }
+  if (eligible && ciG.ok) {
+    const findingText = f => `${f.path ? `in ${f.path}${f.line ? `:${f.line}` : ''}: ` : ''}${f.summary}`
+    const items = [
+      ...(review.notFixed || []).map(f => ({ kind: 'R', f, summary: f.summary, text: `review finding the fix agent did not fix: ${findingText(f)} (fix agent: ${f.reason || 'no reason'})` })),
+      ...(review.leftover || []).filter(f => f.score >= FIX_THRESHOLD).map(f => ({ kind: 'R', f, summary: f.summary, text: `review finding left after the fix rounds (score ${f.score}) ${findingText(f)}` })),
+    ].map((x, i) => ({ ...x, id: `R${i + 1}` }))
+    items.push(...openNr().map((d, i) => ({ kind: 'D', d, id: `D${i + 1}`, summary: d.title, text: `needs_review decision: ${d.title}. Decision: ${d.decision}. Why: ${d.why}` })))
+    const verdicts = await askGate(t, fin, items, impl.worktree)
+    const v = i => verdicts.get(i.id)
+    const said = items.map(i => `${i.id} ${v(i).verdict}: ${v(i).reason}`).join('; ')
+    advised = { verdicts: Object.fromEntries(items.map(i => [i.id, v(i)])), accepted: [] }
+    const toOwner = items.filter(i => v(i).verdict === 'owner')
+    if (toOwner.length) {
+      log(`#${t.n} advisor gate: ${toOwner.map(i => i.id).join(', ')} go to the owner`)
+      for (const f of failed) f.detail += `; advisor: ${said}`
+    } else {
+      const fixes = items.filter(i => v(i).verdict === 'fix')
+      const accepts = items.filter(i => v(i).verdict === 'accept')
+      let fixTip = ''
+      let moved = false   // an advisor fix landed commits, so CI must run again at the new tip
+      const fixedD = []
+      if (fixes.length) {
+        // One fix round for the fix items, one re-review of its commits, then the gate is judged again with no second advisor call.
+        const many = fixes.length > 1
+        const line = i => i.kind === 'D' ? `Decision ${i.id} (needs_review, resolve it in the code so it no longer needs the owner) ${i.text}`
+          : `Finding ${i.id}${i.f.score != null ? ` (score ${i.f.score})` : ''} ${findingText(i.f)}`
+        const res = await fixAgent(`${ctx.labelPrefix}fix advisor`, many ? `Fix each of these ${fixes.length} items, in this order:\n${fixes.map(line).join('\n')}` : line(fixes[0]),
+          '', 'Gate', 'advisor', ctx, many)
+        takeDecisions(t.n, 'advisor-fix', res)
+        const per = new Map(((res && Array.isArray(res.findings)) ? res.findings : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]))
+        const fixedIds = fixes.filter(i => {
+          if (!many) return res && res.fix_status === 'fixed' && res.commit
+          const r = per.get(i.id); return r && r.fix_status === 'fixed' && r.commit
+        })
+        if (fixedIds.length) {
+          moved = true
+          // The fix agent's last commit is the new tip. Without a range its commits are unreviewed, and the gate fails on them.
+          const lastCommit = (res && res.commit) || ''
+          for (const i of fixedIds) {
+            if (i.kind === 'D') { fixedD.push(i.d); continue }   // marked advisor_fixed only when the gate then passes
+            review.notFixed = review.notFixed.filter(f => f !== i.f)
+            review.leftover = review.leftover.filter(f => f !== i.f)
+            review.fixed.push({ id: i.f.id, summary: i.f.summary, commit: (per.get(i.id) || {}).commit || lastCommit })
+          }
+          // After the fixed items leave the lists: a finding the re-review reports again is a new leftover.
+          await reviewFixRange(ctx, review, 'advisor fix', res.base_sha && res.commit ? `${res.base_sha}..${res.commit}` : '')
+          // The advisor fix changed the diff: intent must still match.
+          const again = await intentWithReview(t, ctx, review)
+          intent = again.intent
+          fixTip = again.tip || lastCommit
+          intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+        }
+      }
+      // Judge the gate with the accepted items set aside. They are recorded only when the whole gate then passes.
+      const acceptedR = new Set(accepts.filter(i => i.kind === 'R').map(i => i.f))
+      const acceptedD = accepts.filter(i => i.kind === 'D').map(i => i.d)
+      const stripped = { ...review, notFixed: review.notFixed.filter(f => !acceptedR.has(f)), leftover: review.leftover.filter(f => !acceptedR.has(f)),
+        accepted: [...(review.accepted || []), ...acceptedR] }
+      const rG = judgeReview(stripped)
+      if (moved) {
+        if (rG.ok && intentG.ok) await runCi(fixTip)   // the fix moved the branch tip: CI must be green there
+        else { ciG = { ok: false, text: `not checked (the ${rG.ok ? 'intent' : 'review'} after the advisor fix failed)` }; head = '' }
+      }
+      const nrLeft = openNr().filter(d => !acceptedD.includes(d) && !fixedD.includes(d))
+      if (rG.ok && intentG.ok && ciG.ok && nrLeft.length === 0) {
+        Object.assign(review, stripped)
+        for (const d of fixedD) d.advisor_fixed = true
+        for (const i of accepts) {
+          if (i.kind === 'D') i.d.advisor_accepted = true
+          const reason = v(i).reason
+          addDecision(t.n, 'advisor gate', {
+            title: `Accepted by advisor: #${t.n} ${capSummary(i.summary)}`,
+            context: `The merge gate for #${t.n} failed on this item (${i.text}). The run base ${base} matches feat/*, so the advisor judged it.`,
+            decision: 'accept', why: reason,
+            consequences: i.kind === 'D' ? 'The ticket PR may merge into the integration branch; the final PR body lists it under Accepted by advisor.'
+              : 'The ticket PR may merge into the integration branch with this finding; the final PR body lists it under Accepted by advisor.',
+            how_to_reverse: `Fix the item on ${integBranch} before the final merge, or revert the ticket's merge commit.`,
+            needs_review: false, adr: false,
+          })
+          advisorAccepted.push({ n: t.n, item: capSummary(i.summary), reason })
+          advised.accepted.push(i.id)
+        }
+        log(`#${t.n} advisor gate: passed (${advised.accepted.length} accepted${fixes.length ? `, ${fixes.length} fixed` : ''})`)
+      } else log(`#${t.n} advisor gate: the gate still fails after the advisor ${fixes.length ? 'fix round' : 'verdicts'}`)
+      reviewG = judgeReview(review)
+      nrG = nrOf(openNr())
+      failed = []
+      if (!reviewG.ok) failed.push({ gate: 'review', detail: `${reviewG.text}; advisor: ${said}` })
+      if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
+      if (reviewG.ok && !ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
+      if (!nrG.ok) failed.push({ gate: 'needs_review', detail: `${nrG.text}; advisor: ${said}` })
+    }
+  }
   const pass = failed.length === 0
   const block = mergeBlock({ mode: pass ? 'auto' : 'human', why: pass ? '' : `gate ${failed.map(f => f.gate).join(', ')} failed`, ci: ciG, review: reviewG, intent: intentG, open: nrG })
   await updateMergeBlock(t, fin, ctx, block)
-  return { pass, failed, ci: ciG, review: reviewG, intent: intentG, head }
+  return { pass, failed, ci: ciG, review: reviewG, intent: intentG, head, ...(advised ? { advised } : {}) }
 }
 
 async function runTicket(t) {
   const branch = ticketBranch(t)
   const spec = specs[t.n] = {}
+  // Decisions the autopilot skill passed with the ticket (a drafted Verify: row under --no-ask). Only the text
+  // fields are taken; the script sets the rest, so an entry can never clear needs_review or ask for an ADR file.
+  for (const d of t.decisions || []) addDecision(t.n, 'autopilot', skillDecision(d))
   try {
     const intent = spec.intent = await stageIntent(t)
     boundaries[t.n] = boundaryOf(intent)
     const boundary = boundaryText(`Boundary for ticket #${t.n}:`, intent)
     await writeSpecsEarly(t, t.depth === 'S' ? ['intent.md', 'design.md', 'plan.md'] : ['intent.md'])
-    let planText, foldedPlan = false
+    let planText
     if (t.depth === 'S') {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
     } else if (t.depth === 'M') {
-      // Depth M has no plan agent. The implement agent writes the plan, then builds it: one context, no hand-off.
-      foldedPlan = true
+      // Depth M: a plan stage fed by the intent only. No research, design or advisor (those stay at depth L).
+      const plan = spec.plan = await stagePlan(t, intent)
       await writeSpecsEarly(t, ['design.md', 'plan.md'])
-      planText = foldedPlanText(intent)
+      planText = `Follow this plan:\n${plan.plan_md}`
     } else {
       const research = spec.research = await stageResearch(t, intent)
       const design = spec.design = await stageDesign(t, intent, research)
@@ -955,16 +1301,62 @@ async function runTicket(t) {
     if (t.depth !== 'S') {
       try {
         const r = await stageQa(t, intent, spec.design, branch)
-        if (r && r.ready && r.dir) qa = spec.qa = r
+        if (r && r.ready && r.dir) qa = spec.qa = { ...r, dir: repoRel(r.dir), files: (r.files || []).map(repoRel) }
         else log(`#${t.n} qa: no acceptance tests (${(r && r.reason) || 'not ready'})`)
       } catch (e) { log(`#${t.n} qa: no acceptance tests (${e && e.message ? e.message : String(e)})`) }
     }
-    const impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
-    if (foldedPlan) {
-      if (typeof impl.plan_md === 'string' && impl.plan_md.trim()) {
-        spec.plan = { plan_md: impl.plan_md, plan_steps: impl.plan_steps || [] }
-        await writeSpecsEarly(t, ['plan.md'])
-      } else log(`#${t.n} implement returned no plan_md; plan.md keeps the steps from the intent stage`)
+    // One repair of the blind tests per ticket, from a failed qa check or an implementer 'Flawed acceptance test' decision.
+    let repairUsed = false
+    const problemsOf = c => (c ? [...(c.uncovered || []).map(x => `uncovered: ${x}`), ...(c.unmapped || []).map(x => `unmapped: ${x}`), ...(c.invented || []).map(x => `invented: ${x}`)] : [])
+    const check = async tip => {
+      try { return await stageQaCheck(t, intent, qa, tip) } catch (e) { log(`#${t.n} qa check: skipped (${e && e.message ? e.message : String(e)})`); return null }
+    }
+    const repair = async (problems, where) => {
+      repairUsed = true
+      try {
+        const r = await stageQaRepair(t, qa, problems, where)
+        if (r && r.ready) {
+          // The repair fixes tests in place: the tests dir stays the original one. It may list only the files and
+          // tests it changed, so those are merged into the original lists, never swapped for them.
+          const rel = f => repoRel(typeof f === 'string' && f.startsWith(`${where.dir}/`) ? f.slice(where.dir.length + 1) : f)
+          const files = [...new Set([...(qa.files || []), ...(r.files || []).map(rel)])]
+          const fixed = new Map((r.tests || []).map(x => [x.name, x]))
+          const tests = [...(qa.tests || []).map(x => fixed.get(x.name) || x), ...(r.tests || []).filter(x => !(qa.tests || []).some(o => o.name === x.name))]
+          qa = spec.qa = { ...qa, files, tests }
+          return true
+        }
+        log(`#${t.n} qa repair: no repaired tests (${(r && r.reason) || 'not ready'})`)
+        return false
+      } catch (e) { log(`#${t.n} qa repair: skipped (${e && e.message ? e.message : String(e)})`); return false
+      } finally { if (where.remove) await stageQaRepairCleanup(t, where.dir) }
+    }
+    const flawDecision = (title, problems) => addDecision(t.n, 'qa', {
+      title, context: `The blind acceptance tests still have flaws after the one repair: ${problems.join('; ')}.`,
+      decision: 'The ticket goes on with the tests as they are.', why: 'One repair per ticket; a second round is out of scope.',
+      consequences: 'A flawed test can still fail the ticket gate.', how_to_reverse: 'Fix the test by hand on the ticket branch.', needs_review: true, confidence: 'high' })
+    if (qa) {
+      let c = await check(branch)
+      if (problemsOf(c).length) {
+        const repaired = await repair(problemsOf(c).join('\n'), { ...newWt(`qa-repair-${t.n}`, branch, null, true), remove: true })
+        if (repaired) c = await check(branch)
+        if (problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', problemsOf(c))
+      }
+    }
+    let impl = spec.impl = await stageImplement(t, branch, planText, boundary, qa)
+    const flaws = r => (r.decisions || []).filter(d => d && /^Flawed acceptance test/i.test(String(d.title || '')))
+    if (qa && flaws(impl).length) {
+      const text = flaws(impl).map(d => `${d.title}: ${d.context || ''} ${d.decision || ''}`.trim()).join('\n')
+      if (repairUsed) {
+        flawDecision('Flawed acceptance test reported after the repair was used', [text])
+      } else {
+        if (await repair(text, { dir: impl.worktree, setup: `cd ${impl.worktree}\n\n` })) {
+          impl = spec.impl = await stageImplement(t, branch, planText + `\n\nThe qa-writer repaired the acceptance tests under ${qa.dir}/ after your report. Make them pass.`, boundary, qa)
+          const c = await check(impl.branch || branch)
+          if (flaws(impl).length || problemsOf(c).length) flawDecision('Blind acceptance tests still flawed after repair', [...flaws(impl).map(d => d.title), ...problemsOf(c)])
+        } else {
+          flawDecision('Flawed acceptance test reported but the repair produced no tests', [text])
+        }
+      }
     }
     if (qa) {
       const bad = await stageTestGuard(t, impl, qa)
@@ -1129,24 +1521,47 @@ const RULE_SKILL = `You MUST invoke the Skill tool with skill 'code-review'. Do 
 // key decisions are recorded under; wtPrefix keeps worktree dirs apart and labelPrefix keeps agent labels apart.
 const RUN_CTX = { ticket: 'run', ref: finalRef, branch: finalBranch, diffBase: baseRef, wtPrefix: '', labelPrefix: '', boundary: null }
 
+// REVIEW.md holds review-only rules. The agent reads it from the diff base with git show, never from the worktree,
+// so the PR under review cannot edit the rules that judge it.
+// Gate statement:
+//   Verifies: the review instructions come from the base branch, not from the PR (the tests check that every review
+//     prompt carries the git show <base>:REVIEW.md instruction and never a worktree path).
+//   Does not verify: that the agent reads the file or applies every row; CLAUDE.md and .claude/rules/ are still
+//     read from the PR worktree.
+const reviewMdNote = ctx =>
+  `Review rules: read REVIEW.md from the base branch with: git -C ${repoDir} show ${ctx.diffBase}:REVIEW.md (never from ${ctx.ref} or the worktree: the PR could edit it). ` +
+  `If that command fails because the base has no REVIEW.md, run the review as usual and return review_md: missing. If it fails for another reason, run the review as usual and return review_md: error with the error text in skill_error. Otherwise return review_md: read and apply it: ` +
+  `drop every finding the section "Do not report" names; keep at most the number of Nits the section "Cap the nits" allows; ` +
+  `for each row of "Always check" whose trigger appears in the diff, check it, and when the check fails return a finding whose summary starts with "REVIEW.md: ".\n`
+
 function reviewAgent(label, level, target, rangeNote, retryNote, ctx = RUN_CTX) {
   const w = newWt(`${ctx.wtPrefix}${label}`, null, ctx.ref)
   const prompt = `${w.setup}${RULES}\n\n` +
+    reviewMdNote(ctx) +
     `Stage: review. Use the Skill tool: skill 'code-review', args '${level} ${target}'. Run it from ${w.dir} (${ctx.ref} is checked out there${rangeNote ? '' : `; the diff is ${ctx.diffBase}...${ctx.ref}`}). Never edit files, never post comments.\n` +
     `${RULE_SKILL} Return skill_invoked: true only when the skill ran.\n${retryNote || ''}` +
-    `${rangeNote}Return every finding with score 0-100 (how sure you are that it is a real defect worth fixing). ` +
+    `${rangeNote}Return every finding the REVIEW.md rules above leave in, with score 0-100 (how sure you are that it is a real defect worth fixing). ` +
     `Mark pre_existing: true for a finding that is already present on ${ctx.diffBase} and not introduced by this change.`
   return call(prompt, { label, phase: 'Review', schema: REVIEW_SCHEMA, model: MODEL.review, effort: EFFORT.review })
 }
 
 // Run code-review; one retry when the skill did not run. Returns {res} or {notRun: reason}.
+const reviewMdLogged = new Set()   // '<missing|error>:<base>' already logged
 async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
-  let res = await reviewAgent(label, level, target, rangeNote, '', ctx)
+  const noted = r => {
+    const k = r && ['missing', 'error'].includes(r.review_md) ? `${r.review_md}:${ctx.diffBase}` : ''
+    if (k && !reviewMdLogged.has(k)) {   // once per base: every review call reads the same file
+      reviewMdLogged.add(k)
+      log(r.review_md === 'missing' ? `review: no REVIEW.md on ${ctx.diffBase}` : `review: could not read REVIEW.md on ${ctx.diffBase} (${capSummary(r.skill_error) || 'no reason'})`)
+    }
+    return r
+  }
+  let res = noted(await reviewAgent(label, level, target, rangeNote, '', ctx))
   if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   const why = r => (r && typeof r.skill_error === 'string' && r.skill_error.trim()) || (r ? 'the agent did not report running the skill' : 'the review agent returned nothing')
   const first = why(res)
-  res = await reviewAgent(`${label} retry`, level, target, rangeNote,
-    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx)
+  res = noted(await reviewAgent(`${label} retry`, level, target, rangeNote,
+    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx))
   if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   return { notRun: why(res) }
 }
@@ -1417,7 +1832,7 @@ async function stageUat(delivered) {
         (tried ? `Earlier fix rounds (their code is already in your checkout):\n${tried}\n` : '') +
         `Fix the code so the owner's request holds. ${qa ? 'For a docs, config or script change, edit the file the AC names.' : 'Console errors are report-only: do not fix them unless a failing AC needs it.'}` +
         (accept ? `\nNever edit the acceptance tests under ${accept.dir}/.` : '') +
-        (advice ? `\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}` : '')
+        (advice ? ADVICE_HEADING + advice : '')
       let fix = null
       try { fix = await fixAgent(lbl(`#${t.n} ${NAME} fix${sfx}`, t.title), text, '', 'UAT', `${W}-${t.n}${key}`, RUN_CTX, false, { docs: qa }) }
       catch (e) { log(`${NAME} #${t.n}: fix round ${k} failed (${e && e.message})`) }
@@ -1493,18 +1908,7 @@ async function stageSuite() {
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, fixRan: true, note: `${first.failed} failed first; re-ran only those` }
 }
 
-async function stageArtifact(results) {
-  // Local mode publishes nothing outside the machine: no push, no PR, no artifact.
-  if (LOCAL) return { fallback: 'docs/adr/' }
-  const prompt = `${RULES_LITE}\n\nStage: build ONE private artifact for this run. If the 'ink-artifact' skill and the Artifact tool both exist, use the skill to build it: one section per ticket, decisions with needs_review: true first. Keep it private.\n` +
-    `If either is missing, build nothing, return created: false and fallback: 'docs/adr/' (the ADR files are the source of truth).\n` +
-    `Tickets: ${JSON.stringify(results.map(r => ({ n: r.n, status: r.status, summary: r.summary, reason: r.reason, url: r.url })))}\n` +
-    `Decisions: ${JSON.stringify(decisions)}`
-  const res = await call(prompt, { label: 'update run artifact', phase: 'Decisions', schema: ARTIFACT_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
-  return res && res.created && res.url ? { url: res.url } : { fallback: (res && res.fallback) || 'docs/adr/' }
-}
-
-async function stageAdr(finalPr, artifact, bodyTemplate) {
+async function stageAdr(finalPr, bodyTemplate) {
   const input = JSON.stringify({ run: slug, decisions })
   const update = LOCAL
     ? `Local mode: save the final body as PR-BODY.md at the worktree root (do not commit it) and return its absolute path as body_file.`
@@ -1513,9 +1917,9 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
   const prompt = `${w.setup}${RULES_LITE}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
-    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true and two or more options, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
+    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision with adr true, two or more options and a stage before implement (${EARLY_STAGES.join(', ')}); a later one stays a table row, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
-    `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
+    `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json\n` +
     `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review, ticket, title). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
   const res = await call(prompt, { label: 'write ADRs', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
@@ -1549,8 +1953,14 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
     for (const d of bounded) L.push(`- ${d.title}: ${d.decision}`)
     L.push('')
   }
-  L.push('## Summary', '')
   const ref = n => (LOCAL ? `Ticket ${n}` : `#${n}`)   // in local mode the ticket is not a real issue
+  if (advisorAccepted.length) {
+    // Items the advisor accepted at a ticket gate (feat/* base only): the owner reads them before the merge into main.
+    L.push('## Accepted by advisor', '')
+    for (const a of advisorAccepted) L.push(`- ${ref(a.n)} ${a.item}: ${a.reason}`)
+    L.push('')
+  }
+  L.push('## Summary', '')
   for (const r of results) L.push(`- ${ref(r.n)} ${r.status}${r.summary ? `: ${capSummary(r.summary)}` : ''}${r.reason ? ` (${r.reason})` : ''}`)
   L.push('')
   if (LOCAL) { for (const r of results) L.push(`Ticket ${r.n}`) }
@@ -1671,7 +2081,7 @@ for (const g of groups) {
 const deliveredAll = ordered().filter(r => r.status === 'done')
 const out = {
   single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [],
-  intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], artifact: { fallback: 'docs/adr/' }, decisions, specFiles: [],
+  intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], decisions, specFiles: [],
 }
 // The files the main session writes after the run (summary.md, and any file the writer was refused).
 // {{DATE}} stays in the text: the main session replaces it with the output of date +%F.
@@ -1728,12 +2138,10 @@ out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
 
 phase('Decisions')
-const artifact = await stageArtifact(ordered())
-out.artifact = artifact
 const ciSnap = await stageCiSnapshot(finalPr)
 const defaultBranch = await stageDefaultBranch()
 finalPolicy = decideFinalMerge(defaultBranch, review, intent, suite)
-const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat, ciSnap))
+const adr = await stageAdr(finalPr, buildBody(ordered(), review, intent, suite, uat, ciSnap))
 takeDecisions('run', 'adr', adr)
 if (adr.status === 'blocked') failures.push(`ADR stage: ${adr.blocked_reason || adr.summary || 'blocked'}`)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))

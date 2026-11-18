@@ -32,6 +32,15 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
   head the gate judged. There is no conflict path: a conflict or any failure changes nothing, and the ticket stays open.
 - **A ticket that fails a gate** is `blocked` ("human merge: gate <names> failed"), keeps its PR, and gets a `needs_review`
   decision with the exact command `gh pr merge <pr> --repo R --merge`. It is missing from the final PR and its dependents are skipped.
+- **Advisor on a failed gate** (base `feat/*` only): when the run's base matches `feat/*` and the gate failed only on
+  review findings (not fixed, or left at score 50 or more) or on open `needs_review` decisions, with CI green, intent
+  `match`, no failed security gate and no `dangerous` or `contradicts_confirmed` decision on the ticket, the gate asks the
+  advisor once (`#<n> advisor gate`) for a verdict per item: `accept`, `fix` or `owner`. `owner` on any item blocks the ticket as above. `fix`, on a review finding or a decision, runs one more fix round and one re-review, then CI again, with no second advisor
+  call. All other items accepted: the gate passes, each item is recorded as an `Accepted by advisor: ` decision, and the
+  final PR body lists it under `## Accepted by advisor`. The call fails closed: no answer, or an unclear one, means `owner`.
+  An accepted or fixed `needs_review` decision keeps `needs_review`: the ticket PR may merge into `feat/<slug>`, but the
+  final PR stays a human merge and lists the decision under `## Needs your decision`. An accepted review finding does not
+  block the final PR by itself; a protected base keeps it a human merge.
 - **Guard**: the `merge-guard.sh` PreToolUse hook blocks any merge whose PR base is not `feat/*`; it fails closed
   (`docs/hooks.md`). A workflow or subagent never merges into base; only the owner, approving one PR in the session prompt, does. Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
   a nested Workflow), so `/harness:setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
@@ -76,6 +85,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
+   Every review call (run review, per-ticket gate review, fix-range re-review) reads `REVIEW.md` from the diff base with `git show <base>:REVIEW.md`, never from the worktree, so the PR cannot edit its own rules. Without a `REVIEW.md` on the base the review runs as before.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
 6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
    FE+BE tickets (local mode skips it with a log line). A `docs` ticket (docs, config, CLI, scripts, plugin
@@ -96,7 +106,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
    not start), becomes a `needs_review` decision and the ticket stays done. The PR body gets a
    `## UAT sign-off` checklist that nothing enforces.
 7. Testing: the full suite once, at the end.
-8. Decisions: one artifact, the ADR files (`scripts/write_adrs.py`), and the PR body.
+8. Decisions: the ADR files (`scripts/write_adrs.py`), and the PR body.
 
 No agent uses `isolation: 'worktree'`: it binds to the session's working directory, which is not the
 target repo (ADR 0002). Each agent runs `git -C <repoDir> fetch` and `git -C <repoDir> worktree add`
@@ -125,7 +135,8 @@ review; it is left out when both are empty. `{{DECISIONS}}` stays after Final ve
 
 Stage agents run the skill by path with `Mode: auto`, never ask, and return `decisions[]`. Workflow
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
-Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L; depth M has no plan stage, because the implement agent writes the plan. It also picks Opus for the implement stage at depth L unless the profile names `implement`. Depth L is the difficulty signal, so this rule fits "the orchestrator chooses the model per task difficulty". Every stage, `implement` and `fix` included, can be set through `args.profile.stages`; the design and plan rule at depth L cannot be overridden.
+A stage that returns `blocked` or nothing gets one advisor recovery, at most one per stage per ticket (a stage that already used its `needs_advisor` call still gets it), in at most two rounds. Each round asks the advisor for a verdict: `retry` re-runs the stage once with the advice under the `## Advisor advice` heading (a later round keeps the earlier advice); `owner`, an unclear answer or a failed advisor call blocks the ticket, and the block reason carries the advisor's reason (`; advisor (owner): ...`, or `; advisor (retry failed): ...` when the last retry is blocked again). A result with a `dangerous` or `contradicts_confirmed` decision gets no round: it goes to the owner as before. The first round runs on `advisorModel`. When that is Opus and its retry is still blocked, a second round runs on Fable (owner, 2026-11-18: Fable only after Opus advice failed). A stage whose `needs_advisor` call already got real Opus advice starts on Fable, with one round. A failed Fable call falls back to `advisorModel`. Each call counts under `advisor recovery` in `stats.byStage`. A block outside a stage run (security gate, UAT and QA checks, plugin check, branch integration) gets no recovery.
+Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L. The `intent`, `plan` and `qa` stages run on Opus at `medium` at every depth through `MODEL`, so a profile entry can override them; depth M runs a plan stage fed by the intent only (no research, design or advisor), and depth S has no plan stage. It also picks Opus for the implement stage at depth L unless the profile names `implement`. Depth L is the difficulty signal, so this rule fits "the orchestrator chooses the model per task difficulty". Every stage, `implement` and `fix` included, can be set through `args.profile.stages`; the design and plan rule at depth L cannot be overridden.
 
 ## Watching a run live
 

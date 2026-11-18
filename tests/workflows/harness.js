@@ -30,7 +30,7 @@ function metaText() {
 const FIXED_LABELS = {
   'write specs/ flow files': 'specs', 'write specs/ early': 'specs-early', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
-  'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
+  'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun',
   'CI snapshot': 'ci-snapshot', 'default branch': 'default-branch', 'merge final PR': 'final-merge', 'write ADRs': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
 }
 const TICKET_VERBS = {
@@ -53,6 +53,8 @@ function legacyLabel(l) {
     if (what.startsWith('intent review')) return `gintent:${gn}`
     if (what.startsWith('intent fix')) return `gintent-fix:${gn}`
     if (what === 'CI checks') return `gci:${gn}`
+    if (what === 'fix advisor') return `gfix:${gn}:adv`
+    if (what === 'code-review · advisor fix') return `greview:${gn}:adv`
     if (what === 'PR body') return `gbody:${gn}`
   }
   const head = l.split(' · ')[0]
@@ -90,6 +92,9 @@ function defaults(c, st) {
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
   if (l.startsWith('qa:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
+  if (l.startsWith('qa check:')) return { uncovered: [], unmapped: [], invented: [] }
+  if (l.startsWith('qa repair cleanup:')) return ok()
+  if (l.startsWith('qa repair:')) return ok({ ready: true, dir: 'tests/acceptance', files: [`tests/acceptance/ticket-${n}.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
   if (l.startsWith('acceptance-test check:')) return { commits: [{ sha: 'qa1', subject: `Add acceptance tests for #${n}` }] }
   if (l.startsWith('security gate:')) return { why_risky: 'touches secrets', risk_note: 'NOTE', findings: [], followups: [] }
   if (/^uat(-rerun(-r\d+)?)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
@@ -123,7 +128,6 @@ function defaults(c, st) {
   if (l === 'suite-rerun') return { passed: 2, failed: 0, skipped: 0, failing: [] }
   if (l === 'default-branch') return { name: 'main' }
   if (l === 'final-merge') return ok({ merged: true, reason: '' })
-  if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
   if (l === 'specs' || l === 'specs-early') return ok()
   throw new Error(`no scripted answer for label '${l}'`)
@@ -207,7 +211,7 @@ test('p1: the result counts every agent call by stage, with model and effort', a
   assert.strictEqual(Object.values(s.byStage).reduce((n, e) => n + e.failed, 0), 0)
 })
 
-const noRepoTouch = /^(request:|artifact|final-pr)/
+const noRepoTouch = /^(request:|final-pr)/
 test('a2: no agent call uses isolation (it binds to the session cwd, not the target repo)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1), T(3, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
   assert(calls.length > 15)
@@ -252,6 +256,68 @@ test('d3: review stage prompts require the Skill tool and forbid a self-made rev
   const { calls } = await run({}, null)
   const p = named(calls, /^review:r0$/)[0].prompt
   assert(p.includes("skill 'code-review'") && p.includes('Do not substitute your own review') && p.includes('reading the diff yourself does not count') && p.includes('skill_invoked: false'))
+})
+
+test('rv1: the review prompt reads REVIEW.md from the diff base with git show', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^review:r0$/)[0].prompt
+  assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
+})
+
+test('rv2: the review prompt never points at REVIEW.md inside the worktree', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^review:r0$/)[0].prompt
+  const dir = p.match(/Run it from (\S+) /)[1]
+  assert(!p.includes(`${dir}/REVIEW.md`), `worktree path ${dir}/REVIEW.md found`)
+})
+
+test('rv3: the per-ticket gate review reads REVIEW.md from the integration branch', async () => {
+  const r = await gateFlow({})
+  const p = named(r.calls, /^greview:1:r0$/)[0].prompt
+  assert(p.includes('show origin/feat/ms:REVIEW.md'), p)
+})
+
+test('rv4: the fix-range re-review carries the same instruction', async () => {
+  const { calls } = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [{ id: 'f', path: 'a.js', summary: 'S-f', score: 80 }], skill_invoked: true }) : undefined))
+  const p = named(calls, /^review:r1$/)[0].prompt
+  assert(p.includes('show origin/v5.0.0:REVIEW.md'), p)
+})
+
+test('rv9: a review that reports review_md missing makes the workflow log "review: no REVIEW.md on <base>"', async () => {
+  const miss = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'missing' }) : undefined))
+  assert(miss.logs.includes('review: no REVIEW.md on origin/v5.0.0'), miss.logs.join('\n'))
+  const read = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'read' }) : undefined))
+  assert(!read.logs.some(l => l.startsWith('review: no REVIEW.md')), read.logs.join('\n'))
+  assert(named(read.calls, /^review:r0$/)[0].prompt.includes('return review_md: missing'))
+})
+
+test('rv10: a missing REVIEW.md is logged once per base; a git show error is logged as such', async () => {
+  const miss = await run({}, c => (/^review:r\d$/.test(c.label) ? ok({ findings: c.label === 'review:r0' ? [{ id: 'f', path: 'a.js', summary: 'S-f', score: 80 }] : [], skill_invoked: true, review_md: 'missing' }) : undefined))
+  assert(named(miss.calls, /^review:r1$/).length === 1, labelsOf(miss.calls).join())
+  assert.strictEqual(miss.logs.filter(l => l === 'review: no REVIEW.md on origin/v5.0.0').length, 1, miss.logs.join('\n'))
+  const err = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [], skill_invoked: true, review_md: 'error', skill_error: 'invalid object name' }) : undefined))
+  assert(err.logs.some(l => l.startsWith('review: could not read REVIEW.md on origin/v5.0.0') && l.includes('invalid object name')), err.logs.join('\n'))
+  assert(named(err.calls, /^review:r0$/)[0].prompt.includes('Return every finding the REVIEW.md rules above leave in'))
+})
+
+test('rv8: the reviewNote gate statement has a Verifies and Does not verify split naming CLAUDE.md and .claude/rules/', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
+  const c = src.slice(src.indexOf('// Gate statement:'), src.indexOf('const reviewMdNote'))
+  assert(/Verifies:/.test(c) && /Does not verify:/.test(c) && c.includes('CLAUDE.md') && c.includes('.claude/rules/') && /PR worktree/.test(c), c)
+})
+
+const REVIEW_MD = fs.readFileSync(path.join(__dirname, '..', '..', 'REVIEW.md'), 'utf8')
+
+test('rv5: REVIEW.md caps Nits at five per review', () => {
+  assert(/at most five Nits per review/i.test(REVIEW_MD) && !/at most 3 Nits/i.test(REVIEW_MD))
+})
+
+test('rv6: REVIEW.md defines Important as breaking a hook, ship.js or the merge rule, or weakening a test', () => {
+  assert(/breaks the behavior of a hook, of `?ship\.js`? or of the merge rule, or that weakens a test/.test(REVIEW_MD))
+})
+
+test('rv7: REVIEW.md excludes what CI checks and the run output directories', () => {
+  for (const t of ['shellcheck', 'claude plugin validate --strict', 'STE lint', 'specs/', 'tests/evals/*/runs/']) assert(REVIEW_MD.includes(t), t)
 })
 
 test('d4: code-review not run: one retry with the error, then NOT RUN, a needs_review decision, no fix', async () => {
@@ -877,7 +943,15 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early')   // the local spec write needs the ADR paths
   assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
-  assert.strictEqual(result.artifact.fallback, 'docs/adr/')
+})
+
+test('ar1: the run builds no artifact', async () => {
+  for (const local of [false, true]) {
+    const { calls, result } = await run({ local, tickets: [T(1, 1)] }, null)
+    assert.strictEqual(calls.filter(c => c.display === 'update run artifact').length, 0)
+    assert.strictEqual(named(calls, /artifact/).length, 0)
+    assert(!('artifact' in result))
+  }
 })
 
 test('i: local mode never mentions pushing or opening a PR and fetches no issue', async () => {
@@ -888,7 +962,6 @@ test('i: local mode never mentions pushing or opening a PR and fetches no issue'
       assert(!c.prompt.includes('git push'), `${c.label} mentions git push`)
     }
     assert.strictEqual(named(calls, /^request:/).length, 0)
-    assert.strictEqual(named(calls, /^artifact/).length, 0, 'local mode publishes no artifact')
     assert.strictEqual(result.final.pr, null)
     assert(result.tickets.every(t => t.status === 'done'))
   }
@@ -938,10 +1011,10 @@ test('j: no agent gets max or ultra effort, and every agent gets an explicit eff
   assert.strictEqual(models.suite, 'haiku'); assert.strictEqual(models.research, 'haiku'); assert.strictEqual(models.implement, 'sonnet')
 })
 
-test('j2: design and plan run on opus at depth L only; depth M has no plan agent (implement writes the plan), S runs neither', async () => {
+test('j2: design runs on opus at depth L only; plan runs on opus at depth M and L; S runs neither', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'S' }), T(2, 1, [], { depth: 'M' }), T(3, 1, [], { depth: 'L' })] }, null)
   const models = (n, stage) => named(calls, new RegExp(`^${stage}:${n}$`)).map(c => c.opts.model)
-  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), [])   // depth S and M have no plan agent
+  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), ['opus'])   // depth S has no plan agent; depth M has one (#645)
   assert.deepStrictEqual(models(1, 'design'), []); assert.deepStrictEqual(models(2, 'design'), [])
   assert(models(3, 'design').length > 0 && models(3, 'design').every(m => m === 'opus'), 'L design on opus')
   assert(models(3, 'plan').length > 0 && models(3, 'plan').every(m => m === 'opus'), 'L plan on opus')
@@ -981,25 +1054,17 @@ test('p2: at depth L, design and plan stay on opus even when the profile names a
   }
 })
 
-test('p3a: depth M has no plan agent; the implement agent is told to write the plan, and plan_md reaches plan.md', async () => {
-  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1'
-    ? ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [], plan_md: 'MY-OWN-PLAN', plan_steps: [] }) : undefined))
-  assert.strictEqual(named(calls, /^plan:/).length, 0, labelsOf(calls).join())
+test('p3a: depth M runs a plan agent; its plan_md reaches the implement prompt and plan.md (#645)', async () => {
+  const { calls, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'plan:1'
+    ? ok({ plan_md: 'MY-OWN-PLAN', plan_steps: [] }) : undefined))
+  assert.strictEqual(named(calls, /^plan:/).length, 1, labelsOf(calls).join())
   const impl = named(calls, /^implement:1$/)
   assert.strictEqual(impl.length, 1)
-  assert(impl[0].prompt.includes('/plug/skills/writing-plans/SKILL.md') && impl[0].prompt.includes('as plan_md') && impl[0].prompt.includes('Intent: {'), impl[0].prompt.slice(-700))
-  assert(!impl[0].prompt.includes('Follow this plan:'), 'no plan from another agent')
+  assert(impl[0].prompt.includes('Follow this plan:') && impl[0].prompt.includes('MY-OWN-PLAN'), impl[0].prompt.slice(-700))
+  assert(!impl[0].prompt.includes('as plan_md'), 'implement is not told to write the plan')
   const w = named(calls, /^specs$/)[0].prompt
-  assert(w.includes('MY-OWN-PLAN'), 'plan.md carries the plan the implement agent wrote')
+  assert(w.includes('MY-OWN-PLAN'), 'plan.md carries the plan the plan agent wrote')
   assert.strictEqual(result.tickets[0].status, 'done')
-})
-
-test('p3b: depth M with no plan_md from implement still ships; plan.md falls back to the intent steps and the run logs it', async () => {
-  const { calls, logs, result } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1'
-    ? ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [] }) : undefined))
-  assert.strictEqual(result.tickets[0].status, 'done')
-  assert(logs.some(l => l.includes('implement returned no plan_md')), logs.join('\n'))
-  assert(named(calls, /^specs$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/plan.md'))
 })
 
 test('p3c: depth S and depth L keep their flow: S has no plan agent, L has a plan agent and the implement prompt follows it', async () => {
@@ -1014,7 +1079,7 @@ test('p3c: depth S and depth L keep their flow: S has no plan agent, L has a pla
 test('p5: stages that only run a gh or git command get the core rules; stages that read or edit code get all of them', async () => {
   const { calls } = await run({ tickets: [T(1, 1), T(2, 2, [1])] }, null)
   const block = c => (c.prompt.match(/(Core rules|Rules) \(all of them apply\):[\s\S]*?\n\n/) || [''])[0]
-  const lite = calls.filter(c => /^(setup-integration|merge:|final-pr|ci-snapshot|adr|suite|artifact|gci:|gbody:|advisor:)/.test(c.label || ''))
+  const lite = calls.filter(c => /^(setup-integration|merge:|final-pr|ci-snapshot|adr|suite|gci:|gbody:|advisor:)/.test(c.label || ''))
   const full = calls.filter(c => /^(intent:|implement:|review:|fix:|uat:)/.test(c.label || ''))
   assert(lite.length >= 8 && full.length >= 4, `${lite.length} lite, ${full.length} full: ${labelsOf(calls).join()}`)
   for (const c of lite) {
@@ -1460,7 +1525,7 @@ test('s2: blocked, merge-blocked and skipped tickets get spec files with their r
   const p = named(calls, /^specs$/)[0].prompt
   const sum = path => (result.specFiles.find(f => f.path === path) || {}).text || ''
   assert.strictEqual(result.specFiles.length, 4, result.specFiles.map(f => f.path).join())
-  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
+  assert(sum('/repo/specs/1-ticket-1/summary.md').includes('Status: blocked (implement: cannot build; advisor (owner): ADVICE-TEXT)'), 'blocked ticket')
   assert(sum('/repo/specs/3-ticket-3/summary.md').includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
   assert(sum('/repo/specs/4-ticket-4/summary.md').includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
   assert(p.includes('FULL-BODY-1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket body as the request')
@@ -1474,7 +1539,7 @@ test('s3: when no ticket is delivered the spec files are still written', async (
   assert.strictEqual(w.length, 1, labelsOf(calls).join())
   assert(w[0].prompt.includes('=== /repo/specs/1-add-the-thing/intent.md') && !w[0].prompt.includes('summary.md'))
   assert.strictEqual(result.specFiles.length, 1)
-  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope)') && result.specFiles[0].text.includes('code review: not run'))
+  assert(result.specFiles[0].text.includes('Status: blocked (implement: nope; advisor (owner): ADVICE-TEXT)') && result.specFiles[0].text.includes('code review: not run'))
 })
 
 test('s4: early spec writes happen after the intent and plan stages, before implement, in the main checkout', async () => {
@@ -1484,11 +1549,9 @@ test('s4: early spec writes happen after the intent and plan stages, before impl
     const early = named(calls, /^specs-early$/)
     const at = labels.map((l, i) => (l === 'specs-early' ? i : -1)).filter(i => i >= 0)
     assert(early.length >= 1 && at[0] < impl, `${depth}: ${labels.join()}`)
-    // Depth M has no plan agent: its plan.md is written once from the intent steps before implement, then again after implement returns plan_md.
-    if (depth === 'M') assert(at.some(i => i > impl), 'M: plan.md is written again after implement')
-    else assert(at.every(i => i < impl), `${depth}: all early writes before implement`)
+    assert(at.every(i => i < impl), `${depth}: all early writes before implement`)
+    if (depth !== 'S') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
     assert(labels.indexOf('specs-early') > labels.indexOf('intent:1'), `${depth}: after intent`)
-    if (depth === 'L') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
     const p = early.map(c => c.prompt).join('\n')
     for (const f of ['intent.md', 'plan.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f}`)
     if (depth !== 'S') assert(p.includes('=== /repo/specs/1-ticket-1/design.md'), `${depth}: design.md`)
@@ -1507,7 +1570,7 @@ test('s5: the intent.md early write exists when implement is blocked or throws',
   assert(named(a.calls, /^specs-early$/)[0].prompt.includes("=== /repo/specs/1-add-the-thing/intent.md"))
   const b = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'implement:1' ? new Error('implement failed') : undefined))
   assert(named(b.calls, /^specs-early$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/intent.md'))
-  assert.strictEqual(named(b.calls, /^plan:/).length, 0)
+  assert.strictEqual(named(b.calls, /^plan:/).length, 1)
   assert.strictEqual(b.result.tickets[0].status, 'blocked')
 })
 
@@ -2001,6 +2064,780 @@ test('security: medium and low findings pass the gate and reach the PR body as f
   assert(adr.includes('## Security gate') && adr.includes('weak cookie flag') && adr.includes('rotate keys'), adr.slice(0, 400))
 })
 
+const stageCalls = (calls, stage, n) => named(calls, new RegExp(`^${stage}:${n}$`))
+const mDepths = () => run({ tickets: [T(1, 1, [], { depth: 'S' }), T(2, 1, [], { depth: 'M' }), T(3, 1, [], { depth: 'L' })] }, null)
+
+test('mo1: the intent call runs on opus at medium effort for depth S, M and L', async () => {
+  const { calls } = await mDepths()
+  for (const n of [1, 2, 3]) {
+    const cs = stageCalls(calls, 'intent', n)
+    assert(cs.length > 0, `ticket ${n}: no intent call`)
+    assert(cs.every(c => c.opts.model === 'opus' && c.opts.effort === 'medium'), `ticket ${n}: ${cs.map(c => c.opts.model + '/' + c.opts.effort).join()}`)
+  }
+})
+
+test('mo2: depth M runs exactly one opus/medium plan call before qa; implement prompt has no folded plan', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, null)
+  const plans = stageCalls(calls, 'plan', 1)
+  assert.strictEqual(plans.length, 1, `plan calls: ${plans.length}`)
+  assert(plans[0].opts.model === 'opus' && plans[0].opts.effort === 'medium', `${plans[0].opts.model}/${plans[0].opts.effort}`)
+  const qas = stageCalls(calls, 'qa', 1)
+  assert(qas.length > 0, 'no qa call')
+  assert(calls.indexOf(plans[0]) < calls.indexOf(qas[0]), 'plan must come before qa')
+  const impl = stageCalls(calls, 'implement', 1)
+  assert(impl.length > 0, 'no implement call')
+  for (const c of impl) assert(!c.prompt.includes('no plan exists yet'), 'implement prompt still says no plan exists yet')
+})
+
+test('mo3: the qa call runs on opus at medium effort', async () => {
+  const { calls } = await mDepths()
+  for (const n of [2, 3]) {
+    const cs = stageCalls(calls, 'qa', n)
+    assert(cs.length > 0, `ticket ${n}: no qa call`)
+    assert(cs.every(c => c.opts.model === 'opus' && c.opts.effort === 'medium'), `ticket ${n}: ${cs.map(c => c.opts.model + '/' + c.opts.effort).join()}`)
+  }
+})
+
+test('mo4: a profile entry for intent overrides the opus default', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'M' })], profile: { stages: { intent: { model: 'sonnet' } } } }, null)
+  const cs = stageCalls(calls, 'intent', 1)
+  assert(cs.length > 0, 'no intent call')
+  assert(cs.every(c => c.opts.model === 'sonnet'), cs.map(c => c.opts.model).join())
+  const others = [...stageCalls(calls, 'plan', 1), ...stageCalls(calls, 'qa', 1)]
+  assert(others.length === 2 && others.every(c => c.opts.model === 'opus'), 'plan and qa keep opus: ' + others.map(c => c.label + '=' + c.opts.model).join())
+})
+
+// ---- qa check and qa repair: the blind tests are checked, one flawed test is repaired (#647) ------
+const FLAWED = { title: 'Flawed acceptance test', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, adr: false }
+const mTicket = () => [T(1, 1, [], { depth: 'M' })]
+const implementCalls = calls => named(calls, /^implement:1(:|$)/)
+const implOk = () => ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [], plan_md: 'PLAN-MD', plan_steps: [] })
+const allDecisions = r => [...(r.result.decisions || []), ...r.result.tickets.flatMap(t => t.decisions || [])]
+
+test('qt1: a depth M ticket runs one opus qa check after qa, and its prompt has no plan', async () => {
+  const { calls } = await run({ tickets: mTicket() }, null)
+  const cs = named(calls, /^qa check:1/)
+  assert.strictEqual(cs.length, 1, labelsOf(calls).join())
+  assert.strictEqual(cs[0].opts.model, 'opus')
+  assert(calls.indexOf(named(calls, /^qa:1$/)[0]) < calls.indexOf(cs[0]), 'qa check must come after qa')
+  assert(!cs[0].prompt.includes('PLAN-MD') && !cs[0].prompt.includes('plan_md'), 'the qa check prompt must not hold the plan')
+})
+
+test('qt2: a qa check result with one invented test gives one qa repair and a second qa check', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['guards against a future .py file'] } : undefined))
+  assert.strictEqual(named(calls, /^qa repair:1/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(named(calls, /^qa check:1/).length, 2, labelsOf(calls).join())
+})
+
+test('qt8: the second qa check runs in a different worktree than the first', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['x'] } : undefined))
+  const cs = named(calls, /^qa check:1/)
+  assert.strictEqual(cs.length, 2, labelsOf(calls).join())
+  const dirOf = c => (c.prompt.match(/worktree add --detach (\S+)/) || [])[1]
+  assert(dirOf(cs[0]) && dirOf(cs[1]) && dirOf(cs[0]) !== dirOf(cs[1]), `${dirOf(cs[0])} vs ${dirOf(cs[1])}`)
+})
+
+test('qt9: the pre-implement qa repair removes its worktree so implement can use the branch', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^qa check:1/.test(c.label) && ++n === 1
+    ? { uncovered: [], unmapped: [], invented: ['x'] } : undefined))
+  const rp = named(calls, /^qa repair:1/)[0]
+  assert(rp, 'no qa repair')
+  const cl = named(calls, /^qa repair cleanup:1/)
+  assert.strictEqual(cl.length, 1, labelsOf(calls).join())
+  assert(/worktree remove --force/.test(cl[0].prompt), 'the script must remove the repair worktree')
+  assert(calls.indexOf(cl[0]) < calls.indexOf(named(calls, /^implement:1(:|$)/)[0]), 'cleanup must come before implement')
+})
+
+test('qt11: the repair worktree is removed when the repair returns no ready tests', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label)) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa repair cleanup:1/).length, 1, labelsOf(r.calls).join())
+})
+
+test('qt12: a repair result dir that is a worktree path does not replace the tests dir', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label) && ++n === 1) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: true, dir: '/wt/qa-repair-1/tests/acceptance', files: ['a.spec.js'], tests: [] })
+  })
+  const g = named(calls, /^acceptance-test check:1/)[0]
+  assert(g && !g.prompt.includes('/wt/qa-repair-1'), 'the guard must use the original tests dir')
+})
+
+test('qt13: after a pre-implement repair, implement and the re-check get the original files plus the repaired ones, repo-relative', async () => {
+  const dirOf = c => (c.prompt.match(/The branch is already checked out in (\S+)\. Fix only/) || [])[1]
+  for (const absolute of [true, false]) {
+    let n = 0
+    const { calls } = await run({ tickets: mTicket() }, c => {
+      if (/^qa check:1/.test(c.label) && ++n === 1) return { uncovered: [], unmapped: [], invented: ['x'] }
+      if (/^qa repair:1/.test(c.label)) {
+        const wt = dirOf(c)
+        return ok({ ready: true, dir: `${wt}/tests/acceptance`, files: absolute ? [`${wt}/tests/acceptance/b.spec.js`] : [], tests: [] })
+      }
+    })
+    const p = implementCalls(calls)[0].prompt
+    const want = absolute ? 'tests/acceptance/ticket-1.spec.js, tests/acceptance/b.spec.js' : 'tests/acceptance/ticket-1.spec.js'
+    assert(p.includes(`under tests/acceptance/ (${want})`), `absolute=${absolute}: ${(p.match(/Acceptance tests already exist[^\n]*/) || [''])[0]}`)
+    assert(!p.includes('qa-repair-1'), `absolute=${absolute}: implement prompt names the removed repair worktree`)
+    const recheck = named(calls, /^qa check:1/)[1]
+    assert(recheck && recheck.prompt.includes(`(${want} under tests/acceptance/)`), `absolute=${absolute}: re-check files`)
+  }
+})
+
+test('qt14: after a repair in the implement worktree, the tests dir and files stay repo-relative', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => {
+    if (/^implement:1(:|$)/.test(c.label)) return ++n === 1 ? { ...implOk(), decisions: [FLAWED] } : implOk()
+    if (/^qa repair:1/.test(c.label)) {
+      const wt = (c.prompt.match(/The branch is already checked out in (\S+)\. Fix only/) || [])[1]
+      return ok({ ready: true, dir: `${wt}/tests/acceptance`, files: [`${wt}/tests/acceptance/c.spec.js`], tests: [] })
+    }
+  })
+  const impls = implementCalls(calls)
+  assert.strictEqual(impls.length, 2, labelsOf(calls).join())
+  assert(impls[1].prompt.includes('under tests/acceptance/ (tests/acceptance/ticket-1.spec.js, tests/acceptance/c.spec.js)'), (impls[1].prompt.match(/Acceptance tests already exist[^\n]*/) || [''])[0])
+  const g = named(calls, /^acceptance-test check:1/)[0]
+  assert(g && /-- tests\/acceptance\n/.test(g.prompt), g && g.prompt.split('\n')[0])
+})
+
+test('qt15: a worktree-absolute tests dir from the qa stage becomes repo-relative for implement and the guard', async () => {
+  const { calls } = await run({ tickets: mTicket() }, c => {
+    if (c.label === 'qa:1') {
+      const wt = (c.prompt.match(/worktree add (?:-b \S+ |--detach )?(\S+)/) || [])[1]
+      return ok({ ready: true, dir: `${wt}/tests/acceptance`, files: [`${wt}/tests/acceptance/a.spec.js`], tests: [{ name: 'AC1: it works', covers: 'AC1' }] })
+    }
+  })
+  const p = implementCalls(calls)[0].prompt
+  assert(p.includes('under tests/acceptance/ (tests/acceptance/a.spec.js)'), (p.match(/Acceptance tests already exist[^\n]*/) || [''])[0])
+  const g = named(calls, /^acceptance-test check:1/)[0]
+  assert(g && /-- tests\/acceptance\n/.test(g.prompt), g && g.prompt.split('\n')[0])
+})
+
+test('qt10: a pre-implement repair with no ready tests gives no second qa check', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label)) return { uncovered: [], unmapped: [], invented: ['x'] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa check:1/).length, 1, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
+test('qt3: a Flawed acceptance test decision from implement gives one qa repair and one more implement call', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label)
+    ? (++n === 1 ? { ...implOk(), decisions: [FLAWED] } : implOk()) : undefined))
+  assert.strictEqual(named(calls, /^qa repair:1/).length, 1, labelsOf(calls).join())
+  assert.strictEqual(implementCalls(calls).length, 2, labelsOf(calls).join())
+})
+
+test('qt4: a second Flawed acceptance test decision gives no second qa repair and a needs_review decision', async () => {
+  const r = await run({ tickets: mTicket() }, c => (/^implement:1(:|$)/.test(c.label) ? { ...implOk(), decisions: [FLAWED] } : undefined))
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, labelsOf(r.calls).join())
+  assert.strictEqual(implementCalls(r.calls).length, 2, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
+test('qt7: a repair that returns no ready tests gives no second implement call and a needs_review decision', async () => {
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^implement:1(:|$)/.test(c.label)) return { ...implOk(), decisions: [FLAWED] }
+    if (/^qa repair:1/.test(c.label)) return ok({ ready: false, reason: 'could not repair' })
+  })
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, labelsOf(r.calls).join())
+  assert.strictEqual(implementCalls(r.calls).length, 1, labelsOf(r.calls).join())
+  assert(allDecisions(r).some(d => d.needs_review === true), 'no needs_review decision')
+})
+
+test('qt5: a fix test commit that touches the acceptance folder still blocks the ticket after a repair', async () => {
+  let n = 0
+  const r = await run({ tickets: mTicket() }, c => {
+    if (/^qa check:1/.test(c.label) && ++n === 1) return { uncovered: ['AC2'], unmapped: [], invented: [] }
+    if (c.label === 'acceptance-test check:1') return { commits: [{ sha: 'qa1', subject: 'Add acceptance tests for #1' }, { sha: 'bad2', subject: 'fix test' }] }
+  })
+  assert.strictEqual(named(r.calls, /^qa repair:1/).length, 1, 'the repair must have run: ' + labelsOf(r.calls).join())
+  assert.strictEqual(st(r, 1), 'blocked')
+  assert(r.result.tickets.find(t => t.n === 1).reason.includes('bad2'))
+  assert.strictEqual(named(r.calls, /^finish:/).length, 0)
+})
+
+test('qt6: the qa-writer agent file states the rule that a test checks nothing the ticket does not state', async () => {
+  const f = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'agents', 'qa-writer.md'), 'utf8')
+  assert.strictEqual(f.split('\n').filter(l => l.includes('checks nothing the ticket')).length, 1)
+})
+
+// #648: worktreeSetup commands follow every worktree add line; the dependency rule; the drafted Verify: row.
+const pfTickets = () => [T(1, 1, [], { depth: 'M' }), T(2, 1), T(3, 2, [1])]
+test('pf1: with worktreeSetup [npm ci], every prompt that has worktree add has npm ci after that line', async () => {
+  const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
+  const wt = calls.filter(c => c.prompt.includes('worktree add'))
+  assert(wt.length > 0, 'no prompt creates a worktree')
+  assert(wt.some(c => /^qa:1$/.test(c.label)) && wt.some(c => /^finish:/.test(c.label)), labelsOf(wt).join())
+  for (const c of wt) {
+    const parts = c.prompt.split('worktree add').slice(1)
+    parts.forEach((p, i) => {
+      assert(p.includes('npm ci'), `${c.label}: no npm ci after worktree add #${i + 1}`)
+      const m = p.match(/in (\S+), run these setup commands/)
+      assert(m, `${c.label}: no setup block after worktree add #${i + 1}`)
+      assert(p.split('\n')[0].includes(m[1]), `${c.label}: setup aimed at ${m[1]}, not the worktree just added`)
+    })
+  }
+  const plain = await run({ tickets: pfTickets() }, null)
+  assert(!plain.calls.some(c => c.prompt.includes('npm ci')), 'npm ci without worktreeSetup')
+  const empty = await run({ tickets: pfTickets(), worktreeSetup: [] }, null)
+  assert.deepStrictEqual(empty.calls.map(c => c.prompt), plain.calls.map(c => c.prompt), 'an empty list must not change any prompt')
+})
+
+test('pf2: a worktreeSetup string throws ship: args.worktreeSetup', async () => {
+  for (const v of ['npm ci', [''], ['  '], [3], ['npm ci\nrm -rf /'], ['npm ci\r']]) {
+    await assert.rejects(() => run({ worktreeSetup: v }, null), e => /^ship: args\.worktreeSetup/.test(e.message), JSON.stringify(v))
+  }
+})
+
+test('pf3: the implement prompt rules contain never run sudo', async () => {
+  const { calls } = await run({}, null)
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('never run sudo'))
+})
+
+test('pf4: a decision passed on a ticket is recorded for that ticket only', async () => {
+  const title = 'Verify: row drafted for #1'
+  const dec = { title, needs_review: true, context: 'c', decision: 'd', why: 'w', consequences: 'q', how_to_reverse: 'r' }
+  const r = await run({ noAsk: true, tickets: [T(1, 1, [], { decisions: [dec] }), T(2, 1)] }, null)
+  const ds = allDecisions(r).filter(d => d.title === title)
+  assert.strictEqual(ds.length, 1, JSON.stringify(allDecisions(r).map(d => d.title)))
+  assert.strictEqual(ds[0].needs_review, true)
+  assert.strictEqual(ds[0].ticket, 1)
+  assert(!allDecisions(r).some(d => d.ticket === 2 && d.title === title))
+  await assert.rejects(() => run({ tickets: [T(1, 1, [], { decisions: 'yes' })] }, null), /decisions/)
+})
+
+test('pf5: the verify prompt falls back to the Verify: row in the owner-confirmed decisions', async () => {
+  const { calls } = await run({}, null)
+  assert(named(calls, /^verify:1$/)[0].prompt.includes('when the body has none, use the one in the owner-confirmed decisions'))
+})
+
+// ---- #649: one advisor recovery for a blocked stage ------------------------------------------
+const rcBlocked = (extra) => ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '', ...extra })
+const rcCalls = (calls, re) => calls.filter(c => re.test(c.label || '')).length
+const rcOver = (verdict, implement) => c => {
+  if (c.label === 'advisor:recovery implement:1') return verdict
+  if (/^implement:1(:retry)?$/.test(c.label)) return implement(c)
+  return undefined
+}
+
+test('rc1: a stage that returns blocked then ok gives done, 1 recovery call and 2 stage calls', async () => {
+  const { result, calls } = await run({}, rcOver('retry: build it the other way', c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 1, Object.keys(result.stats.byStage).join())
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 2)
+})
+
+test('rc2: a stage that stays blocked gives blocked after an Opus and a Fable recovery, and no fourth stage call (owner, 2026-11-18)', async () => {
+  const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked()))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 2)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3)
+  assert.deepStrictEqual(named(calls, /^advisor:recovery implement:1$/).map(c => c.opts.model), ['opus', 'fable'])
+})
+
+test('rc3: a blocked ticket does not stop an independent second ticket', async () => {
+  const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, rcOver('retry: try again', () => rcBlocked()))
+  assert.strictEqual(result.stats.byStage['advisor recovery'].calls, 2)
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3)
+  const by = Object.fromEntries(result.tickets.map(t => [t.n, t]))
+  assert.strictEqual(by[1].status, 'blocked')
+  assert.strictEqual(by[2].status, 'done')
+})
+
+test('rc4: an advisor verdict owner gives no retry call and the reason in the block text', async () => {
+  const { result, calls } = await run({}, rcOver('owner: NEEDS-OWNER-KEY', () => rcBlocked()))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0)
+  assert(result.tickets[0].reason.includes('NEEDS-OWNER-KEY'), result.tickets[0].reason)
+})
+
+test('rc5: a stage result with a dangerous decision gets no recovery call', async () => {
+  const bad = { title: 'T', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true, dangerous: true }
+  const { result, calls } = await run({}, rcOver('retry: try again', () => rcBlocked({ decisions: [bad] })))
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 0)
+  assert(!('advisor recovery' in result.stats.byStage), Object.keys(result.stats.byStage).join())
+})
+
+test('rx1: a stage that returns nothing gets a recovery call that says so', async () => {
+  const { result, calls } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? null : undefined)))
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  assert(named(calls, /^advisor:recovery implement:1$/)[0].prompt.includes('(the agent returned nothing)'))
+  const retry = named(calls, /^implement:1:retry$/)[0]
+  assert(retry.prompt.includes('## Advisor advice') && retry.prompt.includes('RETRY-HINT'))
+})
+
+test('rx2: a structured retry verdict puts its advice in the retry prompt; a failed retry carries the reason', async () => {
+  const v = { verdict: 'retry', reason: 'RX-REASON', advice: 'RX-ADVICE' }
+  const a = await run({}, rcOver(v, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  assert.strictEqual(a.result.tickets[0].status, 'done')
+  assert(named(a.calls, /^implement:1:retry$/)[0].prompt.includes('RX-ADVICE'))
+  assert(named(a.calls, /^advisor:recovery implement:1$/)[0].schema, 'recovery call has a schema')
+  const b = await run({}, rcOver(v, () => rcBlocked()))
+  assert.strictEqual(b.result.tickets[0].reason, 'implement: cannot build; advisor (retry failed): RX-REASON')
+})
+
+test('rx3: a free-form advisor answer and a failed advisor call both count as owner', async () => {
+  const md = await run({}, rcOver('1. **Recommendation** - retry: do it again', () => rcBlocked()))
+  assert.strictEqual(rcCalls(md.calls, /^implement:1:retry$/), 0)
+  assert(md.result.tickets[0].reason.includes('advisor (owner)'), md.result.tickets[0].reason)
+  const err = await run({}, rcOver(new Error('no such model'), () => rcBlocked()))
+  assert.strictEqual(err.result.tickets[0].status, 'blocked')
+  assert.strictEqual(rcCalls(err.calls, /^implement:1:retry$/), 0)
+  assert(err.result.tickets[0].reason.endsWith('advisor (owner): (no advisor answer)'), err.result.tickets[0].reason)
+})
+
+test('rx4: the recovery advisor runs on advisorModel, also after an Opus stage; on fable only after Opus advice failed', async () => {
+  const s = await run({ advisorModel: 'opus' }, rcOver('owner: x', () => rcBlocked()))
+  assert.strictEqual(named(s.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+  const l = await run({ advisorModel: 'opus', tickets: [T(1, 1, [], { depth: 'L' })] }, rcOver('owner: x', () => rcBlocked()))
+  assert.strictEqual(named(l.calls, /^implement:1$/)[0].opts.model, 'opus')
+  assert.strictEqual(named(l.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus', 'an Opus stage with no Opus advice yet asks Opus')
+  const a = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return rcBlocked()
+    if (c.label === 'advisor:recovery implement:1') return 'owner: x'
+  })
+  assert.strictEqual(named(a.calls, /^advisor:implement:1$/)[0].opts.model, 'opus')
+  assert.strictEqual(named(a.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'fable', 'Opus advice failed: escalate to fable')
+})
+
+test('rx5: a stage that runs twice in one ticket gets one recovery in total', async () => {
+  let n = 0
+  const { result, calls } = await run({ tickets: mTicket() }, c => {
+    if (c.label === 'advisor:recovery implement:1') return 'retry: RETRY-HINT'
+    if (/^implement:1(:retry)?$/.test(c.label)) { n++; return n === 1 ? rcBlocked() : n === 2 ? { ...implOk(), decisions: [FLAWED] } : rcBlocked() }
+  })
+  assert.strictEqual(rcCalls(calls, /^implement:1(:retry)?$/), 3, labelsOf(calls).join())
+  assert.strictEqual(rcCalls(calls, /^advisor:recovery/), 1, labelsOf(calls).join())
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.tickets[0].reason, 'implement: cannot build')
+})
+
+test('rx6: free text that starts with the word retry but has no colon counts as owner', async () => {
+  const { result, calls } = await run({}, rcOver('Retry will not help here', () => rcBlocked()))
+  assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0)
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert(result.tickets[0].reason.includes('advisor (owner)'), result.tickets[0].reason)
+})
+
+test('rx7: the recovery retry prompt tells the stage to reuse work the first run left', async () => {
+  const { calls } = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+  const p = named(calls, /^implement:1:retry$/)[0].prompt
+  assert(p.includes('RETRY-HINT') && p.includes('Reuse it') && p.includes('never open a second pull request'), p.slice(-600))
+})
+
+test('rx8: the owner path keeps the blocked run decisions; the retry path records only the retry decisions', async () => {
+  const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const owner = await run({}, rcOver('owner: needs a human', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : undefined)))
+  assert.strictEqual(owner.result.tickets[0].status, 'blocked')
+  assert(allDecisions(owner).some(d => d.title === 'FIRST-RUN-DECISION'), 'owner path lost the first-run decision')
+  const retry = await run({}, rcOver('retry: RETRY-HINT', c => {
+    if (c.label === 'implement:1') return rcBlocked({ decisions: [dec] })
+    if (c.label === 'implement:1:retry') return { ...implOk(), decisions: [{ ...dec, title: 'RETRY-DECISION' }] }
+  }))
+  assert.strictEqual(retry.result.tickets[0].status, 'done', JSON.stringify(retry.result.tickets[0]))
+  assert(allDecisions(retry).some(d => d.title === 'RETRY-DECISION'))
+  assert(!allDecisions(retry).some(d => d.title === 'FIRST-RUN-DECISION'), 'retry path recorded the first-run decision')
+})
+
+test('rx9: a decision the retry repeats from the blocked first run is recorded once', async () => {
+  const dec = { title: 'REPEATED-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => {
+    if (c.label === 'implement:1') return rcBlocked({ decisions: [dec] })
+    if (c.label === 'implement:1:retry') return { ...implOk(), decisions: [dec] }
+  }))
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+  assert.strictEqual(allDecisions(r).filter(d => d.title === 'REPEATED-DECISION').length, 1)
+})
+
+test('rx10: a free-text verdict may use markdown emphasis and a colon or a dash', async () => {
+  for (const ans of ['retry - reuse the worktree', '**retry**: reuse it', 'Retry \u2014 reuse it', '`retry`: x']) {
+    const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+    assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 1, ans)
+  }
+  for (const ans of ['Retry will not help here', 'retrying is pointless: owner', 'owner - needs a human', 'Retry-safe? No - only the owner can']) {
+    const { calls } = await run({}, rcOver(ans, c => (c.label === 'implement:1' ? rcBlocked() : undefined)))
+    assert.strictEqual(rcCalls(calls, /^implement:1:retry$/), 0, ans)
+  }
+})
+
+test('rx14: an empty Opus advice answer does not count as failed Opus advice, so the recovery stays on advisorModel', async () => {
+  const r = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'advisor:implement:1') return ''
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return rcBlocked()
+    if (c.label === 'advisor:recovery implement:1') return 'owner: x'
+  })
+  assert.strictEqual(named(r.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+})
+
+test('rx15: a failed needs_advisor call does not stop the stage or count as Opus advice', async () => {
+  const r = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'advisor:implement:1') return new Error('advisor down')
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return rcBlocked()
+    if (c.label === 'advisor:recovery implement:1') return 'owner: x'
+  })
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+  assert(r.result.tickets[0].reason.includes('advisor (owner)'), r.result.tickets[0].reason)
+  assert.strictEqual(named(r.calls, /^advisor:recovery implement:1$/)[0].opts.model, 'opus')
+})
+
+test('rx16: when the Opus recovery retry is still blocked, Fable advises one more retry that can unblock the stage', async () => {
+  let n = 0
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? 'retry: FABLE-HINT' : 'retry: OPUS-HINT'
+    if (c.label === 'implement:1') return rcBlocked()
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
+  })
+  assert.strictEqual(result.tickets[0].status, 'done', JSON.stringify(result.tickets[0]))
+  const retries = named(calls, /^implement:1:retry$/)
+  assert.strictEqual(retries.length, 2)
+  assert(retries[1].prompt.includes('OPUS-HINT') && retries[1].prompt.includes('FABLE-HINT'), 'the Fable retry keeps the Opus advice')
+})
+
+test('rx17: no Fable round when the profile advisor is not Opus, or when the Opus retry returns a dangerous decision', async () => {
+  const s = await run({ advisorModel: 'sonnet' }, rcOver('retry: x', () => rcBlocked()))
+  assert.deepStrictEqual(named(s.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model), ['sonnet'])
+  const d = await run({}, rcOver('retry: x', c => (c.label === 'implement:1' ? rcBlocked() : rcBlocked({ decisions: [{ title: 'DANGER', dangerous: true, decision: 'd' }] }))))
+  assert.deepStrictEqual(named(d.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model), ['opus'])
+  assert.strictEqual(d.result.tickets[0].status, 'blocked')
+})
+
+test('rx18: an Opus retry that returns nothing still escalates; Fable sees the real reason and the tried advice, and only the last retry\'s decisions count', async () => {
+  const dec = t => ({ title: t, context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false })
+  let n = 0
+  const r = await run({}, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? 'retry: FABLE-HINT' : 'retry: OPUS-HINT'
+    if (c.label === 'implement:1') return rcBlocked({ blocked_reason: 'REAL-REASON', decisions: [dec('FIRST')] })
+    if (c.label === 'implement:1:retry') return ++n === 1 ? null : { ...implOk(), decisions: [dec('LAST')] }
+  })
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+  const fable = named(r.calls, /^advisor:recovery implement:1$/).find(c => c.opts.model === 'fable')
+  assert(fable && fable.prompt.includes('REAL-REASON') && fable.prompt.includes('OPUS-HINT'), fable && fable.prompt.slice(-600))
+  const titles = allDecisions(r).map(d => d.title)
+  assert(titles.includes('LAST') && !titles.includes('FIRST'), titles.join())
+})
+
+test('rx19: in the escalation round a failed Fable call does not fall back to Opus; the ticket blocks', async () => {
+  const r = await run({}, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? new Error('unknown model fable') : 'retry: OPUS-HINT'
+    if (/^implement:1(:retry)?$/.test(c.label)) return rcBlocked()
+  })
+  const models = named(r.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model)
+  assert.strictEqual(models[0], 'opus')
+  assert(models.slice(1).length > 0 && models.slice(1).every(m => m === 'fable'), models.join())   // call() may retry fable itself, never opus
+  assert.strictEqual(rcCalls(r.calls, /^implement:1(:retry)?$/), 2)
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+})
+
+test('rx11: a failed fable recovery call falls back once to advisorModel', async () => {
+  let n = 0
+  const r = await run({ advisorModel: 'opus' }, c => {
+    if (c.label === 'advisor:recovery implement:1') return c.opts.model === 'fable' ? new Error('unknown model fable') : 'retry: use the other way'
+    if (c.label === 'implement:1') return { ...implOk(), needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
+    return undefined
+  })
+  const models = named(r.calls, /^advisor:recovery implement:1$/).map(c => c.opts.model)
+  assert(models.includes('fable') && models[models.length - 1] === 'opus', models.join())
+  assert.strictEqual(r.result.tickets[0].status, 'done', JSON.stringify(r.result.tickets[0]))
+})
+
+test('rx12: a recovery retry keeps the advice of the earlier needs_advisor call', async () => {
+  let n = 0
+  const { calls } = await run({}, c => {
+    if (c.label === 'advisor:implement:1') return 'EARLIER-ADVICE'
+    if (c.label === 'advisor:recovery implement:1') return 'retry: RETRY-HINT'
+    if (c.label === 'implement:1') return { ...implOk(), status: 'ok', needs_advisor: true, advisor_question: 'which way?' }
+    if (c.label === 'implement:1:retry') return ++n === 1 ? rcBlocked() : implOk()
+    return undefined
+  })
+  const retries = named(calls, /^implement:1:retry$/)
+  assert.strictEqual(retries.length, 2, labelsOf(calls).join())
+  assert(retries[1].prompt.includes('EARLIER-ADVICE') && retries[1].prompt.includes('RETRY-HINT'), retries[1].prompt.slice(-800))
+})
+
+test('rx13: a recovery retry that returns nothing keeps the blocked run decisions', async () => {
+  const dec = { title: 'FIRST-RUN-DECISION', context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const r = await run({}, rcOver('retry: RETRY-HINT', c => (c.label === 'implement:1' ? rcBlocked({ decisions: [dec] }) : null)))
+  assert.strictEqual(r.result.tickets[0].status, 'blocked')
+  assert(allDecisions(r).some(d => d.title === 'FIRST-RUN-DECISION'))
+})
+
+// ---- #650: the advisor judges a failed ticket gate when the base is feat/* ------------------------
+const gaFinding = { id: 'f1', summary: 'leftover bug', score: 55, path: 'a.js', line: 3 }
+const gaVerdict = (verdict, reason) => ({ items: [{ id: 'R1', verdict, reason: reason || 'REASON-R1' }] })
+// A leftover finding of score 55 survives the fix rounds; the advisor answers with `answer`.
+const gaOver = (answer, extra) => c => {
+  if (extra) { const v = extra(c); if (v !== undefined) return v }
+  if (c.label === 'greview:1:adv') return ok({ findings: [], skill_invoked: true })
+  if (/^greview:1:r\d$/.test(c.label)) return ok({ findings: [gaFinding], skill_invoked: true })
+  if (c.label === 'advisor:gate:1') return answer
+}
+const gaCalls = (calls, re) => calls.filter(x => re.test(x.label || '')).length
+const gaBodies = calls => calls.filter(x => /^(adr|final-pr)$/.test(x.label || '')).map(x => x.prompt)
+const gaAccepted = calls => {
+  for (const b of gaBodies(calls)) {
+    const i = b.indexOf('## Accepted by advisor')
+    if (i < 0) continue
+    const lines = b.slice(i).split('\n').slice(1)
+    while (lines.length && lines[0].trim() === '') lines.shift()
+    const items = []
+    while (lines.length && lines[0].startsWith('- ')) items.push(lines.shift())
+    return items
+  }
+  return null
+}
+
+test('ga1: a leftover finding of 55 on a feat/* base, advisor accepts: ticket done, 1 advisor gate call, one item in the final body', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert.strictEqual(r.result.stats.byStage['advisor gate'].calls, 1, Object.keys(r.result.stats.byStage).join())
+  const items = gaAccepted(r.calls)
+  assert(items, 'no "## Accepted by advisor" in the final PR body')
+  assert.strictEqual(items.length, 1, items.join('\n'))
+  assert(items[0].includes('REASON-R1'), items[0])
+  const d = allDecisions(r).filter(x => /^Accepted by advisor: /.test(x.title))
+  assert.strictEqual(d.length, 1, JSON.stringify(allDecisions(r).map(x => x.title)))
+  assert.strictEqual(d[0].needs_review, false)
+})
+
+test('ga2: the same ticket on base main gets no advisor gate call and is blocked (feat/x control gets one call)', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(ctl.calls, /^advisor:gate:1$/), 1, 'control: feat/x must call the advisor')
+  const r = await gateFlow({ base: 'main' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert(!('advisor gate' in r.result.stats.byStage), Object.keys(r.result.stats.byStage).join())
+  assert.strictEqual(t1(r).status, 'blocked')
+})
+
+test('ga3: advisor verdict owner blocks the ticket with reason "human merge: gate review failed"', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1, 'the advisor must be asked')
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 0)
+})
+
+test('ga4: advisor verdict fix runs exactly 1 more fix call and 1 more gate review, and no second advisor gate call', async () => {
+  const base = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(r.result.stats.byStage['advisor gate'].calls, 1)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(gaCalls(r.calls, /^greview:1:adv$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1/), gaCalls(base.calls, /^gfix:1/) + 1)
+  assert.strictEqual(gaCalls(r.calls, /^greview:1/), gaCalls(base.calls, /^greview:1/) + 1)
+})
+
+test('ga5: a ticket whose CI gate failed gets no advisor gate call (a green-CI control gets one)', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert.strictEqual(gaCalls(ctl.calls, /^advisor:gate:1$/), 1, 'control: green CI must call the advisor')
+  const ci = failingCi([{ name: 'x', bucket: 'fail' }])
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept'), ci))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.includes('ci'), t1(r).reason)
+  const only = await gateFlow({ base: 'feat/x' }, c => { const v = ci(c); if (v !== undefined) return v; if (c.label === 'advisor:gate:1') return gaVerdict('accept') })
+  assert.strictEqual(gaCalls(only.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(only).status, 'blocked')
+})
+
+test('ga6: a run with no accepted item has no "## Accepted by advisor" in the final body', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  assert(gaAccepted(ctl.calls), 'control: an accepted item must show the section')
+  const none = await gateFlow({ base: 'feat/x' }, null)
+  const owner = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('owner')))
+  for (const r of [none, owner]) {
+    assert(gaBodies(r.calls).length > 0, 'no final body call to inspect')
+    assert.strictEqual(gaAccepted(r.calls), null)
+    assert(!gaBodies(r.calls).some(b => b.includes('Accepted by advisor')))
+  }
+})
+
+// ---- #650 extra paths: fix success, needs_review items, flagged decisions, text answers -------------
+const gavD = { title: 'SKILL-DECISION', decision: 'drafted a Verify row' }
+const gavFlow = (ovr, extra) => run({ base: 'feat/x', tickets: [T(1, 1, [], extra), T(2, 1)] }, ovr)
+const gavBody = calls => gaBodies(calls)[0] || ''
+
+test('gav1: an advisor fix that the re-review passes gives done, and the merge uses the fix tip CI ran on', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const m = named(r.calls, /^merge:/)[0]
+  assert(m && /#1 branch \S+ PR 101 head gc3\b/.test(m.prompt), m && m.prompt)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+})
+
+test('gav2: an advisor fix that the re-review does not pass blocks the ticket and records no accepted item', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => { if (c.label === 'greview:1:adv') return ok({ findings: [gaFinding], skill_invoked: true }) }))
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review failed'), t1(r).reason)
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+  assert.strictEqual(gaAccepted(r.calls), null)
+})
+
+test('gav3: an accepted needs_review decision passes the ticket gate but keeps needs_review, so the final PR stays a human merge', async () => {
+  const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'accept', reason: 'REASON-D1' }] } }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, 'CI already ran green; it must not run twice')
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && d.needs_review === true && d.advisor_accepted === true, JSON.stringify(d))
+  const body = gavBody(r.calls)
+  assert(/## Needs your decision[\s\S]*SKILL-DECISION/.test(body), 'the owner must still see the decision')
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('REASON-D1')))
+  assert.strictEqual(r.result.final.merged, false, JSON.stringify(r.result.final))
+})
+
+test('gav4: fix on a needs_review decision runs one advisor fix round; the ticket passes and the decision keeps needs_review', async () => {
+  const r = await gavFlow(c => { if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] } }, { decisions: [gavD] })
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(gaCalls(r.calls, /^gfix:1:adv$/), 1, labelsOf(r.calls).join())
+  assert(/SKILL-DECISION/.test(named(r.calls, /^gfix:1:adv$/)[0].prompt))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && d.needs_review === true && d.advisor_fixed === true, JSON.stringify(d))
+  assert.strictEqual(r.result.final.merged, false, JSON.stringify(r.result.final))
+})
+
+test('gav5: a dangerous decision from a gate fix agent gets no advisor gate call and the ticket blocks', async () => {
+  const all = { items: [{ id: 'R1', verdict: 'accept', reason: 'a' }, { id: 'D1', verdict: 'accept', reason: 'b' }] }   // accepts everything: only the guard can block
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(all, c => {
+    if (c.label === 'gfix:1:r1:1') return ok({ fix_status: 'fixed', base_sha: 'gb0', commit: 'gx1', decisions: [{ title: 'DANGER', dangerous: true, decision: 'd' }] })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0)
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.startsWith('human merge: gate review, needs_review failed'), t1(r).reason)
+})
+
+test('gav6: a plain-text advisor answer is parsed per line; ADVICE-TEXT gives owner', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver('Looked at it.\nR1: accept: TEXT-REASON'))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('TEXT-REASON')))
+  const o = await gateFlow({ base: 'feat/x' }, gaOver(undefined))
+  assert.strictEqual(gaCalls(o.calls, /^advisor:gate:1$/), 1)
+  assert.strictEqual(t1(o).status, 'blocked')
+  assert.strictEqual(gaAccepted(o.calls), null)
+})
+
+// ---- #650 review fixes ----
+test('gav7: an advisor id in lowercase in a structured answer still gets its verdict', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver({ items: [{ id: 'r1', verdict: 'accept', reason: 'LOWER-REASON' }] }))
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  assert((gaAccepted(r.calls) || []).some(l => l.includes('LOWER-REASON')))
+})
+
+test('gav8: the deferred CI run on the advisor path expects the intent-fix tip, so a stale head blocks before any advisor call', async () => {
+  let n = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept'), c => {
+    if (c.label === 'gintent:1') return n++ === 0 ? gaps : { verdict: 'match', findings: [] }
+    if (c.label === 'gintent-fix:1') return ok({ fix_status: 'fixed', base_sha: 'ib0', commit: 'intentfixtip' })   // CI runs on the last review-fix commit, not on this tip
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^advisor:gate:/), 0, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'blocked')
+})
+
+test('gav9: intent review runs again after an advisor fix, and a drift it finds blocks the ticket', async () => {
+  const ctl = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix')))
+  assert.strictEqual(gaCalls(ctl.calls, /^gintent:1$/), 2, labelsOf(ctl.calls).join())
+  let n = 0
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gintent:1') return n++ === 0 ? { verdict: 'match', findings: [] } : { verdict: 'drift found', findings: [{ kind: 'excess', clause: 'c', detail: 'd' }] }
+  }))
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert(t1(r).reason.includes('intent'), t1(r).reason)
+  assert(!allDecisions(r).some(d => /^Accepted by advisor: /.test(d.title)))
+})
+
+test('gav10: an intent fix after the advisor fix is code-reviewed, and CI expects its tip', async () => {
+  let n = 0, ci = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gci:1' && ++ci === 2) return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'intentfixtip' }
+    if (c.label === 'gintent:1') { n++; return n === 2 ? gaps : { verdict: 'match', findings: [] } }
+    if (c.label === 'gintent-fix:1') return ok({ fix_status: 'fixed', base_sha: 'ib1', commit: 'intentfixtip' })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^greview:1:rif$/), 1, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'done', JSON.stringify(t1(r)))
+  const m = named(r.calls, /^merge:/)[0]
+  assert(m && /PR 101 head intentfixtip\b/.test(m.prompt), m && m.prompt)
+})
+
+test('gav11: an advisor fix with no base_sha is not reviewed, so the gate fails, and intent still runs again', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('fix'), c => {
+    if (c.label === 'gfix:1:adv') return ok({ fix_status: 'fixed', commit: 'gcx' })
+  }))
+  assert.strictEqual(gaCalls(r.calls, /^gintent:1$/), 2, labelsOf(r.calls).join())
+  assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
+})
+
+test('gav12: a fixed needs_review decision is not set aside when the gate still fails after the fix', async () => {
+  const r = await gavFlow(c => {
+    if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] }
+    if (c.label === 'greview:1:adv') return ok({ findings: [gaFinding], skill_invoked: true })
+  }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'blocked', JSON.stringify(t1(r)))
+  const d = allDecisions(r).find(x => x.title === 'SKILL-DECISION')
+  assert(d && !d.advisor_fixed && d.needs_review === true, JSON.stringify(d))
+  assert(t1(r).reason.includes('needs_review'), t1(r).reason)
+})
+
+test('gav13: a fix verdict whose fix lands nothing runs no second CI check', async () => {
+  const r = await gavFlow(c => {
+    if (c.label === 'advisor:gate:1') return { items: [{ id: 'D1', verdict: 'fix', reason: 'x' }] }
+    if (c.label === 'gfix:1:adv') return ok({ fix_status: 'skipped', reason: 'nothing to change' })
+  }, { decisions: [gavD] })
+  assert.strictEqual(t1(r).status, 'blocked')
+  assert.strictEqual(gaCalls(r.calls, /^gci:1$/), 1, labelsOf(r.calls).join())
+})
+
+test('gav14: the advisor gate prompt points at readable files and asks for no command', async () => {
+  const r = await gateFlow({ base: 'feat/x' }, gaOver(gaVerdict('accept')))
+  const p = named(r.calls, /^advisor:gate:1$/)[0].prompt
+  assert(!p.includes('gh pr diff'), 'the advisor has no shell')
+  assert(p.includes('You cannot run commands') && /Read the files it names under \S+/.test(p), p.slice(-400))
+  assert(p.includes('a decision the code can make unnecessary'), 'fix must be allowed on decisions')
+})
+
+test('ad1: a review-stage adr decision reaches the ADR input with stage review and needs_review true (#653)', async () => {
+  const D = { title: 'Late review choice', context: 'c-ad1', options: ['a', 'b'], decision: 'DEC-AD1', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false, adr: true, stage: 'design' }
+  const { calls } = await run({}, c => (/^review:/.test(c.label || '') ? ok({ findings: [], skill_invoked: true, skill_error: '', decisions: [D] }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  const line = p.split('\n').find(l => l.startsWith('{"run":'))
+  assert(line, 'no decisions JSON in the adr prompt')
+  const d = JSON.parse(line).decisions.find(x => x.title === 'Late review choice')
+  assert(d, 'the review decision did not reach the ADR input')
+  assert.strictEqual(d.stage, 'review', 'a late call must record its own stage label')
+  assert.strictEqual(d.adr, true)
+  assert.strictEqual(d.needs_review, true, 'a late adr decision must be forced to needs_review')
+  assert(p.includes('stage before implement'), 'the ADR stage prompt does not say only an early decision gets a file')
+})
+
+test('ad2: a late restatement of an early adr decision does not send it to the owner; a new late one does', async () => {
+  const d = { title: 'Use a queue', context: 'c', options: ['a', 'b'], decision: 'a', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false, adr: true }
+  const r = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => {
+    if (c.label === 'plan:1') return ok({ plan_md: 'p', decisions: [d] })
+    if (c.label === 'implement:1') return { ...implOk(), decisions: [d, { ...d, title: 'Pick a cache' }] }
+  })
+  const ds = allDecisions(r)
+  assert(!ds.some(x => x.title === 'Use a queue' && x.needs_review), JSON.stringify(ds.filter(x => x.title === 'Use a queue')))
+  assert(ds.some(x => x.title === 'Pick a cache' && x.needs_review), JSON.stringify(ds.map(x => [x.title, x.stage, x.needs_review])))
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {
@@ -2026,4 +2863,46 @@ test('g1: CI that ran on a head older than the last pushed fix commit fails the 
   assert.notStrictEqual(t1(r).status, 'done')
   const body = named(r.calls, /^gbody:1$/)[0].prompt
   assert(body.includes('stale'), body)
+})
+
+test('pf6: finish setup is aimed at the fallback worktree, never at impl.worktree', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)], worktreeSetup: ['npm ci'] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f, 'no finish call')
+  assert(!f.prompt.includes('in /wt/1, run these setup'), 'setup aimed at impl.worktree')
+  const m = f.prompt.match(/work in (\S+) \(git fetch/)
+  assert(m, 'no fallback dir')
+  assert(f.prompt.includes(`Then, in ${m[1]}, run these setup`), 'setup not aimed at the fallback dir')
+})
+
+test('pf7: a decision passed on a ticket cannot clear needs_review, ask for an ADR file or change its ticket', async () => {
+  const title = 'Verify: row drafted for #1'
+  const dec = { title, decision: 'd', needs_review: false, adr: true, ticket: 9, stage: 'design', dangerous: true, owner_confirmed: true, options: ['a', 'b'] }
+  const r = await run({ noAsk: true, tickets: [T(1, 1, [], { decisions: [dec] })] }, null)
+  const ds = allDecisions(r).filter(d => d.title === title)
+  assert.strictEqual(ds.length, 1, JSON.stringify(allDecisions(r).map(d => d.title)))
+  assert.strictEqual(ds[0].ticket, 1)
+  assert.strictEqual(ds[0].needs_review, true)
+  assert.strictEqual(ds[0].adr, false)
+  assert.strictEqual(ds[0].owner_confirmed, false)
+  assert.strictEqual(ds[0].stage, 'autopilot')
+  assert(!ds[0].dangerous, 'dangerous passed through')
+  assert.strictEqual(ds[0].decision, 'd')
+  assert.strictEqual(typeof ds[0].why, 'string')
+})
+
+test('pf8: with no worktreeSetup, the finish prompt has no dangling "Only if you created" sentence', async () => {
+  const { calls } = await run({ tickets: [T(1, 1)] }, null)
+  const f = calls.find(c => /^finish:/.test(c.label))
+  assert(f, 'no finish call')
+  assert(!f.prompt.includes('Only if you created'), 'dangling setup condition')
+})
+
+test('pf9: each worktree add line is followed by exactly one setup block', async () => {
+  const { calls } = await run({ tickets: pfTickets(), worktreeSetup: ['npm ci'] }, null)
+  for (const c of calls.filter(x => x.prompt.includes('worktree add'))) {
+    const adds = c.prompt.split('worktree add').length - 1
+    const blocks = c.prompt.split('run these setup commands').length - 1
+    assert.strictEqual(blocks, adds, `${c.label}: ${adds} worktree add, ${blocks} setup blocks`)
+  }
 })

@@ -26,7 +26,7 @@ Use these sections, in this order:
 - **Summary**: what changed, in two or three sentences.
 - **Why**: the problem or ticket (`Closes #n`).
 - **Changes**: the behavior changes a reviewer should know, not a file list.
-- **Decisions**: link the ADR files or artifact when present; otherwise list the decisions from
+- **Decisions**: link the ADR files when present; otherwise list the decisions from
   the run, with how to reverse each.
 - **Testing**: the real commands run and their counts (for example `pytest: 42 passed`).
 - **Risk**: what could break and how likely.

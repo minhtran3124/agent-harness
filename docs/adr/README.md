@@ -25,6 +25,16 @@ gets a table-only row and no ADR file. The script also checks what it can check 
 needs at least two options that are not `n/a`, and it refuses a title that starts with
 `Boundary: ` or `UAT not run`. `confidence` never decides this.
 
+Only a decision made before implement gets a file: its `stage` must be exactly `intake`,
+`grilling`, `intent`, `research`, `design`, `plan` or `plan-review`. A file written after the code
+exists explains the code instead of guiding it. A decision that meets the rest of the rule but
+comes from a later stage (`qa`, `implement`, `review`, a `-fix` stage, ...) or has no `stage` is a
+late decision: no file, the table row `late decision, no file`, and `needs_review` forced true
+(except an `owner_confirmed` one), so the PR body lists it under `## Needs your decision`. In
+`ship.js` a late call records its own stage label, so its agent cannot claim an early stage. For a
+manual run, `--needs-out FILE` writes that list. When duplicates merge, an early `adr` item wins
+over a later one.
+
 The script also reads this folder. A decision whose ticket already has an ADR here with the same
 title slug or the same non-empty context and the same decision text is skipped, so a re-run writes
 no duplicate. If the decision text changed, the script writes a new ADR that names the old one in
@@ -33,8 +43,8 @@ checked this way; run-level decisions (ticket `run`) are not.
 
 `needs_review` is a separate flag on the decision, not a field of the ADR file: it asks the owner to look at a decision before the merge. It
 does not make a file. Every merged decision, with or without a file, is one row in the `## Decisions`
-table of the PR body. A row says `ADR file`, `owner-confirmed`, `already recorded (ADR NNNN)` or
-`table only`.
+table of the PR body. A row says `ADR file`, `owner-confirmed`, `already recorded (ADR NNNN)`,
+`late decision, no file` or `table only`.
 
 ## Design records
 
