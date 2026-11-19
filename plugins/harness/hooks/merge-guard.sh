@@ -184,7 +184,9 @@ judge_api_merge() {  # judge_api_merge <segment>
 # bodies and quoted strings that hold whitespace or separators (each leaves one QUOTED word, so a value
 # option such as --body still has its value and does not swallow the PR number), so text that only
 # mentions a merge never matches; then split on separators and standalone braces.
-segs=$(printf '%s\n' "$cmd" | awk '
+# Redirections that hold & or | (2>&1, >&f, <&3, >|f) would be cut at that character and leave their
+# target as a command word; turn them into a plain > or < first.
+segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g; s/([<>])&/\1 /g; s/>\|/> /g' | awk '
     { L[NR] = $0 }
     END {
       q = ""; qb = ""; out = ""; hd = ""
@@ -226,8 +228,8 @@ while IFS= read -r seg; do
   KW=0
   drop_word() { case "$seg" in *[[:space:]]*) seg=$(printf '%s' "${seg#*[[:space:]]}" | sed -E 's/^[[:space:]]+//') ;; *) seg="" ;; esac; }
   while :; do
-    if printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*([[:space:]]+|$)'; then
-      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//'); continue
+    if printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*([[:space:]]+|$)'; then
+      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*[[:space:]]*//'); continue
     fi
     w0=${seg%%[[:space:]]*}
     case "$w0" in
@@ -254,14 +256,24 @@ while IFS= read -r seg; do
   esac
   b=${w0//\\/}; b=${b#=}; b=${b##*/}  # drop every backslash, zsh's leading =, and any path
   case "$b" in
-    bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su)
+    bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su|watch|unshare)
       seg="$b${seg#"$w0"}" ;;
   esac
   NSEGS=$((NSEGS + 1))
   # A gh merge behind a keyword, prefix or redirection is not a plain merge to put to the owner.
   if [ "$KW" -eq 1 ] && printf '%s' "$seg" | grep -qE '^gh[[:space:]]'; then
-    case "$(fold "$seg")" in *merge*) deny "a gh merge behind a shell keyword, prefix or redirection cannot be put to the owner; run the merge alone." ;; esac
+    if printf '%s' "$(fold "$seg")" | grep -qE 'pr[[:space:]]+merge|/merge|graphql'; then
+      deny "a gh merge behind a shell keyword, prefix or redirection cannot be put to the owner; run the merge alone."
+    fi
   fi
+  # A backslash inside the gh words (g\h pr merge, gh pr mer\ge) does not change what runs, but it hides
+  # the words from the checks below: deny such a segment when it reads as a gh merge without the backslashes.
+  case "$seg" in
+    *\\*)
+      if printf '%s' "$(fold "${seg//\\/}")" | grep -qE '^gh[[:space:]].*(pr[[:space:]]+merge|/merge|graphql)'; then
+        deny "a gh merge spelled with a backslash cannot be judged."
+      fi ;;
+  esac
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
@@ -293,7 +305,7 @@ while IFS= read -r seg; do
       # with the Write tool and run that file by a path without the word.
       # This is a best-effort list of common shells and wrappers, not a complete one (interpreters such as
       # python or awk, find -exec and git -c alias are not on it; see the follow-up issue).
-      bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|.|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su)
+      bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|.|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su|watch|unshare)
         deny "a merge inside a shell string or wrapper ($cw) cannot be judged." ;;
     esac
   fi

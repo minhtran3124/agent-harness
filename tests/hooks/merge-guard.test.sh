@@ -298,6 +298,22 @@ reset
 t "#679 review: a redirection before an ordinary command is still allowed"; g '>/tmp/out echo merged'; assert_rc 0
 t "#679 review: test brackets next to the word merge are still allowed"; g '[ -n "$X" ] && echo merged'; assert_rc 0
 
+# Confirmation review of #679: a backslash inside the gh words, a redirection holding & or |, X+= and
+# a[0]= assignments, watch and unshare. Each reached gh pr merge with no prompt before this change.
+reset; setbase main
+for c in 'g\h pr merge 7 --repo o/r' 'gh pr mer\ge 7 --repo o/r' 'gh p\r merge 7 --repo o/r' \
+         '2>&1 bash -c "gh pr merge 7 --repo o/r"' '>&/dev/null bash -c "gh pr merge 7 --repo o/r"' \
+         '>| f bash -c "gh pr merge 7 --repo o/r"' 'X+=1 bash -c "gh pr merge 7 --repo o/r"' \
+         'a[0]=1 bash -c "gh pr merge 7 --repo o/r"' 'watch -g -n1 "gh pr merge 7 --repo o/r"' \
+         'unshare -r bash -c "gh pr merge 7 --repo o/r"'; do
+  t "#679 confirm: a hidden merge is denied: $c"; g "$c"; assert_rc 2
+done
+reset
+for c in 'if gh run list --workflow merge.yml; then :; fi' '! gh pr view 5 --json mergedAt' \
+         '>/tmp/o gh pr list --search merged' 'ls 2>&1 | grep merge'; do
+  t "#679 confirm: a gh read next to a keyword or redirection is allowed: $c"; g "$c"; assert_rc 0
+done
+
 # Fourth security review of the dropped #671 exemption: a $VAR/ operand that word-splits into -c, env's
 # split-string option in a form the old check missed, and $( assembled from pieces (PS4, test -v). Each ran
 # gh pr merge in a sandbox through the exemption; with no exemption they must be denied.
