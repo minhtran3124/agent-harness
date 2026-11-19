@@ -44,6 +44,23 @@ t "merged PR but uncommitted changes in the worktree: kept, nothing forced"
 run
 if [ -d "$WT" ] && [ -f "$WT/untracked.txt" ] && printf '%s' "$OUT" | grep -q 'kept'; then pass; else fail "out=$OUT"; fi
 
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge; echo dirty > "$WT/untracked.txt"
+t "dry run: a worktree with an untracked file is reported as kept, as a real run would keep it"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ -d "$WT" ] && git -C "$MAIN" rev-parse -q --verify feat >/dev/null && printf '%s' "$OUT" | grep -q "^kept feat: worktree $WT has changes" \
+   && ! printf '%s' "$OUT" | grep -q '^would '; then pass; else fail "out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge; git -C "$MAIN" worktree lock "$WT"
+t "dry run: a locked worktree is reported as kept"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ -d "$WT" ] && printf '%s' "$OUT" | grep -q "^kept feat: worktree $WT has changes or a lock" \
+   && ! printf '%s' "$OUT" | grep -q '^would '; then pass; else fail "out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+t "CLEAN_DRY_RUN=0 is a real run: worktree and branch are removed"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=0 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ ! -d "$WT" ] && ! git -C "$MAIN" rev-parse -q --verify feat >/dev/null; then pass; else fail "out=$OUT"; fi
+
 setup merged
 t "merged on GitHub with the exact tip but not in git history (squash): worktree and branch are removed"
 run
