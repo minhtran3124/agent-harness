@@ -469,7 +469,12 @@ for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
          "gh pr create --title x --body \"\$(cat <<EOF${NL}gh pr merge in a string is denied${NL}- head: \$(git rev-parse --short HEAD) on \$BRANCH${NL}EOF${NL})\"" \
          "sleep 5; git log --grep='gh pr merge' --oneline | head" \
          "gh api repos/o/r/pulls/7 | jq '.mergeable'; grep -c 'gh pr merge' docs/hooks.md" \
-         "sed -n '1,40p' docs/hooks.md; grep -n 'gh pr merge' docs/hooks.md"; do
+         "sed -n '1,40p' docs/hooks.md; grep -n 'gh pr merge' docs/hooks.md" \
+         "git push -u origin fix/x; cat > \$SCRATCH/pr-body.md <<'EOF'${NL}Squash-merge after review; gh pr merge is denied. \${x:-y} \$((1)) are text.${NL}EOF" \
+         "cat > \$SCRATCH/gh/pr700.md <<'EOF'${NL}gh pr merge is denied${NL}EOF" \
+         "git add -A && git commit -q -F - <<'EOF'${NL}fix: deny gh pr merge in quotes (\$(x) and \${y:z} are text)${NL}EOF" \
+         "gh pr create --base main --head x --title t --body-file - <<'EOF'${NL}gh pr merge in a string is denied; \${a[1]}${NL}EOF" \
+         "REPO=\$(gh repo view --json nameWithOwner -q .nameWithOwner); cat > \$SCRATCH/body.md <<EOF${NL}PR for \$REPO: gh pr merge is denied in \${REPO} and \\\$((1)).${NL}\$(gh repo view --json nameWithOwner -q .nameWithOwner)${NL}EOF"; do
   t "#680: a replay false-positive shape is allowed: $c"; g "$c"
   if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 done
@@ -496,6 +501,15 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "echo 'gh pr merge 7 --repo o/r' | tee .git/hooks/pre-commit"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
+# A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the
+# shell, so this grep is allowed now (one of the two old-deny/new-allow shapes of the #680 replay).
+reset
+t "#680: a grep whose regex holds a quoted gh token pattern is allowed"
+g "grep -anEi -e 'gh[pousr]_[A-Za-z0-9]{36}|-----BEGIN [A-Z ]*PRIVATE KEY' -e \"it's\" docs/hooks.md"
+if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+# A write of merge text to a hook file under a variable directory is still denied.
+t "#680: merge text written to \$D/hooks/pre-commit or \$SCRATCH/.git/config is denied"
+g "echo 'gh pr merge 7 --repo o/r' > \$SCRATCH/.git/config && git status"; assert_rc 2
 reset; setbase main
 t "#680: a merge-like --subject on the one plain merge is still put to the owner"; g "$MA --subject \"gh: merge it\""; assert_ask "Merge PR #7 of o/r into main"
 # Issue #675 stays open on purpose: a merge that is encoded at run time holds no merge-like text, and text
