@@ -217,7 +217,7 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
     function loose(s) { return fold(s) ~ /gh.*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
     function wordy(s) { return s ~ /(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$).*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
     function tc() { return (KIND[sp] == "C") ? sp : sp - 1 }
-    function seg(f) { if (!CUR[f]) { n++; CUR[f] = n; OUT[n] = ""; RAW[n] = ""; EX[n] = ""; QD[n] = ""; QH[n] = "" } return CUR[f] }
+    function seg(f) { if (!CUR[f]) { n++; CUR[f] = n; OUT[n] = ""; RAW[n] = ""; EX[n] = ""; QD[n] = ""; QH[n] = ""; ISPAT[n] = PAT[f] } return CUR[f] }
     function out(s,   i) { i = seg(tc()); OUT[i] = OUT[i] s }
     # RAW: all text of the segment; EX: the part the shell expands (not single quotes, $\047 \047, quoted heredocs)
     function raw(s,   f) { for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f]) { RAW[CUR[f]] = RAW[CUR[f]] s; if (!NOEX) EX[CUR[f]] = EX[CUR[f]] s } }
@@ -238,18 +238,19 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
       gsub(/\$\(\(/, "$[", t)
       gsub(/\$([A-Za-z_(\047"#?@*$!0-9-]|$)/, "", t)
       return t !~ /\$/ }
+    function unesc(t) { gsub(/\\./, "", t); return t }  # drop escaped characters (\` and \$ are text)
     function pseudo(name, body) { n++; OUT[n] = name; RAW[n] = body; EX[n] = body; QD[n] = body; QH[n] = "" }
     function endbody(   f, o) {  # the body HB of heredoc hcur is complete
       o = HO[hcur]; RAW[o] = RAW[o] " " HB; QD[o] = QD[o] HB " "; if (!HQ[hcur]) EX[o] = EX[o] " " HB
       for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f] && CUR[f] != o) { RAW[CUR[f]] = RAW[CUR[f]] " " HB; if (!HQ[hcur]) EX[CUR[f]] = EX[CUR[f]] " " HB }
-      if (!HQ[hcur] && HB ~ /\$\(|`|\$\[|\$\{/ && !spans(HB)) pseudo("HEREDOC-SUBST", HB)
+      if (!HQ[hcur] && unesc(HB) ~ /\$\(|`|\$\[|\$\{/ && !spans(HB)) pseudo("HEREDOC-SUBST", HB)
       hcur++; HB = ""; HJ = "" }
     # spans <body>: an unquoted heredoc body is data except its substitutions. Each simple $( ... ) is put
     # after the input as a command line of its own, so it is split and judged like any other command. A body
     # with a backtick, $(( )), $[ ], ${ } with a subscript or an offset, or a $( ) that holds a quote, a
     # comment, a case, a heredoc or unbalanced parentheses is not read: return 0 (one opaque command).
     function spans(b,   i, m, c, d, st, k, a, parts, ln) {
-      if (b ~ /`/ || !plainexp(b)) return 0
+      if (unesc(b) ~ /`/ || !plainexp(b)) return 0
       m = length(b); k = 0
       for (i = 1; i <= m; i++) {
         c = substr(b, i, 1)
@@ -315,11 +316,17 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
             } else if (c == "\047") { seg(sp); sq = (prev == "$") ? 2 : 1; sqb = ""; if (incomment) qic = 1 }
             else if (c == "\"") { seg(sp); sp++; KIND[sp] = "D"; QB[sp] = ""; SUB[sp] = 0; if (incomment) qic = 1 }
             else if (c == "`") { seg(sp); bt = 1; btb = ""; if (incomment) qic = 1 }
-            else if (c == ";" || c == "|" || c == "&") { flush(sp); raw(c) }
-            else if (c == "(") { if (sp > 0) PC[sp]++; flush(sp); raw(c) }
+            else if (c == ";" || c == "|" || c == "&") {
+              # after ;; ;& or ;;& come the patterns of the next case arm, up to ")": data, not commands
+              if (c == ";" && prev != ";") PAT[sp] = (nx == ";" || nx == "&"); else if (c == "&" && prev != ";") PAT[sp] = 0
+              flush(sp); raw(c) }
+            else if (c == "(") {
+              # NAME() defines a function: its body is judged as commands of the call (flag d)
+              if (nx == ")" && CUR[sp] && OUT[CUR[sp]] ~ /^[A-Za-z_][A-Za-z0-9_-]*[ \t]*$/) FNDEF[CUR[sp]] = 1
+              PAT[sp] = 0; if (sp > 0) PC[sp]++; flush(sp); raw(c) }
             else if (c == ")") {
               if (sp > 0 && PC[sp] == 0) { flush(sp); sp--; raw(")") }
-              else { if (sp > 0) PC[sp]--; flush(sp); raw(c) } }
+              else { if (sp > 0) PC[sp]--; PAT[sp] = 0; flush(sp); raw(c) } }
             else if ((c == "{" || c == "}") && prev ~ /[ \t;|&()]/ && (nx == "" || nx ~ /[ \t;|&()]/)) { flush(sp); raw(c) }
             else if (c == " " || c == "\t") { if (CUR[sp]) { out(c); raw(c) } }
             else {
@@ -345,7 +352,7 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         if (hcur <= nh && !cont && (sq || bt || sp != HS[hcur])) bad("HEREDOCQUOTE")
         if (cont) continue
         if (sq) sqb = sqb "\n"; else if (bt) btb = btb "\n"; else if (KIND[sp] == "D") QB[sp] = QB[sp] "\n"
-        else { flush(sp); raw("\n") }
+        else { if (CUR[sp]) PAT[sp] = 0; flush(sp); raw("\n") }
       }
       if (sq || bt || sp > 0 || hcur <= nh) bad("OPENQUOTE")
       if (BAD != "") print "\001" BAD
@@ -356,6 +363,9 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         s2 = s; sub(/(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$)/, " ", s2); if (wordy(s2)) f = f "g"
         if (fold(QH[i]) ~ /pulls\/[^ ]*merge|repos\/[^ ]*\/merges/) f = f "a"
         if (!plainexp(EX[i])) f = f "x"
+        if (FNDEF[i]) f = f "d"
+        o = OUT[i]; sub(/^[ \t]+/, "", o); sub(/[ \t]+$/, "", o)
+        if (ISPAT[i] && o ~ /^[A-Za-z0-9_.*?!@+-]+$/) OUT[i] = ":"  # a case pattern word (no expansion, no redirection)
         if (f == "") f = "-"
         print f "\t" OUT[i] }
     }')
@@ -387,6 +397,7 @@ inert() {
   LEVEL=1
   case "$fl" in *x*) return 1 ;; esac
   w=${s%%[[:space:]]*}
+  case "$FNS" in *" $w "*) return 0 ;; esac
   case "$w" in
     '#'*|echo|:|true|false|cd|pwd|'for'|'case'|'esac'|'done'|'fi'|sleep|seq|jq|wc|ls|mkdir|touch|rm|date|basename|dirname|realpath|readlink|which|type|stat|du|df) return 0 ;;
     cat|head|tail|grep|egrep|fgrep|tee|uniq|cut|tr|nl|comm|paste|column|rev|diff|cmp|sha256sum|shasum|md5sum|md5|base64|xxd|od) return 0 ;;
@@ -437,38 +448,58 @@ inert() {
 CDCFG=0
 cfgsure() {
   case "$1" in
-    .git|.git/*|*/.git|*/.git/*|*.gitconfig*|*hooks/*|hooks|*husky*|*lefthook*|*pre-commit*|*.config/gh*|*gh/config.yml|*gh/hosts.yml) return 0 ;;
+    .git|*/.git|*.git/*config*|*.git/hooks|*.git/hooks/*|*.git/modules/*|*.gitconfig*|*hooks/*|hooks|*husky*|*lefthook*|*pre-commit*|*.config/gh*|*gh/config.yml|*gh/hosts.yml) return 0 ;;
   esac
   return 1
 }
+# cfgmaybe <target>: git, gh and rg find configuration by its file name (config, .gitconfig, *rc, a .yml or a
+# hidden file; rg by RIPGREP_CONFIG_PATH, which an assignment in the call cannot set: see the ASG rule), so the
+# name decides. A name the hook cannot read, or a name with no extension in a directory it cannot read (a hook
+# such as post-checkout), may be one.
 cfgmaybe() {
-  local w=$1
-  # A file under a variable directory ($SCRATCH/pr-body.md) whose own name is a plain data file is not a
-  # configuration: git, gh and rg read no configuration with these names (hooks and config names are sure).
-  case "$w" in
-    '$'*)
-      # shellcheck disable=SC2016  # a literal $ in the sed pattern
-      w=$(printf '%s' "$w" | sed -E 's#^\$(\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)/##')
-      case "$w" in
-        *'$'*|*'`'*|*'*'*|*'?'*|*'['*|.*|*/.*|*[Cc]onfig*) ;;
-        *.md|*.txt|*.json|*.log|*.csv|*.html|*.out|*.diff|*.patch) return 1 ;;
-      esac ;;
-  esac
-  case "$1" in
-    .*|*/.*|*[Cc]onfig*|*rc|*'$'*|*'`'*|*'*'*|*'?'*|*'['*|QUOTED|'~'*|-) return 0 ;;
-  esac
+  local w=$1 b
+  case "$w" in QUOTED|'~'|-|*'`'*) return 0 ;; esac
+  b=${w##*/}
+  case "$b" in ''|.*|*[Cc]onfig*|*rc|*'$'*|*'*'*|*'?'*|*'['*|*.y*ml|*.toml) return 0 ;; esac
+  case "$w" in *'$'*/*) case "$b" in *.*) ;; *) return 0 ;; esac ;; esac
   return 1
+}
+# VARS: "|NAME=value|" for each bare assignment seen so far in the call (value UNKNOWN when it holds an
+# expansion or a quoted string); resolve <word> puts a known value in for a leading $NAME or ${NAME}.
+VARS="|"
+setvars() {
+  local a n v
+  for a in $1; do
+    case "$a" in
+      [A-Za-z_]*=*)
+        n=${a%%=*}; v=${a#*=}
+        case "$n" in *[!A-Za-z0-9_]*) continue ;; esac
+        case "$v" in *'$'*|*'`'*|*QUOTED*|*'('*|*'~'*) v=UNKNOWN ;; esac
+        VARS="$VARS$n=$v|" ;;
+    esac
+  done
+}
+resolve() {
+  local w=$1 n rest v
+  case "$w" in
+    \$\{*\}*) n=${w#\$\{}; n=${n%%\}*}; rest=${w#*\}} ;;
+    '$'[A-Za-z_]*) n=${w#\$}; n=${n%%[!A-Za-z0-9_]*}; rest=${w#\$"$n"} ;;
+    *) printf '%s' "$w"; return ;;
+  esac
+  case "$VARS" in *"|$n="*) v=${VARS##*"|$n="}; v=${v%%|*} ;; *) v=UNKNOWN ;; esac
+  if [ "$v" = UNKNOWN ]; then printf '%s' "$w"; else printf '%s%s' "$v" "$rest"; fi
 }
 cfgtarget() {
   local s=$1 tg w
   case "$s" in
     cd[[:space:]]*)
-      w=$(printf '%s' "${s#cd}" | sed -E 's/^[[:space:]]+//')
-      if cfgsure "$w" || cfgmaybe "$w"; then CDCFG=1; fi ;;
+      w=$(resolve "$(printf '%s' "${s#cd}" | sed -E 's/^[[:space:]]+//')")
+      case "$w" in *'$'*|*'`'*|-|QUOTED|*.git*|*hooks*|*husky*|*.config*) CDCFG=1 ;; esac ;;
   esac
   tg=$(printf '%s\n' "$s" | sed -E 's#[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)# #g' | grep -oE '>>?[[:space:]]*[^[:space:]]+' | sed -E 's/^>>?[[:space:]]*//')
   if [ "${s%%[[:space:]]*}" = tee ]; then tg="$tg $(printf '%s' "${s#tee}" | sed -E 's/(^|[[:space:]])-[^[:space:]]*//g')"; fi
   for w in $tg; do
+    w=$(resolve "$w")
     if cfgsure "$w"; then WRITES=2; return 0; fi
     if [ "$CDCFG" -eq 1 ] || cfgmaybe "$w"; then [ "$WRITES" -eq 2 ] || WRITES=1; fi
   done
@@ -477,6 +508,7 @@ cfgtarget() {
 
 set -f
 NSEGS=0
+FNS=" "   # functions defined earlier in the call (NAME() { ... })
 SRC=0     # segments on the allow list (and bare assignments) that hold merge-like text
 OTHERS=0  # segments that are neither a judged merge nor on the allow list
 CONFS=0   # allow-list segments of level 2 (git, gh, rg: they read configuration files)
@@ -513,6 +545,7 @@ while IFS= read -r seg; do
   case "$FL" in *q*) T=1 ;; esac
   if printf '%s' "$seg" | grep -qE '^gh([[:space:]]|$)'; then case "$FL" in *g*) T=1 ;; esac; else case "$FL" in *w*) T=1 ;; esac; fi
   if [ -z "$seg" ]; then
+    [ "$ASG" -eq 1 ] && setvars "$orig"
     # A keyword or redirection alone still counts as a command, so a merge next to it is not "the only command".
     [ "$KW" -eq 1 ] && NSEGS=$((NSEGS + 1))
     # A bare assignment (or a keyword line) that holds merge-like text is a source of that text.
@@ -592,8 +625,13 @@ while IFS= read -r seg; do
     elif [ "$T" -eq 1 ]; then deny "merge-like text next to a variable assignment in front of a command cannot be judged; run the command without the assignment."
     fi
   fi
+  # NAME() { ...; } defines a function; a later call of NAME runs only that body, which this loop judges as
+  # commands of the call. A name that is already a command (python3() { :; }) is not honored.
+  case "$FL" in *d*) command -v "${seg%%[[:space:]]*}" >/dev/null 2>&1 || FNS="$FNS ${seg%%[[:space:]]*} " ;; esac
   if [ "$KIND" != merge ]; then
-    if inert "$seg" "$FL" "$T"; then
+    # An assignment in front of git, gh or rg can point it at other configuration (GIT_CONFIG_GLOBAL, GH_CONFIG_DIR,
+    # RIPGREP_CONFIG_PATH): such a command is not on the list.
+    if inert "$seg" "$FL" "$T" && { [ "$ASG" -eq 0 ] || [ "$LEVEL" -eq 1 ]; }; then
       [ "$T" -eq 1 ] && SRC=1
       [ "$LEVEL" -eq 2 ] && CONFS=$((CONFS + 1))
     else
