@@ -161,6 +161,21 @@ for c in 'command gh pr merge 7 --repo o/r' 'env gh pr merge 7 --repo o/r' 'exec
 done
 t "gh alias set with merge is denied"; g "gh alias set mm 'pr merge'"; assert_rc 2
 
+# Issue #671: a wrapper segment (bash, env, ...) is denied only when the command can carry a PR merge,
+# not because a file or helper name such as post-merge-hooks.test.sh or merge_pr has the word in it.
+reset; setbase main
+for c in 'S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh' 'bash $HOME/x.sh; echo post-merge' \
+         'echo $HOME; bash tests/hooks/post-merge-hooks.test.sh' 'H=/tmp; bash $H/merge-guard.sh < /dev/null' \
+         'D=/r; env FOO=1 bash $D/merge_pr.sh' 'R=/r; sh $R/git-merge-base.sh main HEAD'; do
+  t "#671: a wrapper with only a merge-named file, no PR merge, is allowed: $c"; g "$c"; assert_rc 0
+done
+for c in 'X="gh pr merge 7 --repo o/r"; bash -c "$X"' 'X=me; bash -c "gh pr ${X}rge 7 --repo o/r"' \
+         'C=$(echo gh); bash -c "$C pr merge 7"' 'Y=1; bash -c "echo $Y; gh pr merge 7 --repo o/r"' \
+         'U=x; bash -c "gh api -X PUT repos/o/r/pulls/7/merge $U"' 'P=7; eval "gh pr merge $P --repo o/r"' \
+         'N=7; bash $HOME/x.sh merge $N'; do
+  t "#671: a wrapper that can carry a PR merge is still denied: $c"; g "$c"; assert_rc 2
+done
+
 reset; setbase feat/x; printf 'main\n' > "$D/base.8"
 t "chain: 7 on feat/x, 8 on main: the whole command is denied"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 2
 t "chain: the denied PR comes first: denied"; g 'gh pr merge 8 --repo o/r --merge; gh pr merge 7 --repo o/r --merge'; assert_rc 2

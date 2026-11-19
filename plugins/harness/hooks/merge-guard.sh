@@ -32,6 +32,18 @@ is_merge_like() {
   return 1
 }
 is_merge_like "$payload" || exit 0
+# A wrapper segment (bash, env, eval, ...) can run a merge the hook cannot see, so it is denied when the
+# command could carry one: the word merge on its own (gh pr merge, $X merge, .../pulls/7/merge; also
+# spelled with quotes or backslashes), a gh pr subcommand built at run time, or a merge API name. The word
+# inside a longer name (post-merge-hooks.test.sh, merge_pr, merge-guard.sh, git merge-base) is not
+# enough: those are file and helper names (#671).
+can_carry_merge() {
+  local f; f=$(fold "$1")
+  printf '%s' "$f" | grep -qE '(^|[^a-z0-9_-])merge([^a-z0-9_-]|$)' && return 0
+  printf '%s' "$f" | grep -qE '(^|[^a-z0-9_])gh([^a-z0-9_].*)?[^a-z0-9_]pr[^a-z0-9_].*[$`]' && return 0
+  case "$f" in *mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*) return 0 ;; esac
+  return 1
+}
 
 TMPF=""
 trap '[ -z "$TMPF" ] || rm -f "$TMPF"' EXIT
@@ -248,7 +260,7 @@ while IFS= read -r seg; do
     cw=${seg%%[[:space:]]*}
     case "$cw" in
       bash|sh|zsh|dash|ksh|eval|xargs|env|exec|nohup|time|command|sudo|builtin|source|.)
-        deny "a merge inside a shell string or wrapper ($cw) cannot be judged." ;;
+        can_carry_merge "$cmd" && deny "a merge inside a shell string or wrapper ($cw) cannot be judged." ;;
     esac
   fi
 done <<SEGS
