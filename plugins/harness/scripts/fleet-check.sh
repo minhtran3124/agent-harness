@@ -100,7 +100,7 @@ evid=$(resolve_dir "$evid") || usage "--evidence is not a directory"
 
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/fleet-check.XXXXXX" 2>/dev/null) || { echo "fleet-check: cannot create a temp dir" >&2; exit 2; }
 tmpout=""
-# shellcheck disable=SC2317  # called by the traps
+# shellcheck disable=SC2317,SC2329  # called by the traps (SC2329 is the name newer shellcheck uses)
 cleanup() {
   [ -n "$tmpout" ] && rm -f -- "$tmpout"
   [ -n "$tmp" ] && rm -rf -- "$tmp"
