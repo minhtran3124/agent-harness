@@ -482,6 +482,9 @@ for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
          "# check what gh pr merge would do${NL}gh pr view 7 --repo o/r --json mergeable" \
          "for i in \$(seq 1 3); do r=\$(gh pr view 7 --repo o/r --json statusCheckRollup --jq '.x'); case \"\$r\" in *COMPLETED:SUCCESS*) exit 0;; *FAILURE*) exit 1;; esac; sleep 10; done; echo 'gh pr merge is text'" \
          "cat > \$S/t.md <<'EOF'${NL}*gh pr merge* [x] is text?${NL}EOF" \
+         "cat > \$S/pr15.md <<EOF${NL}squash-merge after review; gh pr merge is denied${NL}EOF${NL}gh api -X PATCH 'repos/{owner}/{repo}/pulls/15' -F body=@\$S/pr15.md -q .html_url" \
+         "cat > \$S/pr15.md <<EOF${NL}gh pr merge is denied${NL}EOF${NL}gh api -X PATCH \"repos/{owner}/{repo}/pulls/15\" -F body=@\$S/pr15.md" \
+         "R=o/r; cat > \$S/x1.md <<EOF${NL}gh pr merge is denied${NL}EOF${NL}gh api repos/\$R/milestones/9 -q '.title'" \
          "grep -qx '.claude.bak/' .git/info/exclude || echo '.claude.bak/' >> .git/info/exclude; cat > /tmp/x/x.md <<'EOF'${NL}gh pr merge is denied${NL}EOF"; do
   t "#680: a replay false-positive shape is allowed: $c"; g "$c"
   if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
@@ -529,7 +532,14 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "printf 'gh pr merge 7 --repo o/r\\n' > x.sh; git grep --no-index --op=sh -e gh x.sh" \
          "printf 'gh pr merge 7 --repo o/r\\n' > x.sh; git grep --no-index --ope=sh -e gh x.sh" \
          "git log -1 --format='gh pr merge 7 --repo o/r' --outp=.git/hooks/pre-commit" \
-         "P=repos/o/r/pulls/7/merge ; gh api -X PUT \$P" "P=repos/o/r/pulls/7; gh api -X PUT \$P/merge"; do
+         "P=repos/o/r/pulls/7/merge ; gh api -X PUT \$P" "P=repos/o/r/pulls/7; gh api -X PUT \$P/merge" \
+         "M=merge; echo 'gh pr merge is text'; gh api -X PUT repos/o/r/pulls/7/\$M" \
+         "N=7; echo 'gh pr merge is text'; gh api -X PUT repos/o/r/pulls/\$N/merge" \
+         "R='o/r/pulls/7/merge?a='; echo 'gh pr merge is text'; gh api -X PUT repos/\$R/milestones/9" \
+         "R=\$(cat r.txt); echo 'gh pr merge is text'; gh api -X PUT repos/\$R/milestones/9" \
+         "echo 'gh pr merge is text'; gh api -X PUT 'repos/{owner}/{repo}/{branch}'" \
+         "echo 'gh pr merge is text'; gh api -X PUT repos/o/r/pulls/7/\$(echo x)" \
+         "echo 'gh pr merge 7 --repo o/r' > q.txt; gh api graphql -F query=@q.txt"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the

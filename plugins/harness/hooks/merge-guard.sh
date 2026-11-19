@@ -443,11 +443,44 @@ inert() {
     gh)
       LEVEL=2
       printf '%s' "$s" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+(create|comment|edit|review|view|list|checks|diff|status|close|ready|reopen)|issue[[:space:]]+(create|comment|edit|view|list|close|reopen)|run[[:space:]]+(list|view|watch)|release[[:space:]]+(create|edit|view|list)|repo[[:space:]]+view|search|api|label)([[:space:]]|$)' || return 1
-      # gh api acts on its endpoint: an endpoint built from a variable or substitution could be a merge path
-      if printf '%s' "$s" | grep -qE '^gh[[:space:]]+api([[:space:]]|$)'; then case "$s" in *'$'*|*'`'*) return 1 ;; esac; fi
+      # gh api acts on its endpoint: it is listed only when the endpoint cannot be a merge path (apiok)
+      if printf '%s' "$s" | grep -qE '^gh[[:space:]]+api([[:space:]]|$)'; then apiok "$s" || return 1; fi
       return 0 ;;
   esac
   return 1
+}
+
+# apiok <gh api segment>: 0 when the endpoint skeleton cannot be a merge path. {owner} and {repo} are filled
+# by gh from the git remote (a name with no / ? #), so they are literal parts. A $VAR or ${VAR} part counts as
+# its value when an earlier VAR= of the call set it to a plain literal (no ? # and no merge); any other
+# $VAR, {branch} or other placeholder is opaque: its value can hold "pulls/7/merge?" and swallow the rest of
+# the path as a query. Denied: graphql, a $( ) or backtick, a quoted endpoint, any opaque part.
+apiok() {
+  local w ep="" skip="" v n
+  for w in ${1#gh}; do
+    if [ -n "$skip" ]; then skip=""; continue; fi
+    case "$w" in
+      api) ;;
+      -X|--method|-H|--header|-f|--raw-field|-F|--field|-q|--jq|-t|--template|--input|--hostname|-p|--preview|--cache) skip=1 ;;
+      -*) ;;
+      *) ep=$w; break ;;
+    esac
+  done
+  case "$ep" in ''|QUOTED|graphql|*\$\(*|*'`'*) return 1 ;; esac
+  ep=$(printf '%s' "$ep" | sed -E 's/\{(owner|repo)\}/x/g')
+  while :; do
+    case "$ep" in
+      *\$\{*) n=${ep#*\$\{}; n=${n%%\}*}; w="\${$n}" ;;
+      *'$'*) n=${ep#*\$}; n=${n%%[!A-Za-z0-9_]*}; w="\$$n" ;;
+      *) break ;;
+    esac
+    case "$n" in ''|*[!A-Za-z0-9_]*) return 1 ;; esac
+    case "$VARS" in *"|$n="*) v=${VARS##*"|$n="}; v=${v%%|*} ;; *) return 1 ;; esac
+    case "$v" in UNKNOWN|*'?'*|*'#'*|*[Mm][Ee][Rr][Gg][Ee]*) return 1 ;; esac
+    ep=${ep/"$w"/$v}
+  done
+  case "$ep" in *'{'*|*'}'*|*[Mm][Ee][Rr][Gg][Ee]*) return 1 ;; esac
+  return 0
 }
 
 # cfgtarget <segment>: 0 when the segment writes (a > or >> redirection, or tee) to a target that can be a
