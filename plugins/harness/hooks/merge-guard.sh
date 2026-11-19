@@ -14,7 +14,9 @@
 # Verifies: the PR base read live with `gh pr view --json baseRefName` for every PR number of every merge
 #   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is not protected (see above) and is not the repo default branch.
 #   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs, a merge
-#   that is not at command position, and `gh alias set|import` next to the word merge.
+#   that is not at command position, and `gh alias set|import` next to the word merge. A shell that runs a
+#   script file (`bash $S/run.sh`) is not denied for the word merge inside a file name; it is denied when the
+#   command has a pipe, heredoc or redirection, text built at run time, or merge as a word of its own (#671).
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
 #   merge through the web UI or another client, a script that builds the command at run time, or whether
 #   the PR is ready (the workflow gate checks that).
@@ -32,6 +34,57 @@ is_merge_like() {
   return 1
 }
 is_merge_like "$payload" || exit 0
+# Wrapper segments (#671). A wrapper that runs code from a string or stdin (bash -c, bash -s, a bare
+# bash, eval, xargs, env -S, source) can run a merge the hook cannot see, so it is denied whenever the
+# command is merge-like, as before; so is a pass-through wrapper (command, time, env, ...) in front of
+# anything but such a shell. Only a shell that runs a script FILE (bash $S/run.sh ...) gets a narrower
+# test: the script's own content was never visible, and the word merge inside a file or helper name
+# (post-merge-hooks.test.sh, merge_pr, merge-guard.sh) must not block it. That segment is still denied
+# when the command has a pipe, heredoc or redirection (they can build the script), or could carry a
+# merge (can_carry_merge).
+
+# runs_script_file <segment>: 0 when the segment, after prefix wrappers (env, time, nohup, command,
+# builtin, exec, sudo), runs bash/sh/zsh/dash/ksh on a script file operand, with no -c or -s.
+runs_script_file() {
+  local -a w; local i=0 n
+  read -r -a w <<<"$1"; n=${#w[@]}
+  while [ "$i" -lt "$n" ]; do
+    case "${w[$i]}" in
+      env) i=$((i + 1))
+        while [ "$i" -lt "$n" ]; do
+          case "${w[$i]}" in -S*|--split-string*) return 1 ;; -*|*=*) i=$((i + 1)) ;; *) break ;; esac
+        done ;;
+      time|nohup|command|builtin|exec|sudo) i=$((i + 1))
+        while [ "$i" -lt "$n" ] && [ "${w[$i]#-}" != "${w[$i]}" ]; do i=$((i + 1)); done ;;
+      *) break ;;
+    esac
+  done
+  case "${w[$i]:-}" in bash|sh|zsh|dash|ksh) ;; *) return 1 ;; esac
+  i=$((i + 1))
+  while [ "$i" -lt "$n" ]; do
+    case "${w[$i]}" in
+      --) i=$((i + 1)); break ;;
+      -*c*|-*s*|+*c*|+*s*) return 1 ;;  # -c string or -s stdin (also inside a cluster such as -ec)
+      -*|+*) i=$((i + 1)) ;;
+      *) break ;;
+    esac
+  done
+  [ "$i" -lt "$n" ] || return 1  # no operand: the shell reads its code from stdin
+  case "${w[$i]}" in '<'*|QUOTED) return 1 ;; esac
+  return 0
+}
+
+# can_carry_merge <command>: 0 when the command could still carry a merge. Sets CARRY_WHY.
+CARRY_WHY=""
+can_carry_merge() {
+  local f; f=$(fold "$1")
+  # shellcheck disable=SC2016  # the patterns are literal text: $( and a backtick, not expansions
+  case "$1" in *'$('*|*'`'*|*"\$'"*) CARRY_WHY="text built at run time (\$(...), a backtick or \$'...')"; return 0 ;; esac
+  if printf '%s' "$f" | grep -qE '(^|[^a-z0-9_-])merge([^a-z0-9_-]|$)'; then CARRY_WHY="the word merge on its own"; return 0; fi
+  if printf '%s' "$f" | grep -qE '(^|[^a-z0-9_])gh([^a-z0-9_]|$).*[$]'; then CARRY_WHY="gh next to a variable"; return 0; fi
+  case "$f" in *mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*pulls/*) CARRY_WHY="a merge API path or name"; return 0 ;; esac
+  return 1
+}
 
 TMPF=""
 trap '[ -z "$TMPF" ] || rm -f "$TMPF"' EXIT
@@ -248,7 +301,14 @@ while IFS= read -r seg; do
     cw=${seg%%[[:space:]]*}
     case "$cw" in
       bash|sh|zsh|dash|ksh|eval|xargs|env|exec|nohup|time|command|sudo|builtin|source|.)
-        deny "a merge inside a shell string or wrapper ($cw) cannot be judged." ;;
+        if ! runs_script_file "$seg"; then
+          deny "a merge inside a shell string or wrapper ($cw) cannot be judged."
+        elif case "$cmd" in *'|'*|*'<<'*|*'<('*|*'>'*) true ;; *) false ;; esac; then
+          # A pipe, heredoc or redirection can build or write the script that the shell then runs.
+          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: a pipe, heredoc or redirection next to a shell run)."
+        elif can_carry_merge "$cmd"; then
+          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: $CARRY_WHY)."
+        fi ;;
     esac
   fi
 done <<SEGS

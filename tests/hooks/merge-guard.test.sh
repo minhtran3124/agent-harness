@@ -161,6 +161,55 @@ for c in 'command gh pr merge 7 --repo o/r' 'env gh pr merge 7 --repo o/r' 'exec
 done
 t "gh alias set with merge is denied"; g "gh alias set mm 'pr merge'"; assert_rc 2
 
+# Issue #671: a wrapper segment (bash, env, ...) is denied only when the command can carry a PR merge,
+# not because a file or helper name such as post-merge-hooks.test.sh or merge_pr has the word in it.
+reset; setbase main
+for c in 'S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh' 'bash $HOME/x.sh; echo post-merge' \
+         'echo $HOME; bash tests/hooks/post-merge-hooks.test.sh' 'H=/tmp; bash $H/merge-guard.sh < /dev/null' \
+         'D=/r; env FOO=1 bash $D/merge_pr.sh' 'R=/r; sh $R/git-merge-base.sh main HEAD' \
+         'bash tests/hooks/post-merge-hooks.test.sh' 'echo $HOME; grep -n merge_pr tests/scripts/release.test.sh' \
+         'bash tests/hooks/post-merge-hooks.test.sh > /tmp/out.log; echo done'; do
+  t "#671: a wrapper with only a merge-named file, no PR merge, is allowed: $c"; g "$c"; assert_rc 0
+done
+t "#671: a script-file deny names what it matched"; g 'N=7; bash $HOME/x.sh merge $N'; assert_rc_contains 2 "matched: the word merge on its own"
+# A wrapper that runs code from a string or stdin stays denied, including merges built at run time
+# (the bypasses found in review of the first fix), and a script-file run that could carry a merge.
+for c in 'X="gh pr merge 7 --repo o/r"; bash -c "$X"' 'X=me; bash -c "gh pr ${X}rge 7 --repo o/r"' \
+         'C=$(echo gh); bash -c "$C pr merge 7"' 'Y=1; bash -c "echo $Y; gh pr merge 7 --repo o/r"' \
+         'U=x; bash -c "gh api -X PUT repos/o/r/pulls/7/merge $U"' 'P=7; eval "gh pr merge $P --repo o/r"' \
+         'N=7; bash $HOME/x.sh merge $N' \
+         'Y=ge; bash -c "gh api -X PUT repos/o/proj/pulls/7/mer$Y"' \
+         "bash -c \$'gh api -X PUT repos/o/r/pulls/7/merg\\x65'; echo post-merge" \
+         'X=pr; Y=mer; bash -c "gh $X ${Y}ge 7 --repo o/r"; bash post-merge-hooks.test.sh' \
+         'X=me-rge; bash -c "gh pr ${X//-/} 7"' \
+         'bash -c "$(printf %s Z2ggcHIgbWVyZ2Ug | base64 -d) 7 --repo o/r"; echo gh merge-base' \
+         'A=g; B=h; bash -c "$A$B pr $M 7"; echo post-merge' 'echo gh pr merge 7 | bash; echo $HOME' \
+         'S=/r; bash -s < $S/post-merge.sh' 'S=/r; env -S "bash $S/post-merge.sh"' \
+         'S=/r; bash $(echo $S)/post-merge.sh' 'S=/r; bash -ec "$S post-merge"' \
+         'S=/r; gh_cmd=1; bash $S/post-merge.sh $gh_cmd; gh api repos/o/r/pulls/7 -X PUT'; do
+  t "#671: a wrapper that can carry a PR merge is still denied: $c"; g "$c"; assert_rc 2
+done
+# The security review of the first fix: a merge built at run time from a word with an extra character,
+# fed to a shell through a pipe, heredoc, file or wrapper. Each one was denied on main and must stay so.
+for c in 'echo gh pr xmerge 7 --repo o/r | sed s/x// | bash' 'echo gh pr Xmerge 7 --repo o/r | tr -d X | sh' \
+         'echo gh api -X PUT repos/o/r/pulls/7/xmerge | sed s/x// | bash' \
+         'echo gh; v=xmerge; w=xpr; bash -c "gh ${w#x} ${v#x} 7 --repo o/r"' \
+         'echo gh; v=xmerge; w=xpr; eval "gh ${w#x} ${v#x} 7 --repo o/r"' \
+         "echo gh pr\$'\\x20'merge 7 --repo o/r | bash" \
+         'echo gh; source <(echo gh pr xmerge 7 --repo o/r | sed s/x//)' \
+         'echo gh pr xmerge 7 --repo o/r | sed s/x// > /tmp/p.sh; bash /tmp/p.sh' \
+         "$(printf 'tr -d x <<EOF | bash\ngh pr xmerge 7 --repo o/r\nEOF')" \
+         'echo gh; echo pr xmerge 7 --repo o/r | sed s/x// | xargs gh' 'IFS=_; v=gh_pr_merge_7_--repo_o/r; eval $v' \
+         'echo gh; v=xmerge; w=xpr; command gh ${w#x} ${v#x} 7 --repo o/r' \
+         'echo gh; v=xmerge; w=xpr; time gh ${w#x} ${v#x} 7 --repo o/r' \
+         'echo gh; v=xmerge; w=xpr; env -S "gh ${w#x} ${v#x} 7 --repo o/r"' \
+         'echo $HOME; echo gh pr xmerge 7 --repo o/r | sed s/x// | bash' \
+         'echo gh pr 0merge 7 --repo o/r | cut -c1-6,8- | bash' \
+         'echo GH PR XMERGE 7 --REPO O/R | sed s/X// | tr A-Z a-z | bash' \
+         'echo gh api -X POST repos/o/r/xmerges -f base=main -f head=x | sed s/x// | bash'; do
+  t "#671 review: a merge built at run time stays denied: $c"; g "$c"; assert_rc 2
+done
+
 reset; setbase feat/x; printf 'main\n' > "$D/base.8"
 t "chain: 7 on feat/x, 8 on main: the whole command is denied"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 2
 t "chain: the denied PR comes first: denied"; g 'gh pr merge 8 --repo o/r --merge; gh pr merge 7 --repo o/r --merge'; assert_rc 2
