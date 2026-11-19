@@ -64,11 +64,6 @@ fi
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null) || deny "the command could not be parsed."
 [ -n "$cmd" ] || deny "the command is empty or could not be parsed."
 is_merge_like "$cmd" || exit 0
-# mergeword <text>: the text holds the word merge (lowercase, quotes and backslashes removed, harmless words
-# such as mergeable or merge-base mapped away).
-mergeword() {
-  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | sed -E 's/merge(able|d|state|commit|base|_base|-base|-guard|_state|_commit|_method)/mrg/g' | grep -q 'merge'
-}
 # APIONLY: the call passed the pre-filter only as a gh api call with an expansion. It is judged only by the
 # gh api endpoint rule (F9); the other rules keep the old gate. With no "merg" at all, F9 cannot apply.
 APIONLY=0
@@ -77,11 +72,6 @@ if ! is_merge_like "$cmd" old; then
   printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' || exit 0
   APIONLY=1
 fi
-# RTFALL: the call can move any text into a variable at run time ($( ), backticks, process substitution,
-# read, mapfile, source), so every word merge in it counts for F9 (RTM below).
-RTFALL=0
-printf '%s' "$cmd" | grep -qE '\$\(|`|[<>]\(|(^|[^A-Za-z0-9_-])(read|mapfile|readarray|source)([^A-Za-z0-9_-]|$)' && RTFALL=1
-RTM=0  # the word merge where it can reach a gh api endpoint at run time
 
 DEADLINE=20  # seconds for the whole hook; the registered hook timeout is 30
 GH_OUT=""
@@ -387,7 +377,6 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         s2 = s; sub(/(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$)/, " ", s2); if (wordy(s2)) f = f "g"
         if (fold(QH[i]) ~ /pulls\/[^ ]*merge|repos\/[^ ]*\/merges/) f = f "a"
         if (!plainexp(EX[i])) f = f "x"
-        r = tolower(RAW[i]); gsub(/\\\n/, "", r); gsub(/["\047\\]/, "", r); if (r ~ /merg/) f = f "G"  # unmapped, for F9
         if (FNDEF[i]) f = f "d"
         o = OUT[i]; sub(/^[ \t]+/, "", o); sub(/[ \t]+$/, "", o)
         if (ISPAT[i] && o ~ /^[A-Za-z0-9_.*?!@+-]+$/) OUT[i] = ":"  # a case pattern word (no expansion, no redirection)
@@ -477,17 +466,17 @@ inert() {
 # its value when an earlier VAR= of the call set it to a plain literal (no ? # and no merge); any other
 # $VAR, {branch} or other placeholder is opaque: its value can hold "pulls/7/merge?" and swallow the rest of
 # the path as a query. Denied: graphql, a $( ) or backtick, a quoted endpoint, any opaque part.
-# apif9 <gh api segment>: deny a request that can write, whose endpoint is built from a variable or substitution
-# apiok cannot resolve, when the word merge can reach the endpoint at run time (RTM).
+# apif9 <gh api segment>: the owner's rule (#680): a merge goes only through `gh pr merge`, where the owner is
+# asked, so gh api is never a merge path. Deny a request that can write (-X/--method other than GET, a field or
+# --input with no explicit GET, a method-override header) whose endpoint holds a variable, a substitution or a
+# backtick that apiok cannot resolve, when the whole call holds the substring "merg" anywhere (any case,
+# unmapped, so a slice of mergeable counts). The word built at run time from pieces (B=mer; ${B}ge) is #675.
 apif9() {
   apiok "$1" && return 0
-  case "$APIEP" in
-    *'$'*|*'`'*)
-      if [ "$APIMUT" -eq 1 ] && [ "$RTM" -eq 1 ]; then
-        deny "a gh api write request whose endpoint is built from a variable or substitution, next to the word merge, cannot be judged; write the endpoint literally."
-      fi ;;
-  esac
-  return 0
+  [ "$APIMUT" -eq 1 ] || return 0
+  case "$APIEP" in *'$'*|*'`'*) ;; *) return 0 ;; esac
+  printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' || return 0
+  deny "a gh api write request with an endpoint built from a variable, next to merge text, cannot be judged. Merge with 'gh pr merge <n> --repo o/r' (the owner is asked). To edit a PR or issue, use 'gh pr edit --body-file', 'gh issue edit|comment|close' instead of gh api."
 }
 APIEP=""; APIMUT=0  # set by apiok: the raw endpoint, and 1 when the request can be other than GET
 apiok() {
@@ -534,7 +523,7 @@ apiok() {
 # onlyset <NAME>: 0 when, in the whole command text, NAME appears only as one plain NAME= at the start of a
 # word and as $NAME or ${NAME} reads. Any other appearance can set or change it: declare, local, export, read,
 # printf -v, mapfile, getopts, for NAME, unset, NAME+=, NAME[..]=, ${NAME:=..}, eval "NAME=..", a nameref
-# (ref=NAME), or a second NAME= in a function, a subshell or a $( ).
+# (ref=NAME), an array NAME=( ... ), or a second NAME= in a function, a subshell or a $( ).
 onlyset() {
   printf '%s\n' "$cmd" | awk -v n="$1" '
     { t = t $0 "\n" }
@@ -546,6 +535,8 @@ onlyset() {
         if (p ~ /[A-Za-z0-9_]/ || q ~ /[A-Za-z0-9_]/) continue
         if (p == "$") continue
         if (p == "{" && i > 2 && substr(t, i - 2, 1) == "$" && q == "}") continue
+        # NAME=( ... ) is an array: $NAME is its first element, which the splitter cannot see (it cuts at the paren)
+        if (q == "=" && substr(t, i + L + 1, 1) == "(") { o++; continue }
         if (q == "=" && (p == "" || p ~ /[ \t\n;&|(]/)) { a++; continue }
         o++ }
       exit !(a == 1 && o == 0) }'
@@ -667,19 +658,6 @@ while IFS= read -r seg; do
   T=0
   case "$FL" in *q*) T=1 ;; esac
   if printf '%s' "$seg" | grep -qE '^gh([[:space:]]|$)'; then case "$FL" in *g*) T=1 ;; esac; else case "$FL" in *w*) T=1 ;; esac; fi
-  # RTM: an assignment, a for/select/case word list, a command that sets a variable, or a segment with an
-  # evaluating expansion counts all its text; any other segment counts only its unquoted words (a quoted
-  # string with a space, or a heredoc body, is data that this call does not move into a variable).
-  # A value that is stored can be sliced at run time (B=mergeable; ${B%able}), so where text can reach a variable
-  # the test is the unmapped substring merg; in other unquoted words it is the word merge (mergeable is not).
-  if [ "$RTFALL" -eq 1 ]; then printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' && RTM=1
-  else
-    case "$ASG/${seg%%[[:space:]]*}/$FL" in
-      1/*|0//*|*/for/*|*/select/*|*/case/*|*/declare/*|*/typeset/*|*/local/*|*/export/*|*/readonly/*|*/printf/*|*/getopts/*|*/let/*|*x*)
-        case "$FL" in *G*) RTM=1 ;; esac ;;
-      *) mergeword "$seg" && RTM=1 ;;
-    esac
-  fi
   if [ -z "$seg" ]; then
     [ "$ASG" -eq 1 ] && setvars "$orig"
     # A keyword or redirection alone still counts as a command, so a merge next to it is not "the only command".
