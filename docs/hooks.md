@@ -45,10 +45,12 @@ answer, Claude Code returns it as a denial. So no `UserPromptSubmit` token fallb
 no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
 stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto`,
 `gh api graphql ... mergePullRequest`, `{owner}/{repo}` placeholders in a `gh api` path, a merge inside `bash -c`, `eval`,
-`xargs` or another wrapper (also `nice`, `timeout`, `stdbuf`, `setsid`, `ionice`, `taskset`, `chronic`, `unbuffer`, a shell or
-wrapper written with a path or a backslash, or one behind `if`, `then`, `else`, `elif`, `do`, `while`, `until` or `!`;
-#677), a merge that is not at command position (`command gh`, `/usr/bin/gh`, backticks), and `gh alias set|import` next
-to the word merge. Any denied segment blocks the whole command. A Bash call that is not a merge exits 0 before any
+`xargs` or another wrapper on a best-effort list (shells, `env`, `sudo`, `nice`, `timeout`, `stdbuf`, `setsid`, `flock`,
+`script`, `strace` and similar; #677), also when the shell or wrapper is written with a path, a backslash or zsh's `=`, or
+stands behind an assignment, a keyword (`if`, `then`, `else`, `elif`, `do`, `while`, `until`, `!`), a zsh prefix
+(`noglob`, `nocorrect`, `-`) or a redirection; a command name with glob characters or brace expansion; a merge that is not
+at command position (`command gh`, `/usr/bin/gh`, backticks), and `gh alias set|import` next to the word merge. The
+wrapper list is not complete: interpreters (`python -c`, `perl -e`, `awk`), `find -exec` and `git -c alias` are not on it. Any denied segment blocks the whole command. A Bash call that is not a merge exits 0 before any
 parsing, so it costs nothing. There is no environment-variable bypass.
 
 **Known false positive (#671, accepted).** A harmless command can be denied as "a merge inside a shell string or wrapper"

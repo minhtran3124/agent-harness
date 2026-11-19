@@ -263,6 +263,41 @@ for c in 'if bash -c "gh pr merge 7 --repo o/r"; then :; fi' '! bash -c "gh pr m
 done
 t "#677: a keyword in front of an ordinary command is still allowed"; g 'if true; then echo merged; fi'; assert_rc 0
 
+# Security review of PR #679. F1: a merge next to a keyword is denied, not put to the owner.
+reset; setbase main
+for c in "! gh pr merge 7 --repo o/r --match-head-commit $SHA" \
+         "$(printf 'gh pr merge 7 --repo o/r --match-head-commit %s\nthen' "$SHA")" \
+         "$(printf 'gh pr merge 7 --repo o/r --match-head-commit %s\n!' "$SHA")" \
+         "if gh pr merge 7 --repo o/r --match-head-commit $SHA" "do gh pr merge 7 --repo o/r --match-head-commit $SHA" \
+         "X=1 if gh pr merge 7 --repo o/r --match-head-commit $SHA" \
+         "$(printf 'then\ngh pr merge 7 --repo o/r --match-head-commit %s' "$SHA")"; do
+  t "#679 review F1: a merge next to a keyword is denied, not asked: $c"; g "$c"; assert_rc 2
+done
+# F2-F6: an assignment after a keyword, a backslash, glob or = in the shell name, a redirection first,
+# zsh prefixes, and common wrappers not listed before. Each reached gh pr merge in a sandbox.
+for c in 'if X=1 bash -c "gh pr merge 7 --repo o/r"; then :; fi' '! X=1 bash -c "gh pr merge 7 --repo o/r"' \
+         'while X=1 eval "gh pr merge 7 --repo o/r"; do break; done' 'if true; then X=1 bash -c "gh pr merge 7 --repo o/r"; fi' \
+         '! X= /bin/bash -c "gh pr merge 7 --repo o/r"' \
+         'b\ash -c "gh pr merge 7 --repo o/r"' 'ev\al "gh pr merge 7 --repo o/r"' '/bin/bas[h] -c "gh pr merge 7 --repo o/r"' \
+         '/bin/bas? -c "gh pr merge 7 --repo o/r"' '=bash -c "gh pr merge 7 --repo o/r"' \
+         '>/dev/null bash -c "gh pr merge 7 --repo o/r"' '</dev/null bash -c "gh pr merge 7 --repo o/r"' \
+         '<<<"gh pr merge 7 --repo o/r" bash' 'if >/dev/null bash -c "gh pr merge 7 --repo o/r"; then :; fi' \
+         '> /dev/null bash -c "gh pr merge 7 --repo o/r"' '2>/dev/null bash -c "gh pr merge 7 --repo o/r"' \
+         'noglob bash -c "gh pr merge 7 --repo o/r"' 'nocorrect bash -c "gh pr merge 7 --repo o/r"' \
+         '- bash -c "gh pr merge 7 --repo o/r"' 'repeat 1 bash -c "gh pr merge 7 --repo o/r"' \
+         '! noglob eval "gh pr merge 7 --repo o/r"' 'coproc bash -c "gh pr merge 7 --repo o/r"; wait' \
+         '{bash,-c,"gh pr merge 7 --repo o/r"}' 'echo "gh pr merge 7 --repo o/r" | $SHELL' \
+         'rbash -c "gh pr merge 7 --repo o/r"' 'busybox sh -c "gh pr merge 7 --repo o/r"' \
+         'flock /tmp/l bash -c "gh pr merge 7 --repo o/r"' 'script -qc "gh pr merge 7 --repo o/r" /dev/null' \
+         'setpriv bash -c "gh pr merge 7 --repo o/r"' 'prlimit bash -c "gh pr merge 7 --repo o/r"' \
+         'chrt -o 0 bash -c "gh pr merge 7 --repo o/r"' 'strace -o /dev/null bash -c "gh pr merge 7 --repo o/r"' \
+         'fakeroot bash -c "gh pr merge 7 --repo o/r"'; do
+  t "#679 review F2-F6: a hidden wrapper is denied: $c"; g "$c"; assert_rc 2
+done
+reset
+t "#679 review: a redirection before an ordinary command is still allowed"; g '>/tmp/out echo merged'; assert_rc 0
+t "#679 review: test brackets next to the word merge are still allowed"; g '[ -n "$X" ] && echo merged'; assert_rc 0
+
 # Fourth security review of the dropped #671 exemption: a $VAR/ operand that word-splits into -c, env's
 # split-string option in a form the old check missed, and $( assembled from pieces (PS4, test -v). Each ran
 # gh pr merge in a sandbox through the exemption; with no exemption they must be denied.
