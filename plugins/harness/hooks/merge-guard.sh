@@ -13,23 +13,33 @@
 # on stderr). A Bash call that is not a merge exits 0 at once, before any parsing.
 # Verifies: the PR base read live with `gh pr view --json baseRefName` for every PR number of every merge
 #   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is not protected (see above) and is not the repo default branch.
-#   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs or another
-#   wrapper on a best-effort list (also behind an assignment, keyword, zsh prefix or redirection, or with a
-#   path, backslash or = on the name; #677), a merge that is not at command position, and `gh alias
-#   set|import` next to the word merge. Not on the list: interpreters (python, perl, awk), find -exec, git -c.
+#   It denies `--auto`, the GraphQL merge mutations, a merge inside bash -c / eval / xargs or another wrapper
+#   on a list (also behind an assignment, keyword, zsh prefix or redirection, or with a path, backslash or =
+#   on the name; #677), a merge that is not at command position, and `gh alias set|import` next to the word
+#   merge. #680: merge-like text (quoted or not, in a heredoc, a here-string or a backslash-continued line) is
+#   allowed only in commands on an allow list of commands that never run their arguments (echo, printf,
+#   grep, rg, jq, git commit/log/..., gh pr create|comment|edit, gh issue ...; see inert()). Any other command
+#   with such text is denied (python3 -c, perl -e, awk, sed with a script, find -exec, git -c alias, ...), and
+#   so is every command that is not on the list in the same Bash call as such text, a write of such text to a
+#   git hook or config file, and an expansion that evaluates a value ($(( )), ${s:x}, ${!x}, zsh ${(e)x}).
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
-#   merge through the web UI or another client, a script that builds the command at run time, or whether
-#   the PR is ready (the workflow gate checks that).
+#   merge through the web UI or another client, a merge built at run time with no merge-like text (#675:
+#   `gh pr m{e..e}rge`, $'...', base64, string slicing in an interpreter), a file written in one Bash call
+#   or with the Write tool and run later, or whether the PR is ready (the workflow gate checks that).
 # No env-var bypass. No helper file and no path derived from this file's location: the hook is
 # self-contained so it can be copied alone.
 set -u
 payload=$(cat)
-# Pre-filter on a folded copy (lowercase, quotes and backslashes removed) so "g""h", GH-case or
-# me\rge spellings do not skip the guard.
-fold() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\"; }
+# Pre-filter on a folded copy (lowercase; newlines, quotes and backslashes removed, and a backslash-newline
+# in its JSON form removed first) so "g""h", GH-case, me\rge or a word continued on the next line do not
+# skip the guard.
+fold() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d '\n' | sed 's/\\\\\\n//g' | tr -d "\"'\\\\"; }
 is_merge_like() {
-  case "$(fold "$1")" in
-    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
+  local f; f=$(fold "$1")
+  # "pr merge" with gh after it or in a variable (echo 'pr merge 7' | xargs gh; set -- pr merge 7; gh "$@")
+  if printf '%s' "$f" | grep -qE '(^|[^a-z0-9])pr[^a-z0-9]+merge'; then return 0; fi
+  case "$f" in
+    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*enqueuepullrequest*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
   esac
   return 1
 }
@@ -180,56 +190,296 @@ judge_api_merge() {  # judge_api_merge <segment>
   judge "${rp#* }" "${rp%% *}"
 }
 
-# Reduce the command to what the shell would run (same splitter as clean-worktrees.sh): drop heredoc
-# bodies and quoted strings that hold whitespace or separators (each leaves one QUOTED word, so a value
-# option such as --body still has its value and does not swallow the PR number), so text that only
-# mentions a merge never matches; then split on separators and standalone braces.
+# Reduce the command to what the shell would run. One awk pass walks the text the way the shell reads it
+# and prints one line per command segment: "<flags><TAB><segment>". (clean-worktrees.sh has an older,
+# simpler splitter; this one is no longer a copy of it.)
+# - Segments end at ; | & ( ) a newline and a standalone { or }. A backslash escapes the next character.
+# - A backslash-newline joins two lines in code, in double quotes and in an unquoted heredoc (not in single
+#   quotes, not after an escaped backslash). A join in the middle of a word leaves one backslash in the
+#   segment, so a gh word split that way reads as "spelled with a backslash".
+# - A quoted string that holds whitespace or a separator becomes the word QUOTED (a value option such as
+#   --body keeps its value); any other quoted string is put in as its text. A heredoc body is dropped.
+# - $( ... ) inside double quotes is code: its commands become segments of their own. A backtick span is
+#   never parsed: it becomes the segment `BT with the span as its text.
+# - Flags: q = the quoted text, heredoc body or here-string of the segment holds merge-like text;
+#   w = the whole text of the segment does (quoted or not); g = as w, but without the first gh word;
+#   a = a quoted string that became QUOTED holds a pulls/<n>/merge or /merges path;
+#   o = the text holds the start of an option that makes an otherwise harmless command run a program
+#       (rg --pre, sort --compress-program, git push --exec / --receive-pack, and their short forms).
+# - A line "\001<REASON>" means the text cannot be parsed safely: deny.
 # Redirections that hold & or | (2>&1, >&f, <&3, >|f) would be cut at that character and leave their
 # target as a command word; turn them into a plain > or < first.
 segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g; s/([<>])&/\1 /g; s/>\|/> /g' | awk '
+    # fold: lowercase, quotes and backslashes removed. Words that only start with "merge" (mergeable, mergedAt,
+    # mergeStateStatus, mergeCommit, merge-base, merge_method, merge-guard) are not a merge and become "mrg".
+    function fold(s) { s = tolower(s); gsub(/["\047\\]/, "", s); gsub(/[\n\t]/, " ", s)
+      gsub(/merge(able|d|state|commit|base|_base|-base|-guard|_state|_commit|_method)/, "mrg", s); return s }
+    function loose(s) { return fold(s) ~ /gh.*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
+    function wordy(s) { return s ~ /(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$).*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
+    function tc() { return (KIND[sp] == "C") ? sp : sp - 1 }
+    function seg(f) { if (!CUR[f]) { n++; CUR[f] = n; OUT[n] = ""; RAW[n] = ""; QD[n] = ""; QH[n] = "" } return CUR[f] }
+    function out(s,   i) { i = seg(tc()); OUT[i] = OUT[i] s }
+    function raw(s,   f) { for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f]) RAW[CUR[f]] = RAW[CUR[f]] s }
+    function qd(s,   i) { i = seg(tc()); QD[i] = QD[i] s " " }
+    function bad(why) { if (BAD == "") BAD = why }
+    function flush(f) {
+      if (CUR[f] && f > 0 && OUT[CUR[f]] ~ /^[ \t]*(case|esac)([ \t]|$)/) bad("NESTEDCASE")
+      CUR[f] = 0 }
+    function quoted(body,   i) {  # a closed quoted string: record it and put it into the segment
+      qd(body); raw(body)
+      if (body ~ /^[^ \t\n;|&()]*$/) out(body); else { out("QUOTED"); i = seg(tc()); QH[i] = QH[i] body " " } }
+    # plainexp <text>: 1 when every expansion in the text is $NAME, ${NAME}, a special or positional parameter,
+    # $( or a $-quote (dollar-single or dollar-double). Any other form ($(( )), $[ ], ${s:x}, ${a[x]}, ${!x}, zsh ${(e)x} or $~x)
+    # can evaluate a value as code or arithmetic, and an array subscript in that value runs $( ).
+    function plainexp(t) {
+      gsub(/\$\{([A-Za-z_][A-Za-z0-9_]*|[0-9#?@*$!-])\}/, "", t)
+      gsub(/\$\(\(/, "$[", t)
+      gsub(/\$([A-Za-z_(\047"#?@*$!0-9-]|$)/, "", t)
+      return t !~ /\$/ }
+    function pseudo(name, body) { n++; OUT[n] = name; RAW[n] = body; QD[n] = body; QH[n] = "" }
+    function endbody(   f, o) {  # the body HB of heredoc hcur is complete
+      o = HO[hcur]; RAW[o] = RAW[o] " " HB; QD[o] = QD[o] HB " "
+      for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f] && CUR[f] != o) RAW[CUR[f]] = RAW[CUR[f]] " " HB
+      if (!HQ[hcur] && HB ~ /\$\(|`|\$\[|\$\{/ && !spans(HB)) pseudo("HEREDOC-SUBST", HB)
+      hcur++; HB = ""; HJ = "" }
+    # spans <body>: an unquoted heredoc body is data except its substitutions. Each simple $( ... ) is put
+    # after the input as a command line of its own, so it is split and judged like any other command. A body
+    # with a backtick, $(( )), $[ ], ${ } with a subscript or an offset, or a $( ) that holds a quote, a
+    # comment, a case, a heredoc or unbalanced parentheses is not read: return 0 (one opaque command).
+    function spans(b,   i, m, c, d, st, k, a, parts, ln) {
+      if (b ~ /`/ || !plainexp(b)) return 0
+      m = length(b); k = 0
+      for (i = 1; i <= m; i++) {
+        c = substr(b, i, 1)
+        if (c == "\\") { i++; continue }
+        if (c != "$" || substr(b, i + 1, 1) != "(") continue
+        d = 1; st = i + 2
+        for (i = st; i <= m && d > 0; i++) {
+          c = substr(b, i, 1)
+          if (c ~ /["\047`#\\<]/) return 0
+          if (c == "(") d++; else if (c == ")") d-- }
+        if (d > 0) return 0
+        a = substr(b, st, i - 1 - st); i--
+        if (a ~ /(^|[^A-Za-z0-9_])case([^A-Za-z0-9_]|$)|\$[^A-Za-z_]|\$$/) return 0
+        k++; parts[k] = a }
+      for (i = 1; i <= k; i++) { m = split(parts[i], ln, "\n"); for (c = 1; c <= m; c++) L[++NL] = ln[c] }
+      return 1 }
     { L[NR] = $0 }
     END {
-      q = ""; qb = ""; out = ""; hd = ""
-      for (r = 1; r <= NR; r++) {
+      sp = 0; KIND[0] = "C"; CUR[0] = 0; PC[0] = 0; n = 0; sq = 0; bt = 0; nh = 0; hcur = 1; HB = ""; HJ = ""; cont = 0; BAD = ""
+      NL = NR
+      for (r = 1; r <= NL; r++) {
         line = L[r]
-        if (hd != "") { l = line; sub(/^[ \t]+/, "", l); if (l == hd) hd = ""; continue }
-        n = length(line)
-        for (i = 1; i <= n; i++) { c = substr(line, i, 1)
-          if (q == "") {
-            if (c == "\"" || c == "\047") { q = c; qb = "" }
+        # lines after NR are substitutions taken from heredoc bodies; the input must be fully read by then
+        if (r == NR + 1 && (sq || bt || sp > 0 || hcur <= nh || cont)) bad("OPENQUOTE")
+        if (hcur <= nh && !cont) {  # a heredoc body line; the end line is matched exactly as the shell does
+          l = line
+          if (!HQ[hcur]) {  # an unquoted heredoc joins backslash-newline first; only the joined line can be the end word
+            j = HJ line
+            if (j ~ /(^|[^\\])(\\\\)*\\$/) { if (HD[hcur]) bad("HEREDOCWORD"); HJ = substr(j, 1, length(j) - 1); HB = HB line "\n"; continue }
+            HJ = ""; l = j }
+          if (HD[hcur]) sub(/^\t+/, "", l)
+          if (l == HW[hcur]) { endbody(); continue }
+          # bash ends a heredoc inside $( ) at "EOF)" too; this reader does not, so it cannot judge the rest
+          if (index(l, HW[hcur]) == 1 && substr(l, length(HW[hcur]) + 1) ~ /^[ \t]*\)/) bad("HEREDOCWORD")
+          HB = HB line "\n"; continue }
+        cont = 0; incomment = 0; qic = 0
+        len = length(line)
+        for (i = 1; i <= len; i++) { c = substr(line, i, 1); nx = substr(line, i + 1, 1)
+          if (sq) {
+            if (sq == 2 && c == "\\") { sqb = sqb c nx; i++ }
+            else if (c == "\047") { sq = 0; quoted(sqb) }
+            else sqb = sqb c
+          } else if (bt) {
+            if (c == "\\") { btb = btb c nx; i++ }
+            else if (c == "`") { bt = 0; raw("`" btb "`"); pseudo("`BT", btb)
+              if (KIND[sp] == "C") out("`BT`"); else { QB[sp] = QB[sp] "`BT`"; SUB[sp] = 1 } }
+            else btb = btb c
+          } else if (KIND[sp] == "D") {
+            if (c == "\\") { if (i == len) cont = 1; else { QB[sp] = QB[sp] c nx; i++ } }
+            else if (c == "\"") {
+              body = QB[sp]; sub_ = SUB[sp]; sp--
+              if (sub_) { qd(body); raw(body); out("QUOTED"); if (loose(body)) bad("SUBSTTEXT") }
+              else quoted(body) }
+            else if (c == "$" && nx == "(") { SUB[sp] = 1; raw("$("); sp++; KIND[sp] = "C"; CUR[sp] = 0; PC[sp] = 0; i++ }
+            else if (c == "`") { bt = 1; btb = ""; if (incomment) qic = 1 }
+            else QB[sp] = QB[sp] c
+          } else {  # code
+            prev = (i == 1) ? " " : substr(line, i - 1, 1)
+            if (c == "\\") {
+              if (i == len) { cont = 1
+                if (prev !~ /[ \t;|&()]/ && r < NL && L[r + 1] !~ /^([ \t]|$)/) out("\\") }
+              else { out(c nx); raw(c nx); i++ }
+            } else if (c == "\047") { seg(sp); sq = (prev == "$") ? 2 : 1; sqb = ""; if (incomment) qic = 1 }
+            else if (c == "\"") { seg(sp); sp++; KIND[sp] = "D"; QB[sp] = ""; SUB[sp] = 0; if (incomment) qic = 1 }
+            else if (c == "`") { seg(sp); bt = 1; btb = ""; if (incomment) qic = 1 }
+            else if (c == ";" || c == "|" || c == "&") { flush(sp); raw(c) }
+            else if (c == "(") { if (sp > 0) PC[sp]++; flush(sp); raw(c) }
+            else if (c == ")") {
+              if (sp > 0 && PC[sp] == 0) { flush(sp); sp--; raw(")") }
+              else { if (sp > 0) PC[sp]--; flush(sp); raw(c) } }
+            else if ((c == "{" || c == "}") && prev ~ /[ \t;|&()]/ && (nx == "" || nx ~ /[ \t;|&()]/)) { flush(sp); raw(c) }
+            else if (c == " " || c == "\t") { if (CUR[sp]) { out(c); raw(c) } }
             else {
-              if (c == "<" && substr(line, i + 1, 1) == "<" && substr(line, i + 2, 1) != "<" && (i == 1 || substr(line, i - 1, 1) != "<")) {
-                rest = substr(line, i); if (match(rest, /^<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
-                  d = substr(rest, RSTART, RLENGTH); sub(/^<<-?[ \t]*["\047]?/, "", d)
-                  for (k = r + 1; k <= NR; k++) { t = L[k]; sub(/^[ \t]+/, "", t); if (t == d) { hd = d; break } } } }
-              out = out c }
-          } else if (q == "\"" && c == "\\") { qb = qb c substr(line, i + 1, 1); i++ }
-          else if (c == q) { if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; else out = out "QUOTED"; q = "" }
-          else qb = qb c }
-        if (q == "") { print out; out = "" } else qb = qb "\n" }
-      if (q != "") print "\001OPENQUOTE"
-      if (out != "") print out
-    }' | sed -E 's/&&|\|\||[;|&()]/\
-/g; s/(^|[[:space:]])[{}]([[:space:]]|$)/\
-/g')
+              if (c == "#" && prev ~ /[ \t;|&()]/) { if (sp > 0) bad("NESTEDCOMMENT"); incomment = 1 }
+              if (c == "$" && nx == "{" && sp > 0) {  # ${ ... } inside a nested substitution: keep it only when it is simple
+                rest = substr(line, i); k = index(rest, "}")
+                if (k == 0 || substr(rest, 1, k) ~ /[()"\047`\\]/) bad("NESTEDBRACE")
+                else { out(substr(rest, 1, k)); raw(substr(rest, 1, k)); i += k - 1; continue } }
+              if (c == "<" && nx == "<" && substr(line, i + 2, 1) != "<" && prev != "<") {
+                # A heredoc. Only the plain end words NAME, \047NAME\047 and "NAME" are read; any other form is not judged.
+                rest = substr(line, i + 2); dash = 0
+                if (substr(rest, 1, 1) == "-") { dash = 1; rest = substr(rest, 2) }
+                sub(/^[ \t]+/, "", rest); w = rest; if (match(w, /[ \t;|&()<>]/)) w = substr(w, 1, RSTART - 1)
+                hq_ = -1
+                if (w ~ /^[A-Za-z_][A-Za-z0-9_]*$/) hq_ = 0
+                else if (w ~ /^\047[A-Za-z_][A-Za-z0-9_]*\047$/ || w ~ /^"[A-Za-z_][A-Za-z0-9_]*"$/) { hq_ = 1; w = substr(w, 2, length(w) - 2) }
+                if (hq_ < 0 || incomment) bad("HEREDOCWORD")
+                else { nh++; HW[nh] = w; HQ[nh] = hq_; HD[nh] = dash; HO[nh] = seg(sp); HS[nh] = sp } }
+              out(c); raw(c) }
+          }
+        }
+        if (incomment && qic && (sq || bt || sp > 0)) bad("COMMENTQUOTE")
+        if (hcur <= nh && !cont && (sq || bt || sp != HS[hcur])) bad("HEREDOCQUOTE")
+        if (cont) continue
+        if (sq) sqb = sqb "\n"; else if (bt) btb = btb "\n"; else if (KIND[sp] == "D") QB[sp] = QB[sp] "\n"
+        else { flush(sp); raw("\n") }
+      }
+      if (sq || bt || sp > 0 || hcur <= nh) bad("OPENQUOTE")
+      if (BAD != "") print "\001" BAD
+      for (i = 1; i <= n; i++) {
+        f = ""; s = fold(RAW[i])
+        if (loose(QD[i])) f = f "q"
+        if (wordy(s)) f = f "w"
+        s2 = s; sub(/(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$)/, " ", s2); if (wordy(s2)) f = f "g"
+        if (fold(QH[i]) ~ /pulls\/[^ ]*merge|repos\/[^ ]*\/merges/) f = f "a"
+        if (!plainexp(RAW[i])) f = f "x"
+        if (f == "") f = "-"
+        print f "\t" OUT[i] }
+    }')
 
-# A quote still open at end of input (an apostrophe in a # comment, an escaped or stray quote) would
-# swallow a later merge, so the splitter cannot be trusted: deny.
-case "$segs" in *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;; esac
+# The text could not be parsed the way the shell reads it, so what runs cannot be judged: deny.
+case "$segs" in
+  *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;;
+  *$'\001'COMMENTQUOTE*) deny "a quote inside a # comment hides what follows it, so a merge cannot be judged." ;;
+  *$'\001'SUBSTTEXT*) deny "merge-like text next to a \$( ) or backtick substitution inside double quotes cannot be judged." ;;
+  *$'\001'HEREDOC*) deny "a heredoc with an end word that is not a plain name, in a # comment, or next to an open quote cannot be judged next to the word merge." ;;
+  *$'\001'*) deny "a case statement, a comment or a \${ } expansion inside a quoted substitution cannot be judged next to the word merge." ;;
+esac
+
+# inert <segment> <flags> <T>: the allow list of #680. It returns 0 for a command that never runs its
+# arguments, its stdin or a named file as code, and sets LEVEL: 1 = a shell builtin or a text tool that reads
+# no configuration; 2 = git, gh or rg, which read configuration files that can name a program to run.
+# T is 1 when the segment itself holds merge-like text. A command that is not on the list, and that holds
+# merge-like text, is denied.
+# Never on the list: a segment with an expansion other than $NAME, ${NAME}, a special parameter or $( )
+# (flag x: $(( )), $[ ], ${s:x}, ${a[x]}, ${!x}, zsh ${(e)x} and $~x): the shell evaluates a variable's value
+# there as code or arithmetic, and an array subscript in that value runs $( ). jq is listed: it has no way
+# to run a program. Left out on purpose:
+# test / [ / [[ with a numeric operator or -v, and printf -v (same arithmetic reason), exit, read, export,
+# awk, find, xargs, cp, mv, sed with any script but a line-range print (GNU sed runs a program with e),
+# git -c and every git global option but -C and --no-pager, git pull (-s runs git-merge-<name> from PATH),
+# git grep -O, git log --output, and every interpreter.
+inert() {
+  local s=$1 fl=$2 t=$3 w sub
+  LEVEL=1
+  case "$fl" in *x*) return 1 ;; esac
+  w=${s%%[[:space:]]*}
+  case "$w" in
+    '#'*|echo|:|true|false|cd|pwd|'for'|'case'|'esac'|'done'|'fi'|sleep|seq|jq|wc|ls|mkdir|touch|rm|date|basename|dirname|realpath|readlink|which|type|stat|du|df) return 0 ;;
+    cat|head|tail|grep|egrep|fgrep|tee|uniq|cut|tr|nl|comm|paste|column|rev|diff|cmp|sha256sum|shasum|md5sum|md5|base64|xxd|od) return 0 ;;
+    printf) printf '%s' "$s" | grep -qE '[[:space:]]-[^[:space:]]*v' && return 1; return 0 ;;
+    test|'['|'[[')
+      case "$s" in *\\*) return 1 ;; esac
+      printf '%s' "$s" | grep -qE '[[:space:]]-(eq|ne|lt|le|gt|ge|v)([[:space:]]|$)' && return 1; return 0 ;;
+    sort) printf '%s' "$s" | grep -qE '[[:space:]]--co' && return 1; return 0 ;;
+    sed)  # only `sed [-n] [-E] 'N[,M]p' [file...]`: a line-range print runs nothing
+      printf '%s' "$s" | grep -qE '^sed([[:space:]]+-[nEr]+)*[[:space:]]+[0-9]+(,([0-9]+|\$))?p([[:space:]]+[^-[:space:]][^[:space:]]*)*[[:space:]]*$' && return 0; return 1 ;;
+    rg) LEVEL=2; printf '%s' "$s" | grep -qE '[[:space:]]--(pr|hostname-bin)' && return 1; return 0 ;;
+    git)
+      LEVEL=2
+      # the subcommand after -C <dir> and --no-pager; any other global option (-c, --exec-path, ...) is not listed
+      sub=${s#git}
+      while :; do
+        sub=$(printf '%s' "$sub" | sed -E 's/^[[:space:]]+//')
+        case "$sub" in
+          -C[[:space:]]*) sub=${sub#-C}; sub=$(printf '%s' "$sub" | sed -E 's/^[[:space:]]+[^[:space:]]+//') ;;
+          --no-pager[[:space:]]*|-P[[:space:]]*) sub=${sub#*[[:space:]]} ;;
+          *) break ;;
+        esac
+      done
+      if printf '%s' "$sub" | grep -qE '^(commit|log|show|diff|status|add|tag|branch|rev-parse|merge-base|stash|switch|checkout|restore|rev-list|show-ref|for-each-ref|describe|blame|ls-files|ls-tree|cat-file|reflog|shortlog|worktree[[:space:]]+list|grep)([[:space:]]|$)'; then
+        printf '%s' "$sub" | grep -qE '[[:space:]](--output|--open|-O|-[A-Za-z]*O)' && return 1
+        return 0
+      fi
+      # these talk to a remote: only without merge-like text and without a program option
+      if printf '%s' "$sub" | grep -qE '^(fetch|ls-remote|push)([[:space:]]|$)'; then
+        [ "$t" -eq 0 ] || return 1
+        printf '%s' "$sub" | grep -qE '[[:space:]]--(no-)?(u|e|rec)' && return 1
+        printf '%s' "$sub" | grep -qE '^ls-remote[[:space:]](.*[[:space:]])?-u' && return 1
+        return 0
+      fi ;;
+    gh)
+      LEVEL=2
+      printf '%s' "$s" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+(create|comment|edit|review|view|list|checks|diff|status|close|ready|reopen)|issue[[:space:]]+(create|comment|edit|view|list|close|reopen)|run[[:space:]]+(list|view|watch)|release[[:space:]]+(create|edit|view|list)|repo[[:space:]]+view|search|api|label)([[:space:]]|$)' && return 0 ;;
+  esac
+  return 1
+}
+
+# cfgtarget <segment>: 0 when the segment writes (a > or >> redirection, or tee) to a target that can be a
+# configuration file git, gh or rg read, or a hook git runs; it sets WRITES=2 for a target that is surely
+# one (a .git path, a gitconfig, a hooks/ directory, husky, lefthook, pre-commit, a gh/ directory) and
+# WRITES=1 for one that may be (a hidden file or directory, a name with config or a *rc name, or a target the
+# hook cannot read: a variable, a substitution, a glob, a quoted name). After a cd into such a directory,
+# or a cd to a target the hook cannot read (CDCFG), every write counts as WRITES=1.
+CDCFG=0
+cfgsure() {
+  case "$1" in
+    *.git*|*hooks/*|hooks|*husky*|*lefthook*|*pre-commit*|*gh/*) return 0 ;;
+  esac
+  return 1
+}
+cfgmaybe() {
+  case "$1" in
+    .*|*/.*|*[Cc]onfig*|*rc|*'$'*|*'`'*|*'*'*|*'?'*|*'['*|QUOTED|'~'*|-) return 0 ;;
+  esac
+  return 1
+}
+cfgtarget() {
+  local s=$1 tg w
+  case "$s" in
+    cd[[:space:]]*)
+      w=$(printf '%s' "${s#cd}" | sed -E 's/^[[:space:]]+//')
+      if cfgsure "$w" || cfgmaybe "$w"; then CDCFG=1; fi ;;
+  esac
+  tg=$(printf '%s\n' "$s" | sed -E 's#[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)# #g' | grep -oE '>>?[[:space:]]*[^[:space:]]+' | sed -E 's/^>>?[[:space:]]*//')
+  if [ "${s%%[[:space:]]*}" = tee ]; then tg="$tg $(printf '%s' "${s#tee}" | sed -E 's/(^|[[:space:]])-[^[:space:]]*//g')"; fi
+  for w in $tg; do
+    if cfgsure "$w"; then WRITES=2; return 0; fi
+    if [ "$CDCFG" -eq 1 ] || cfgmaybe "$w"; then [ "$WRITES" -eq 2 ] || WRITES=1; fi
+  done
+  return 0
+}
 
 set -f
 NSEGS=0
+SRC=0     # segments on the allow list (and bare assignments) that hold merge-like text
+OTHERS=0  # segments that are neither a judged merge nor on the allow list
+CONFS=0   # allow-list segments of level 2 (git, gh, rg: they read configuration files)
+WRITES=0  # 2: a write to a sure configuration or hook file, 1: to a possible one (cfgtarget)
+OTHER1=""
 while IFS= read -r seg; do
+  case "$seg" in *$'\t'*) FL=${seg%%$'\t'*}; seg=${seg#*$'\t'} ;; *) continue ;; esac
   seg=$(printf '%s' "$seg" | sed -E 's/^[[:space:]]+//'); orig=$seg
   # #677: variable assignments, shell keywords (if then else elif do while until !), zsh prefixes (noglob,
   # nocorrect, -) and redirections (>f, 2>&1, <f, <<<w) in front of a command do not change what runs.
   # Strip them in one loop until nothing changes, so `if X=1 bash -c ...` and `>/dev/null bash -c ...`
   # reach the wrapper check below. KW records that a keyword, prefix or redirection was stripped.
-  KW=0
+  KW=0; ASG=0
   drop_word() { case "$seg" in *[[:space:]]*) seg=$(printf '%s' "${seg#*[[:space:]]}" | sed -E 's/^[[:space:]]+//') ;; *) seg="" ;; esac; }
   while :; do
     if printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*([[:space:]]+|$)'; then
-      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*[[:space:]]*//'); continue
+      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*[[:space:]]*//'); ASG=1; continue
     fi
     w0=${seg%%[[:space:]]*}
     case "$w0" in
@@ -241,9 +491,18 @@ while IFS= read -r seg; do
       *) break ;;
     esac
   done
+  # A redirection to a file anywhere in the segment (2>&1 and >&2 are > /dev/null by now).
+  # A write to a file that git, gh or rg can read as configuration (rule R4 below).
+  cfgtarget "$orig"
+  # T: the segment holds merge-like text. For a gh command the first gh word is the command itself.
+  T=0
+  case "$FL" in *q*) T=1 ;; esac
+  if printf '%s' "$seg" | grep -qE '^gh([[:space:]]|$)'; then case "$FL" in *g*) T=1 ;; esac; else case "$FL" in *w*) T=1 ;; esac; fi
   if [ -z "$seg" ]; then
     # A keyword or redirection alone still counts as a command, so a merge next to it is not "the only command".
     [ "$KW" -eq 1 ] && NSEGS=$((NSEGS + 1))
+    # A bare assignment (or a keyword line) that holds merge-like text is a source of that text.
+    [ "$T" -eq 1 ] && SRC=1
     continue
   fi
   # A shell or wrapper name with a path, a backslash anywhere, or zsh's =cmd runs the same program. A glob
@@ -266,26 +525,28 @@ while IFS= read -r seg; do
       deny "a gh merge behind a shell keyword, prefix or redirection cannot be put to the owner; run the merge alone."
     fi
   fi
-  # A backslash inside the gh words (g\h pr merge, gh pr mer\ge) does not change what runs, but it hides
-  # the words from the checks below: deny such a segment when it reads as a gh merge without the backslashes.
+  # A backslash inside the gh words (g\h pr merge, gh pr mer\ge, or a backslash-newline in the middle of a
+  # word) does not change what runs, but it hides the words from the checks below: deny such a segment when
+  # it reads as a gh merge without the backslashes.
   case "$seg" in
     *\\*)
       if printf '%s' "$(fold "${seg//\\/}")" | grep -qE '^gh[[:space:]].*(pr[[:space:]]+merge|/merge|graphql)'; then
         deny "a gh merge spelled with a backslash cannot be judged."
       fi ;;
   esac
+  KIND=other
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
-    judge_pr_merge "$seg"
+    judge_pr_merge "$seg"; KIND=merge
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
-    if printf '%s' "$seg" | grep -qE '(^|[[:space:]])graphql([[:space:]]|$)'; then
-      case "$(fold "$cmd")" in
-        *mergepullrequest*|*enablepullrequestautomerge*) deny "a GraphQL mergePullRequest or enablePullRequestAutoMerge mutation is not allowed; a human merges." ;;
-      esac
-    fi
+    # No test for the word graphql: the endpoint can come from a variable (gh api "$E").
+    case "$(fold "$cmd")" in
+      *mergepullrequest*|*enablepullrequestautomerge*|*mergebranch*|*enqueuepullrequest*) deny "a GraphQL mergePullRequest, enablePullRequestAutoMerge, mergeBranch or enqueuePullRequest mutation is not allowed; a human merges." ;;
+    esac
     if printf '%s' "$seg" | grep -qE 'repos/[^[:space:]]*/merges([^A-Za-z0-9_]|$)'; then
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
-    if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; fi
+    case "$FL" in *a*) deny "a gh api merge path inside a quoted string cannot be judged; write the path without quotes." ;; esac
+    if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; KIND=merge; fi
   elif case "${seg%%[[:space:]]*}" in *[\$\`]*) printf '%s' "$(fold "$cmd")" | grep -q 'merge' ;; *) false ;; esac; then
     deny "a command name built from a variable or substitution next to the word merge cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+)?[^[:space:]]*[$`]'; then
@@ -303,15 +564,50 @@ while IFS= read -r seg; do
       # each found a way to run a merge built at run time. A harmless command that trips this (a $ before a
       # file name like post-merge-hooks.test.sh) is a known false positive: put the command in a script file
       # with the Write tool and run that file by a path without the word.
-      # This is a best-effort list of common shells and wrappers, not a complete one (interpreters such as
-      # python or awk, find -exec and git -c alias are not on it; see the follow-up issue).
+      # This list is kept as a second net behind the allow list below (#680): it also denies a merge that a
+      # listed shell or wrapper builds at run time, which holds no merge-like text for the allow list to see.
       bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|.|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su|watch|unshare)
         deny "a merge inside a shell string or wrapper ($cw) cannot be judged." ;;
     esac
   fi
+  # #680: merge-like text that is not a judged merge is allowed only where nothing can run it.
+  if [ "$ASG" -eq 1 ]; then
+    # The value of an assignment in front of a command reaches that command through its environment
+    # (GIT_SSH_COMMAND, GH_PAGER, ...).
+    if [ "$KIND" = merge ]; then case "$FL" in *q*) deny "merge-like text in a variable assignment in front of a merge cannot be judged." ;; esac
+    elif [ "$T" -eq 1 ]; then deny "merge-like text next to a variable assignment in front of a command cannot be judged; run the command without the assignment."
+    fi
+  fi
+  if [ "$KIND" != merge ]; then
+    if inert "$seg" "$FL" "$T"; then
+      [ "$T" -eq 1 ] && SRC=1
+      [ "$LEVEL" -eq 2 ] && CONFS=$((CONFS + 1))
+    else
+      cw=${seg%%[[:space:]]*}
+      [ "$T" -eq 0 ] || deny "merge-like text in the arguments or input of '$cw', which is not on the list of commands that never run their arguments. Run it yourself, or put the text in a file with the Write tool."
+      OTHERS=$((OTHERS + 1)); [ -n "$OTHER1" ] || OTHER1=$cw
+    fi
+  fi
 done <<SEGS
 $segs
 SEGS
+
+# Merge-like text in one command (an echo, a heredoc, a variable) can reach another command of the same
+# Bash call through a pipe, a variable or a file, so every other command must be on the allow list too.
+if [ "$SRC" -eq 1 ] && [ "$OTHERS" -gt 0 ]; then
+  deny "merge-like text in the same Bash call as '$OTHER1', which is not on the list of commands that never run their input. Run the two in separate Bash calls."
+fi
+
+# The same text written to a file can be a configuration or a hook that git, gh or rg read or run (.git/config
+# core.fsmonitor, .git/hooks/pre-commit, .husky/pre-commit, a gh alias file, a ripgrep config). A sure target
+# is denied even with no git, gh or rg in the call (the next call would run it); a possible one only next to
+# git, gh or rg. The Write tool is not a Bash call, so this hook does not see a file written with it.
+if [ "$SRC" -eq 1 ] && [ "$WRITES" -eq 2 ]; then
+  deny "merge-like text is written to a git configuration or hook file, which git runs. The owner writes such a file by hand."
+fi
+if [ "$SRC" -eq 1 ] && [ "$WRITES" -eq 1 ] && [ "$CONFS" -gt 0 ]; then
+  deny "merge-like text is written to a file in the same Bash call as git, gh or rg, which read configuration files. Write the file in a separate Bash call."
+fi
 
 [ "$ASKS" -gt 0 ] || exit 0
 # Something targets a non-feat base. It may be put to the owner only when it is the one and only merge.

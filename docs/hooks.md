@@ -22,12 +22,30 @@ against what was staged before that call. Stage in one call and commit in the ne
 ### `merge-guard.sh` (PreToolUse, Bash)
 
 Lets a PR merge through when the PR base is not protected (`feat/*`, `phase3-ui` or any other branch that is not listed below). A merge into a protected base needs the owner to approve that one PR (see below). It acts on `gh pr merge` and `gh api .../pulls/<n>/merge`
-(at command position, after `&&`, `;`, `|`, `( )`, braces or env assignments; it uses the same segment splitter as
-`clean-worktrees.sh`, so text in a heredoc or quoted string that only mentions a merge is ignored). For every PR number
+(at command position, after `&&`, `;`, `|`, `( )`, braces or env assignments). Its splitter reads the command the way
+bash and zsh do (backslash escapes, backslash-newline, `$( )` inside double quotes and in unquoted heredocs, exact
+heredoc end words) and denies what it cannot read that way. For every PR number
 in every merge segment it reads the live base with `gh pr view <n> --repo <r> --json baseRefName` and the repo default
 branch with `gh repo view`. It allows the merge when the base is not protected and is not the default branch.
 Protected bases are `main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`, `release-*` and the
 default branch. A protected base is denied, unless it is the one owner-approved form below. It exits 2 with the reason on stderr.
+
+**Merge text outside the allow list (#680, ADR 0043).** Merge-like text that is not a judged merge (`gh ... merge`,
+`pr merge`, `pulls/<n>/merge`, `repos/.../merges`, the GraphQL merge mutations; `mergeable`, `mergedAt`, `merge-base`
+and `merge-guard` do not count) is allowed only in a command on an allow list of commands that never run their
+arguments: shell builtins and text tools (`echo`, `printf` without `-v`, `cat`, `grep`, `jq`, `sleep`, `seq`, ...),
+`sed -n '<range>p'`, `rg` without `--pre`, git read and commit subcommands (`git fetch|ls-remote|push` only without such
+text and without a program option), and gh read and text subcommands (`gh pr create|comment|edit`, `gh issue ...`,
+`gh api`). Rules: a command off the list with such text in its arguments, quotes, heredoc or here-string is denied
+(R1; `python3 -c`, `perl -e`, `awk`, `sed` with a script, `find -exec`, `git -c alias.x='!...'`); when one command of
+the Bash call holds such text, every other command of the call must be on the list (R2); an assignment with such text
+in front of a command is denied (R3); such text written to a git hook or config file (`.git/...`, `hooks/`, `.husky/`,
+`lefthook`, `gh/`) is denied, and to a possible config file (a hidden or `*config*` or `*rc` name, a target with `$`)
+only next to git, gh or rg (R4). A command with an expansion that evaluates a value (`$(( ))`, `$[ ]`, `${s:x}`,
+`${a[x]}`, `${!x}`, zsh `${(e)x}` and `$~x`) is never on the list. The wrapper list stays as a second net for a merge
+that bash -c, eval or xargs build at run time. Not closed (#675): a merge encoded at run time with no literal text
+(`gh pr m{e..e}rge`, `$'...'`, base64), and a file written in one call (or with the Write tool) and run in the next;
+branch protection on `main` is the backstop. A denied harmless command is split into two Bash calls or run by the owner.
 
 **Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r --match-head-commit <head sha>` (the flag must equal the head the hook reads, so a later push cannot ride the approval; no `--auto`,
 one PR, the only merge in the command, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
