@@ -239,6 +239,18 @@ test('qb12: the page works under a path prefix and has an embed mode', () => {
   assert.ok(/postMessage\(\{type:'afb-height',height:h\}/.test(html));
 });
 
+test('qb15: /fleet.json answers without a project option, and fleet.html requests only relative URLs', async () => {
+  const { server, port } = await B.start({ port: 0, projectDir: tmp(), follow: false });
+  try {
+    const r = await new Promise((res, rej) => http.get({ host: '127.0.0.1', port, path: '/fleet.json' }, x => { let b = ''; x.on('data', c => { b += c; }); x.on('end', () => res({ status: x.statusCode, body: b })); }).on('error', rej));
+    assert.ok(r.status === 404 || r.status === 503 || r.status === 200, `status ${r.status}`);
+    assert.ok(JSON.parse(r.body), 'JSON body');
+  } finally { server.close(); }
+  const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'fleet.html'), 'utf8');
+  assert.ok(!/(fetch|EventSource)\(\s*['"]\//.test(html), 'fleet.html requests an absolute path');
+  assert.ok(/fetch\('fleet\.json'/.test(html));
+});
+
 test('qb13: agent_facts carries tokens and tool names, and never tool input, prompts or answers', () => {
   const base = tmp();
   const rows = transcript('2026-11-16T08:00:00.000Z', '2026-11-16T08:01:00.000Z', 'claude-sonnet-5-5', 'medium');

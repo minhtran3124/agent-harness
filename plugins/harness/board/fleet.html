@@ -65,7 +65,7 @@ function render(d){
     rows.appendChild(li)})}
 function fail(msg){rows.textContent='';meta.textContent='';err.textContent=msg;err.hidden=false}
 function poll(){
-  fetch('/fleet.json',{cache:'no-store'}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
+  fetch('fleet.json',{cache:'no-store'}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
    .then(function(x){if(x.ok)render(x.j);else fail(x.j&&x.j.error||'error')})
    .catch(function(){fail('board not reachable')})}
 poll();setInterval(poll,3000);
