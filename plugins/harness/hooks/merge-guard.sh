@@ -330,7 +330,8 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
             else if ((c == "{" || c == "}") && prev ~ /[ \t;|&()]/ && (nx == "" || nx ~ /[ \t;|&()]/)) { flush(sp); raw(c) }
             else if (c == " " || c == "\t") { if (CUR[sp]) { out(c); raw(c) } }
             else {
-              if (c == "#" && prev ~ /[ \t;|&()]/) { if (sp > 0) bad("NESTEDCOMMENT"); incomment = 1 }
+              # a # comment at top level is data up to the newline: quotes, ( ) ; | and << in it do nothing
+              if (c == "#" && prev ~ /[ \t;|&()]/) { if (sp > 0) bad("NESTEDCOMMENT"); else { out("#"); break }; incomment = 1 }
               if (c == "$" && nx == "{" && sp > 0) {  # ${ ... } inside a nested substitution: keep it only when it is simple
                 rest = substr(line, i); k = index(rest, "}")
                 if (k == 0 || substr(rest, 1, k) ~ /[()"\047`\\]/) bad("NESTEDBRACE")
@@ -387,8 +388,8 @@ esac
 # Never on the list: a segment with an expansion other than $NAME, ${NAME}, a special parameter or $( )
 # (flag x: $(( )), $[ ], ${s:x}, ${a[x]}, ${!x}, zsh ${(e)x} and $~x): the shell evaluates a variable's value
 # there as code or arithmetic, and an array subscript in that value runs $( ). jq is listed: it has no way
-# to run a program. Left out on purpose:
-# test / [ / [[ with a numeric operator or -v, and printf -v (same arithmetic reason), exit, read, export,
+# to run a program. exit, break, continue and return need a plain number (bash) or do math without $( ) (zsh).
+# Left out on purpose: test / [ / [[ with a numeric operator or -v, and printf -v (same arithmetic reason), read, export,
 # awk, find, xargs, cp, mv, sed with any script but a line-range print (GNU sed runs a program with e),
 # git -c and every git global option but -C and --no-pager, git pull (-s runs git-merge-<name> from PATH),
 # git grep -O, git log --output, and every interpreter.
@@ -399,7 +400,7 @@ inert() {
   w=${s%%[[:space:]]*}
   case "$FNS" in *" $w "*) return 0 ;; esac
   case "$w" in
-    '#'*|echo|:|true|false|cd|pwd|'for'|'case'|'esac'|'done'|'fi'|sleep|seq|jq|wc|ls|mkdir|touch|rm|date|basename|dirname|realpath|readlink|which|type|stat|du|df) return 0 ;;
+    '#'*|echo|:|true|false|cd|pwd|'for'|'case'|'esac'|'done'|'fi'|exit|break|continue|return|sleep|seq|jq|wc|ls|mkdir|touch|rm|date|basename|dirname|realpath|readlink|which|type|stat|du|df) return 0 ;;
     cat|head|tail|grep|egrep|fgrep|tee|uniq|cut|tr|nl|comm|paste|column|rev|diff|cmp|sha256sum|shasum|md5sum|md5|base64|xxd|od) return 0 ;;
     printf) printf '%s' "$s" | grep -qE '[[:space:]]-[^[:space:]]*v' && return 1; return 0 ;;
     test|'['|'[[')
