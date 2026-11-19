@@ -268,7 +268,7 @@ rrun ""
 if ! has automation; then pass; else fail "out=$OUT"; fi
 
 # long-lived branches are never removed, even with a merged PR at the exact tip
-for lb in develop release/1.0; do
+for lb in develop development staging production release/1.0 release-2.0; do
   rsetup; git -C "$MAIN" checkout -q -b "$lb"; git -C "$MAIN" commit -q --allow-empty -m w; git -C "$MAIN" checkout -q main
   git -C "$MAIN" merge -q --no-ff "$lb" -m m; ghstub "$lb" "$(git -C "$MAIN" rev-parse "$lb")"
   t "long-lived branch $lb is kept despite a merged PR at its tip"
