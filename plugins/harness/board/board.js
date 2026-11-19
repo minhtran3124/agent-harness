@@ -13,7 +13,8 @@
 // It binds 127.0.0.1 only. It sends labels, phases, statuses, models, efforts, times and the agent's short
 // summary, a token count and tool names (names only); it never sends prompts, tool inputs or outputs, or file contents.
 //
-//   node board.js [--project <path>] [--run <run id | run dir>] [--port <n>] [--no-follow]
+//   node board.js [--project <path>] [--run <run id | run dir>] [--port <n>] [--no-follow] [--ledger <ledger.json>]
+// Fleet view: /fleet (page) and /fleet.json read a /harness:pd-orchestrate ledger afresh on every request.
 //
 // Verifies: the page shows each agent of one run as it starts and ends, within about one poll interval (500 ms).
 // Does not verify: anything the journal does not record (log() lines and phase() calls appear only in the end
@@ -275,16 +276,71 @@ class RunTail {
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// Fleet view: a /harness:pd-orchestrate run, read from its ledger (protocol.md, section "Ledger")
+// ---------------------------------------------------------------------------
+
+// The newest <project>/specs/fleet/*/ledger.json by modification time, or null.
+function newestLedger(project) {
+  const base = path.join(project, 'specs', 'fleet');
+  let best = null;
+  let names = [];
+  try { names = fs.readdirSync(base); } catch (e) { return null; }
+  for (const n of names) {
+    const f = path.join(base, n, 'ledger.json');
+    let st;
+    try { st = fs.statSync(f); } catch (e) { continue; }
+    if (st.isFile() && (!best || st.mtimeMs > best.mtime)) best = { file: f, mtime: st.mtimeMs };
+  }
+  return best ? best.file : null;
+}
+
+// Two all-digit ids compare numerically (9 before 10); any other pair compares as strings.
+function compareIds(a, b) {
+  const num = /^\d+$/;
+  if (num.test(a) && num.test(b)) return a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+const orNull = v => (v === undefined ? null : v);
+
+// ledger object -> the /fleet.json body. Throws Error with a short reason when the shape is wrong.
+function fleetOf(ledger) {
+  if (!ledger || typeof ledger !== 'object' || Array.isArray(ledger)) throw new Error('ledger is not a JSON object');
+  const t = ledger.tickets;
+  if (!t || typeof t !== 'object' || Array.isArray(t)) throw new Error('ledger has no tickets object');
+  const tickets = Object.keys(t).sort(compareIds).map(id => {
+    const x = t[id] && typeof t[id] === 'object' ? t[id] : {};
+    const sess = o => (o && typeof o === 'object' ? orNull(o.session) : null);
+    return { id, state: orNull(x.state), kind: orNull(x.kind), depth: orNull(x.depth),
+      worker: sess(x.worker), reviewer: sess(x.reviewer), head: orNull(x.head), pr: orNull(x.pr) };
+  });
+  return { run: orNull(ledger.run), base: orNull(ledger.base), tickets };
+}
+
+// Read the ledger again: { status, body }. 404 when there is none, 503 when it does not parse.
+function readFleet(ledgerFile, project) {
+  const file = ledgerFile || newestLedger(project);
+  if (!file) return { status: 404, body: { error: 'no fleet run' } };
+  let text;
+  try { text = fs.readFileSync(file, 'utf8'); }
+  catch (e) { return e.code === 'ENOENT' ? { status: 404, body: { error: 'no fleet run' } } : { status: 503, body: { error: `cannot read ledger: ${e.code || 'error'}` } }; }
+  try { return { status: 200, body: fleetOf(JSON.parse(text)) }; }
+  catch (e) { return { status: 503, body: { error: e instanceof SyntaxError ? 'ledger is not valid JSON' : e.message } }; }
+}
+
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
-  const a = { project: process.cwd(), run: null, port: 4317, follow: true, idleExit: 0 };
+  const a = { project: process.cwd(), run: null, port: 4317, follow: true, idleExit: 0, ledger: null };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === '--project') { a.project = v; i++; }
     else if (k === '--run') { a.run = v; i++; }
+    else if (k === '--ledger') { a.ledger = v; i++; }
     else if (k === '--port') { a.port = Number(v); i++; }
     else if (k === '--no-follow') a.follow = false;
     else if (k === '--idle-exit') { a.idleExit = Number(v); i++; }
@@ -299,6 +355,7 @@ function parseArgs(argv) {
 function start(opts) {
   const flow = JSON.parse(fs.readFileSync(opts.flowFile || path.join(HERE, 'flow.json'), 'utf8'));
   const page = fs.readFileSync(path.join(HERE, 'board.html'));
+  const fleetPage = fs.readFileSync(path.join(HERE, 'fleet.html'));
   const clients = new Set();
   let history = [], tail = null;
 
@@ -342,6 +399,15 @@ function start(opts) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(flow));
     }
+    if (url === '/fleet') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+      return res.end(fleetPage);
+    }
+    if (url === '/fleet.json') {
+      const f = readFleet(opts.ledger, opts.project);
+      res.writeHead(f.status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      return res.end(JSON.stringify(f.body));
+    }
     if (url === '/healthz') {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       return res.end(JSON.stringify({ ok: true, run: tail ? tail.run.id : null, running: !!tail && !tail.ended }));
@@ -368,11 +434,12 @@ function start(opts) {
   });
 }
 
-const USAGE = `usage: node board.js [--project <path>] [--run <run id | run dir>] [--port <n>] [--no-follow]
+const USAGE = `usage: node board.js [--project <path>] [--run <run id | run dir>] [--port <n>] [--no-follow] [--ledger <ledger.json>]
   --project  the project whose newest ship.js run to show (default: the current directory)
   --run      one run: its id (wf_...) or its directory
   --port     port on 127.0.0.1 (default 4317; 0 picks a free one)
   --no-follow  stay on the run shown at start; by default the board switches to a newer run of the project
+  --ledger   the fleet ledger to show at /fleet (default: the newest specs/fleet/*/ledger.json under --project)
   --idle-exit  stop after this many minutes with no run going (default 0: never)`;
 
 if (require.main === module) {
@@ -385,4 +452,4 @@ if (require.main === module) {
   }).catch(e => { console.error(`board: ${e.message}`); process.exit(1); });
 }
 
-module.exports = { projectKey, parseLabel, nodeFor, statusOf, splitLines, agentFacts, usedTokens, eventOf, endEventOf, runsOf, resolveRun, RunTail, parseArgs, start };
+module.exports = { projectKey, parseLabel, nodeFor, statusOf, splitLines, agentFacts, usedTokens, eventOf, endEventOf, runsOf, resolveRun, RunTail, parseArgs, start, newestLedger, fleetOf, readFleet, compareIds };
