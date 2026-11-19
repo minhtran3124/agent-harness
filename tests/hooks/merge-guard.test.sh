@@ -517,7 +517,12 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "echo 'gh pr merge 7 --repo o/r' > x.sh; case a in b) :;; esac; sh<x.sh" \
          "# a comment (with parens); 'quote${NL}python3 -c 'import os; os.system(\"gh pr merge 7 --repo o/r\")'" \
          "echo x # comment${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA" \
-         "x='a[\$(gh pr merge 7 --repo o/r)]'; exit \$((x))"; do
+         "x='a[\$(gh pr merge 7 --repo o/r)]'; exit \$((x))" \
+         "python3 <<EOF${NL}import os; os.system(\"gh pr mer\\${NL}ge 7 --repo o/r\")${NL}EOF" \
+         "python3 <<'EOF'${NL}import os; os.system(\"gh pr mer\\${NL}ge 7 --repo o/r\")${NL}EOF" \
+         "python3 -c 'import os; os.system(\"gh pr mer\\${NL}ge 7 --repo o/r\")'" \
+         "node -e 'require(\"child_process\").execSync(\"gh pr mer\\${NL}ge 7 --repo o/r\")'" \
+         "echo 'gh pr mer\\${NL}ge 7 --repo o/r' | python3 -"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the
