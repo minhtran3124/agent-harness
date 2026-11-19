@@ -27,8 +27,8 @@ Steps (do all of them, in order):
 3. Hand off for code review and intent review: send a message to the session `<orchestrator session>`
    with the ticket id, the checkout path and a short summary of the change. Another session does the
    review; do not review your own change. Wait for the review result and address any finding.
-4. Instead of a PR: commit on a local branch `fix/<id>` in this checkout. Do not push, do not open a
-   PR, do not touch main, never merge, never force-push.
+4. Instead of a PR: create a local branch `fix/<id>` from `<branch>` in this checkout and commit there.
+   Do not push, do not open a PR, do not touch main, never merge, never force-push.
 5. Write a report file at `specs/<id>/report.md` (specs/ is gitignored, do not commit it). The file
    starts with the line `<!-- harness-fleet:report v1 -->` followed by one JSON object with these
    fields: v (1), run, ticket, reported_by ("worker" or "orchestrator"), status ("done" | "failed" |
