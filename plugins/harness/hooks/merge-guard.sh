@@ -39,7 +39,7 @@ is_merge_like() {
   # "pr merge" with gh after it or in a variable (echo 'pr merge 7' | xargs gh; set -- pr merge 7; gh "$@")
   if printf '%s' "$f" | grep -qE '(^|[^a-z0-9])pr[^a-z0-9]+merge'; then return 0; fi
   case "$f" in
-    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*enqueuepullrequest*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
+    *gh*api*[\$\`]*|*gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*enqueuepullrequest*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
   esac
   return 1
 }
@@ -455,17 +455,28 @@ inert() {
 # its value when an earlier VAR= of the call set it to a plain literal (no ? # and no merge); any other
 # $VAR, {branch} or other placeholder is opaque: its value can hold "pulls/7/merge?" and swallow the rest of
 # the path as a query. Denied: graphql, a $( ) or backtick, a quoted endpoint, any opaque part.
+APIEP=""; APIMUT=0  # set by apiok: the raw endpoint, and 1 when the request can be other than GET
 apiok() {
-  local w ep="" skip="" v n
+  local w ep="" skip="" v n meth=""
+  APIMUT=0
   for w in ${1#gh}; do
+    if [ "$skip" = m ]; then meth=$w; skip=""; continue; fi
     if [ -n "$skip" ]; then skip=""; continue; fi
     case "$w" in
       api) ;;
-      -X|--method|-H|--header|-f|--raw-field|-F|--field|-q|--jq|-t|--template|--input|--hostname|-p|--preview|--cache) skip=1 ;;
+      -X|--method) skip=m ;;
+      -X?*) meth=${w#-X} ;;
+      --method=*) meth=${w#--method=} ;;
+      -f|--raw-field|-F|--field|--input) skip=1; APIMUT=1 ;;
+      -f?*|-F?*|--raw-field=*|--field=*|--input=*) APIMUT=1 ;;
+      -H|--header|-q|--jq|-t|--template|--hostname|-p|--preview|--cache) skip=1 ;;
       -*) ;;
-      *) ep=$w; break ;;
+      *) [ -n "$ep" ] || ep=$w ;;
     esac
   done
+  # a field makes gh send POST unless the method is GET; a method the hook cannot read can be PUT
+  case "$meth" in '') ;; [Gg][Ee][Tt]) APIMUT=0 ;; *) APIMUT=1 ;; esac
+  APIEP=$ep
   case "$ep" in ''|QUOTED|graphql|*\$\(*|*'`'*) return 1 ;; esac
   ep=$(printf '%s' "$ep" | sed -E 's/\{(owner|repo)\}/x/g')
   while :; do
@@ -669,6 +680,14 @@ while IFS= read -r seg; do
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     case "$FL" in *a*) deny "a gh api merge path inside a quoted string cannot be judged; write the path without quotes." ;; esac
+    # A merge is a PUT (pulls/<n>/merge) or a POST (repos/<o>/<r>/merges). An endpoint built from a variable or
+    # substitution that apiok cannot resolve, in a request that can be other than GET, may be one (A=pulls/7;
+    # B=merge; gh api -X PUT repos/o/r/$A/$B): deny it, with or without merge-like text in the call.
+    if ! apiok "$seg"; then
+      case "$APIEP" in
+        *'$'*|*'`'*) [ "$APIMUT" -eq 0 ] || deny "a gh api write request whose endpoint is built from a variable or substitution cannot be judged; write the endpoint literally." ;;
+      esac
+    fi
     # An endpoint built from a variable or substitution next to the word merge ($P/merge) cannot be judged.
     case "$seg" in
       *'$'*|*'`'*)
