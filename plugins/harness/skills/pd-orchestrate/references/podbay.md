@@ -103,6 +103,13 @@ delivery confirmation for messages exist only between sessions of the same machi
 
 ## Clean up
 
-Stop a ticket's worker and reviewer only when the ticket is `done`, `blocked` or `skipped`: a
-failed acceptance check reopens it. Leave workspaces in place and list them in your final report;
-the owner decides when they go.
+Stop each session as soon as its work is finished, without waiting for the end of the run:
+- a ticket's worker and reviewer when the ticket becomes `done`, `blocked` or `skipped` (not
+  earlier: a failed acceptance check reopens it);
+- a Fable advisor session when you have checked its `advise-result` and have no question left;
+- any other session you started when it has reported and nothing waits on it.
+
+`podbay-dev start ... --resume latest` brings a stopped session back with its conversation if a
+ticket reopens. At the end of the run no session you started is still running. Leave workspaces in
+place and list them, and the sessions you stopped, in your final report; the owner decides when the
+workspaces go.

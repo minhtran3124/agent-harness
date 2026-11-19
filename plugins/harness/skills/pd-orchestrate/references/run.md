@@ -105,7 +105,8 @@ whether the ticket is risky, the suite command, the worker's session name and ch
    which are for a single session that tests and fixes its own branch. Then wait for CI on the
    receipt's SHA: no checks, a pending check, all checks skipped, or CI on another SHA is not
    green. A new commit after the receipt needs a new receipt.
-5. Mark the ticket `done` in the ledger only now. Keep its worker and reviewer sessions until then.
+5. Mark the ticket `done` in the ledger only now, then stop its worker and reviewer sessions
+   (`podbay.md`, Clean up).
 
 ## Final report to the owner
 
