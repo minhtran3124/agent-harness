@@ -217,9 +217,10 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
     function loose(s) { return fold(s) ~ /gh.*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
     function wordy(s) { return s ~ /(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$).*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
     function tc() { return (KIND[sp] == "C") ? sp : sp - 1 }
-    function seg(f) { if (!CUR[f]) { n++; CUR[f] = n; OUT[n] = ""; RAW[n] = ""; QD[n] = ""; QH[n] = "" } return CUR[f] }
+    function seg(f) { if (!CUR[f]) { n++; CUR[f] = n; OUT[n] = ""; RAW[n] = ""; EX[n] = ""; QD[n] = ""; QH[n] = "" } return CUR[f] }
     function out(s,   i) { i = seg(tc()); OUT[i] = OUT[i] s }
-    function raw(s,   f) { for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f]) RAW[CUR[f]] = RAW[CUR[f]] s }
+    # RAW: all text of the segment; EX: the part the shell expands (not single quotes, $\047 \047, quoted heredocs)
+    function raw(s,   f) { for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f]) { RAW[CUR[f]] = RAW[CUR[f]] s; if (!NOEX) EX[CUR[f]] = EX[CUR[f]] s } }
     function qd(s,   i) { i = seg(tc()); QD[i] = QD[i] s " " }
     function bad(why) { if (BAD == "") BAD = why }
     function flush(f) {
@@ -232,14 +233,15 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
     # $( or a $-quote (dollar-single or dollar-double). Any other form ($(( )), $[ ], ${s:x}, ${a[x]}, ${!x}, zsh ${(e)x} or $~x)
     # can evaluate a value as code or arithmetic, and an array subscript in that value runs $( ).
     function plainexp(t) {
+      gsub(/\\./, "", t)
       gsub(/\$\{([A-Za-z_][A-Za-z0-9_]*|[0-9#?@*$!-])\}/, "", t)
       gsub(/\$\(\(/, "$[", t)
       gsub(/\$([A-Za-z_(\047"#?@*$!0-9-]|$)/, "", t)
       return t !~ /\$/ }
-    function pseudo(name, body) { n++; OUT[n] = name; RAW[n] = body; QD[n] = body; QH[n] = "" }
+    function pseudo(name, body) { n++; OUT[n] = name; RAW[n] = body; EX[n] = body; QD[n] = body; QH[n] = "" }
     function endbody(   f, o) {  # the body HB of heredoc hcur is complete
-      o = HO[hcur]; RAW[o] = RAW[o] " " HB; QD[o] = QD[o] HB " "
-      for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f] && CUR[f] != o) RAW[CUR[f]] = RAW[CUR[f]] " " HB
+      o = HO[hcur]; RAW[o] = RAW[o] " " HB; QD[o] = QD[o] HB " "; if (!HQ[hcur]) EX[o] = EX[o] " " HB
+      for (f = 0; f <= sp; f++) if (KIND[f] == "C" && CUR[f] && CUR[f] != o) { RAW[CUR[f]] = RAW[CUR[f]] " " HB; if (!HQ[hcur]) EX[CUR[f]] = EX[CUR[f]] " " HB }
       if (!HQ[hcur] && HB ~ /\$\(|`|\$\[|\$\{/ && !spans(HB)) pseudo("HEREDOC-SUBST", HB)
       hcur++; HB = ""; HJ = "" }
     # spans <body>: an unquoted heredoc body is data except its substitutions. Each simple $( ... ) is put
@@ -288,7 +290,7 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         for (i = 1; i <= len; i++) { c = substr(line, i, 1); nx = substr(line, i + 1, 1)
           if (sq) {
             if (sq == 2 && c == "\\") { sqb = sqb c nx; i++ }
-            else if (c == "\047") { sq = 0; quoted(sqb) }
+            else if (c == "\047") { sq = 0; NOEX = 1; quoted(sqb); NOEX = 0 }
             else sqb = sqb c
           } else if (bt) {
             if (c == "\\") { btb = btb c nx; i++ }
@@ -353,7 +355,7 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         if (wordy(s)) f = f "w"
         s2 = s; sub(/(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$)/, " ", s2); if (wordy(s2)) f = f "g"
         if (fold(QH[i]) ~ /pulls\/[^ ]*merge|repos\/[^ ]*\/merges/) f = f "a"
-        if (!plainexp(RAW[i])) f = f "x"
+        if (!plainexp(EX[i])) f = f "x"
         if (f == "") f = "-"
         print f "\t" OUT[i] }
     }')
@@ -435,11 +437,23 @@ inert() {
 CDCFG=0
 cfgsure() {
   case "$1" in
-    *.git*|*hooks/*|hooks|*husky*|*lefthook*|*pre-commit*|*gh/*) return 0 ;;
+    .git|.git/*|*/.git|*/.git/*|*.gitconfig*|*hooks/*|hooks|*husky*|*lefthook*|*pre-commit*|*.config/gh*|*gh/config.yml|*gh/hosts.yml) return 0 ;;
   esac
   return 1
 }
 cfgmaybe() {
+  local w=$1
+  # A file under a variable directory ($SCRATCH/pr-body.md) whose own name is a plain data file is not a
+  # configuration: git, gh and rg read no configuration with these names (hooks and config names are sure).
+  case "$w" in
+    '$'*)
+      # shellcheck disable=SC2016  # a literal $ in the sed pattern
+      w=$(printf '%s' "$w" | sed -E 's#^\$(\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)/##')
+      case "$w" in
+        *'$'*|*'`'*|*'*'*|*'?'*|*'['*|.*|*/.*|*[Cc]onfig*) ;;
+        *.md|*.txt|*.json|*.log|*.csv|*.html|*.out|*.diff|*.patch) return 1 ;;
+      esac ;;
+  esac
   case "$1" in
     .*|*/.*|*[Cc]onfig*|*rc|*'$'*|*'`'*|*'*'*|*'?'*|*'['*|QUOTED|'~'*|-) return 0 ;;
   esac
