@@ -636,14 +636,14 @@ function stageIntent(t) {
 
 function stageResearch(t, intent) {
   const w = newWt(`research-${t.n}`, null, integRef)
-  const build = advice => w.setup + head(t, 'xia2',
+  const build = advice => w.setup + head(t, 'pd-xia2',
     `Stage: research for a depth L ticket. Write the research brief and return its full text as research_md.\nIntent: ${JSON.stringify(intent)}${advice}`, w.dir)
   return runStage(t, 'research', build, RESEARCH_SCHEMA, { model: MODEL.research, effort: EFFORT.research })
 }
 
 function stageDesign(t, intent, research) {
   const w = newWt(`design-${t.n}`, null, integRef)
-  const build = advice => w.setup + head(t, 'brainstorming',
+  const build = advice => w.setup + head(t, 'pd-brainstorming',
     `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) with adr true and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file.\n` +
     `Intent: ${JSON.stringify(intent)}\nResearch brief:\n${research.research_md}${advice}`, w.dir)
   return runStage(t, 'design', build, DESIGN_SCHEMA, { model: stageModel('design', t.depth), effort: EFFORT.design })
@@ -651,7 +651,7 @@ function stageDesign(t, intent, research) {
 
 function stagePlan(t, intent, extra) {
   const w = newWt(`plan-${t.n}`, null, integRef)
-  const build = advice => w.setup + head(t, 'writing-plans',
+  const build = advice => w.setup + head(t, 'pd-writing-plans',
     `Stage: plan. Write no file; return the full plan text as plan_md, in the shape of ${pluginDir}/templates/specs/plan.md, plus plan_steps (the script saves it as specs/<slug>/plan.md).\n` +
     `Intent: ${JSON.stringify(intent)}\n${extra || ''}${advice}`, w.dir)
   return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan })
@@ -744,7 +744,7 @@ async function stageSecurity(t, impl, branch) {
 function stageImplement(t, branch, planText, boundary, qa) {
   const w = newWt(`t${t.n}`, branch, integRef, !!qa)
   const qaRule = qa ? `Acceptance tests already exist on your branch under ${qa.dir}/ (${(qa.files || []).join(', ')}). Make them pass. Never edit, skip, delete or weaken anything under ${qa.dir}/. If one is wrong, return a decision titled 'Flawed acceptance test: <name>' with needs_review true and leave that part undone.\n` : ''
-  const build = advice => w.setup + head(t, 'implement',
+  const build = advice => w.setup + head(t, 'pd-implement',
     `Stage: implement. You cannot start other agents, so act as the implementer yourself (${pluginDir}/agents/implementer.md): take the plan steps one at a time. ` +
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
@@ -759,7 +759,7 @@ function stageVerify(t, impl, mode) {
   const w = base ? newWt(`verify-base-${t.n}`, null, integRef) : null
   const dir = base ? w.dir : impl.worktree
   const build = advice => (base ? w.setup : '') + head(t, null,
-    `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above; when the body has none, use the one in the owner-confirmed decisions. ` +
+    `Stage: verify. Read ${pluginDir}/skills/pd-verify/SKILL.md and follow it. Read the Verify: row of the issue body above; when the body has none, use the one in the owner-confirmed decisions. ` +
     (base
       ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
       : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
@@ -883,7 +883,7 @@ function stageFinish(t, impl, verifyResult) {
   const ver = verifyResult
     ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
     : ''
-  const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
+  const build = advice => head(t, 'pd-finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
   return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.finish, effort: EFFORT.finish })
 }
 
@@ -1749,8 +1749,8 @@ function uatAgent(label, wtName, t, body, owner, configPath, qa = false) {
     return call(qprompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.qaVerify, effort: EFFORT.qaVerify, agentType: 'harness:qa-verifier' }, `${pluginDir}/agents/qa-verifier.md`)
   }
   const prompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
-    `Stage: uat. Read ${pluginDir}/skills/uat/SKILL.md and follow it with Mode: auto, only after your worktree exists. Never ask anyone. ` +
-    `The recipe file is ${pluginDir}/skills/verify/references/run-app.md. ` +
+    `Stage: uat. Read ${pluginDir}/skills/pd-uat/SKILL.md and follow it with Mode: auto, only after your worktree exists. Never ask anyone. ` +
+    `The recipe file is ${pluginDir}/skills/pd-verify/references/run-app.md. ` +
     `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep the evidence local and uncommitted; fix nothing.\n\n` +
     `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
     (owner ? `Owner-confirmed decisions (the owner's own words):\n<<<\n${owner}\n>>>\n\n` : '') +
@@ -1773,7 +1773,7 @@ const uatNotRun = (n, reason, qa = false) => addDecision(n, 'uat', {
   decision: `Continue without the ${qa ? 'QA check' : 'UAT'}; the ticket stays done and the PR body says it did not run.`,
   why: 'A missing config, a start failure or an agent failure is not an acceptance failure, so no code fix is attempted.',
   consequences: qa ? 'The delivered result was not checked against the original request.' : 'The running app was not checked against the original request.',
-  how_to_reverse: qa ? `Check the acceptance criteria of #${n} by hand.` : `Run /harness:uat ${n} by hand.`,
+  how_to_reverse: qa ? `Check the acceptance criteria of #${n} by hand.` : `Run /harness:pd-uat ${n} by hand.`,
   needs_review: true, adr: false,
 })
 

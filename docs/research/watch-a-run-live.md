@@ -1,6 +1,6 @@
 # Watch a run live on the board
 
-You run `/harness:autopilot` and want to see what the run does right now. The run board shows it in a
+You run `/harness:pd-autopilot` and want to see what the run does right now. The run board shows it in a
 browser. It needs no install and no build.
 
 ## Steps
@@ -13,7 +13,7 @@ browser. It needs no install and no build.
    ```
 
 3. Open `http://127.0.0.1:4317` in your browser.
-4. Start the board before or during `/harness:autopilot`. Both work. The board shows the newest run of
+4. Start the board before or during `/harness:pd-autopilot`. Both work. The board shows the newest run of
    the project, and it switches to a newer run by itself.
 
 ## What you see

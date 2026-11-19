@@ -1,6 +1,6 @@
 ---
 problem_type: knowledge
-module: decision-record/adr
+module: pd-decision-record/adr
 tags: adr, decision-record, needs-review, boundary, lifecycle, review-note
 severity: standard
 applicable_when: When you change how the harness decides which decisions get an ADR file, how an ADR is numbered or closed, or where a scope note is recorded.
@@ -9,7 +9,7 @@ confidence: high
 confirmed_at: 2026-11-05
 affects:
   - docs/adr/README.md
-  - plugins/harness/skills/decision-record/SKILL.md
+  - plugins/harness/skills/pd-decision-record/SKILL.md
   - plugins/harness/scripts/write_adrs.py
   - docs/hooks.md
 ---
@@ -36,7 +36,7 @@ proposes is a separate follow-up issue in the milestone.
 An ADR records a significant decision that an agent made without blocking the run. The reader is the
 PR reviewer, once, in the PR. `docs/adr/README.md` says it lets a reviewer see "what was decided,
 why, and how to undo it, without reading the whole diff". A future agent is a second reader only by
-accident: the single skill that searches the folder is `xia2` (`plugins/harness/skills/xia2/SKILL.md:14`).
+accident: the single skill that searches the folder is `xia2` (`plugins/harness/skills/pd-xia2/SKILL.md:14`).
 The other skills name one file, `0001-workflow-capabilities.md`, by path.
 
 ## 2. Criteria: is `needs_review` the right gate

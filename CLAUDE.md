@@ -14,8 +14,8 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 
 ## Models
 
-- Main session: Sonnet 5.5 by default. `/harness:autopilot` reads its models from the autopilot
-  profile (`plugins/harness/skills/autopilot/profile.json`, overridden per project by
+- Main session: Sonnet 5.5 by default. `/harness:pd-autopilot` reads its models from the autopilot
+  profile (`plugins/harness/skills/pd-autopilot/profile.json`, overridden per project by
   `<repo>/.claude/autopilot-profile.json`); it warns when the session model differs from the profile's
   `orchestrator`. The profile can set every `ship.js` stage. Without a profile entry, `implement` and `fix` run
   Sonnet 5.5 at `medium`, except that `implement` runs Opus 5.5 at `medium` at depth L.
@@ -75,7 +75,7 @@ evidence of `plugins/harness/skills/pd-orchestrate/references/protocol.md`, whic
 `plugins/harness/scripts/fleet-check.sh` (warn mode) check. `ship.js` stays until the trial of
 ADR 0041 ends.
 
-Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above live in `plugins/harness/skills/` and run as `/harness:<name>`; `qa-writer`, `qa-verifier` and `security-reviewer` are agents in `plugins/harness/agents/`. `/harness:autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
+Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above live in `plugins/harness/skills/` and run as `/harness:<name>`; `qa-writer`, `qa-verifier` and `security-reviewer` are agents in `plugins/harness/agents/`. `/harness:pd-autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
 
 ## Rules
 
@@ -87,7 +87,7 @@ Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above 
 
 ## Hooks
 
-Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail; all hooks fail open except `merge-guard.sh`, which fails closed, and `stop-evidence.sh` on its risk floor. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:setup` merges it into a consuming project.
+Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail; all hooks fail open except `merge-guard.sh`, which fails closed, and `stop-evidence.sh` on its risk floor. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:pd-setup` merges it into a consuming project.
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|

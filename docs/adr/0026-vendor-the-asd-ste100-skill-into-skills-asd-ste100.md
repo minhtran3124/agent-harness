@@ -18,16 +18,16 @@ date: 2026-10-15
 ## Options
 
 - Commit the `npx skills` install.
-- Vendor into `skills/asd-ste100/`.
+- Vendor into `skills/pd-asd-ste100/`.
 - Vendor only the linter under `scripts/`.
 
 ## Decision
 
-Vendor into `skills/asd-ste100/` from upstream `3944283c18`, with three recorded deltas in `UPSTREAM.md`: an `allowed-tools` line, no upstream `README.md` or invalid-example fixture, and a linter path form that the doc-truth lint accepts.
+Vendor into `skills/pd-asd-ste100/` from upstream `3944283c18`, with three recorded deltas in `UPSTREAM.md`: an `allowed-tools` line, no upstream `README.md` or invalid-example fixture, and a linter path form that the doc-truth lint accepts.
 
 ## Why
 
-Vendor into `skills/asd-ste100/` from upstream `3944283c18`, with three recorded deltas in `UPSTREAM.md`: an `allowed-tools` line, no upstream `README.md` or invalid-example fixture, and a linter path form that the doc-truth lint accepts.
+Vendor into `skills/pd-asd-ste100/` from upstream `3944283c18`, with three recorded deltas in `UPSTREAM.md`: an `allowed-tools` line, no upstream `README.md` or invalid-example fixture, and a linter path form that the doc-truth lint accepts.
 
 ## Consequences
 

@@ -27,15 +27,15 @@ TICKET `<id>`
 
 Steps (do every step that applies, in order; the harness skills and agents named here are installed):
 
-1. Intake: run the `harness:intake` skill on the ticket. Write its verdict (READY | CONFIRM | GRILL |
+1. Intake: run the `harness:pd-intake` skill on the ticket. Write its verdict (READY | CONFIRM | GRILL |
    BLOCKED) and depth (S | M | L) into `specs/<id>/intent.md`. If the verdict is CONFIRM or GRILL, ask
-   the owner (for GRILL use the `harness:grilling` skill) and wait for the answers before you go on;
+   the owner (for GRILL use the `harness:pd-grilling` skill) and wait for the answers before you go on;
    write them into `specs/<id>/decision.md`. If BLOCKED, stop and report.
-2. Design (depth L only): use the `harness:brainstorming` skill; write `specs/<id>/design.md`.
-3. Plan: use the `harness:writing-plans` skill; write `specs/<id>/plan.md`.
+2. Design (depth L only): use the `harness:pd-brainstorming` skill; write `specs/<id>/design.md`.
+3. Plan: use the `harness:pd-writing-plans` skill; write `specs/<id>/plan.md`.
 4. Acceptance tests (depth M and L): have the `harness:qa-writer` agent write blind acceptance tests
    from the ticket and its acceptance criteria only, before any code. Commit them first.
-5. Implement: use the `harness:implement` skill (one implementer subagent per plan step, each in its
+5. Implement: use the `harness:pd-implement` skill (one implementer subagent per plan step, each in its
    own worktree). Run the full suite `bash scripts/run-tests.sh` and keep the output.
 6. Security review: if the ticket is risky (deletion, releases or other irreversible actions,
    secrets, auth, permissions), have the `harness:security-reviewer` agent review the change before
@@ -43,10 +43,10 @@ Steps (do every step that applies, in order; the harness skills and agents named
 7. Code review and intent review: send a message to the session `<orchestrator session>` with the
    ticket id, the checkout path and a short summary. Another session does the review; do not review
    your own change. Wait for the result and address any finding.
-8. Acceptance check: for a ticket with a running app or server (FE or BE), run the `harness:uat`
+8. Acceptance check: for a ticket with a running app or server (FE or BE), run the `harness:pd-uat`
    skill against the running app; for a ticket with no app at depth M or L, have the
    `harness:qa-verifier` agent check it.
-9. Decisions: record each decision you made on your own (the `harness:decision-record` skill); an
+9. Decisions: record each decision you made on your own (the `harness:pd-decision-record` skill); an
    early decision with a real trade-off gets an ADR file through its script.
 10. Instead of a PR: commit on the local branch `feature/<id>`. Do not push, do not open a PR, do not
     touch main, never merge, never force-push.

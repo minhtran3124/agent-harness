@@ -1,10 +1,10 @@
 # recall eval
 
-Prompts and assertions: `plugins/harness/skills/recall/evals/evals.json`. Raw outputs: `runs/<date>/<id>-with-skill.md` and `<id>-baseline.md`.
+Prompts and assertions: `plugins/harness/skills/pd-recall/evals/evals.json`. Raw outputs: `runs/<date>/<id>-with-skill.md` and `<id>-baseline.md`.
 
 Command, with the skill (the baseline arm uses the same flags and the bare prompt):
 
-    claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:recall <prompt>'
+    claude -p --plugin-dir plugins/harness --max-budget-usd 1 --allowedTools=Read,Grep,Glob -- '/harness:pd-recall <prompt>'
 
 Scoring (phrase match, same rule for both arms):
 

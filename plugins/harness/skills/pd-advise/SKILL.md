@@ -30,8 +30,8 @@ You choose the method. What usually pays off:
   (`git fetch <checkout path> <branch>` brings it here).
 - **Go wide, then narrow.** Send several `harness:researcher` or `Explore` agents in parallel over
   independent questions (how the code works, how others solved it, what the docs say).
-  `harness:xia2` for how a part works; `harness:brainstorming` when the answer is a choice among
-  designs; for a defect, Read `${CLAUDE_PLUGIN_ROOT}/skills/diagnosing-bugs/SKILL.md`.
+  `harness:pd-xia2` for how a part works; `harness:pd-brainstorming` when the answer is a choice among
+  designs; for a defect, Read `${CLAUDE_PLUGIN_ROOT}/skills/pd-diagnosing-bugs/SKILL.md`.
 - **Prove the answer.** Build the smallest prototype that shows your solution works, on a scratch
   branch in this workspace. A solution you ran is worth more than three you reasoned about.
 - **Attack your own answer.** Before you send it, ask an `harness:advisor` agent or a fresh agent

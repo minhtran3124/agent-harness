@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../lib.sh"
-SKILL="plugins/harness/skills/compound/SKILL.md"
+SKILL="plugins/harness/skills/pd-compound/SKILL.md"
 
 t "compound preserves all four complete-track gates"
 for track in bug knowledge decision failure; do grep -q "| $track |" "$ROOT/$SKILL" || { fail "missing $track"; finish; }; done
@@ -16,7 +16,7 @@ t "compound treats a prediction → measured pair as a learning source"
 grep -qF 'prediction → measured' "$ROOT/$SKILL" && pass || fail "prediction → measured source missing"
 
 t "compound decision-track docs use plugin-root paths, not repo-relative ones"
-D="$ROOT/plugins/harness/skills/compound"
+D="$ROOT/plugins/harness/skills/pd-compound"
 if grep -n 'plugins/harness/scripts/write_adrs\|`docs/adr/README.md`' "$D/templates/decision-consolidated.md" "$D/README.md" >/dev/null; then fail "repo-relative write_adrs path or docs/adr/README.md reference"; else pass; fi
 
 t "compound decision track sources how_to_reverse/confidence from the extractor and links ADRs, not solutions"

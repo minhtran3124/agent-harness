@@ -2,7 +2,7 @@
 """Compare the STE hard count of each prose file with its baseline. Warn only.
 
 The script lints every `plugins/harness/skills/*/*.md`, `skills/*/*/*.md`, `rules/*.md` and `agents/*.md` file, plus `agents/*.md` at the repo root,
-with `plugins/harness/skills/asd-ste100/scripts/ste-lint.py --json`. It reads the `hard_count` field. Advisory
+with `plugins/harness/skills/pd-asd-ste100/scripts/ste-lint.py --json`. It reads the `hard_count` field. Advisory
 findings do not count. It compares each count with `scripts/ste-baseline.json` and prints:
 
   WARN <file>: hard <n> > baseline <b>     the file got worse (a missing entry has baseline 0)
@@ -39,7 +39,7 @@ PLUGIN = "plugins/harness"
 # The plugin's prose, plus the two consumer-owned files in the repo's own agents/ folder.
 GLOBS = (f"{PLUGIN}/skills/*/*.md", f"{PLUGIN}/skills/*/*/*.md", f"{PLUGIN}/rules/*.md",
          f"{PLUGIN}/agents/*.md", "agents/*.md")
-LINTER = f"{PLUGIN}/skills/asd-ste100/scripts/ste-lint.py"
+LINTER = f"{PLUGIN}/skills/pd-asd-ste100/scripts/ste-lint.py"
 BASELINE = "scripts/ste-baseline.json"
 
 # Rules that the check and --update both silence.
@@ -49,7 +49,7 @@ BASELINE = "scripts/ste-baseline.json"
 #   semicolon (327 hits): 5 of 5 true. One is in a table cell. The linter skips inline code.
 #   synonym-rotation (40 hits): 3 of 5 true. 2 are doubtful (a field name, an example file).
 #   phrasal-verb (5), nominalization (3), marketing-adjective (7): all hits are in
-#     skills/asd-ste100, which quotes the bad words as examples. These are mentions, not
+#     skills/pd-asd-ste100, which quotes the bad words as examples. These are mentions, not
 #     table or inline-code errors. The per-file baseline holds them, so the rules stay on.
 # No rule has mostly false findings on tables or inline code, so that test disables none.
 # User decision of 2026-10-15: disable synonym-rotation for a different reason. Test H3

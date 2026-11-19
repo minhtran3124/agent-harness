@@ -20,7 +20,7 @@ cp "$STUB/state.json" "$OUT/gh-state-before.json"
 cp "$EVALS/mocks/gh" "$STUB/gh"
 : >"$OUT/gh-calls.jsonl"
 git -C "$BOX" init -q
-COMMAND=$(sed -n '/^\/harness:tickets/p' "$EVALS/$CASE/prompt.md")
+COMMAND=$(sed -n '/^\/harness:pd-tickets/p' "$EVALS/$CASE/prompt.md")
 OWNER=$(sed -n '/^Owner script: /p' "$EVALS/$CASE/prompt.md")
 SYS="You run inside an eval. In this eval the AskUserQuestion dialog works through a file, so the dialog is available. Each time the skill says to ask the owner, use the Write tool to save the full question text and its options to a new file q1.md, q2.md and so on, then take the reply from the owner script and go on. If the owner script has no reply for a question, end the run there. $OWNER"
 start=$(date +%s)

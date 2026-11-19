@@ -10,7 +10,7 @@ Add an entry only when the pattern:
 
 ## [2026-06-11] meta-repo-signal-remapping
 **Type:** knowledge
-**Module:** skills/xia2 / agents/PROJECT.md (bootstrap-xia2 retired 2026-07-17)
+**Module:** skills/pd-xia2 / agents/PROJECT.md (bootstrap-xia2 retired 2026-07-17)
 **Tags:** meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 **Applicable when:** Bootstrapping or updating xia2 PROJECT.md (or any risk-classification config) for a repo whose "application" is the tooling itself — skills, hooks, scripts.
 
@@ -60,7 +60,7 @@ Example entry shape:
 **Tags:** not-observed-not-absent, false-premise, plan-blind-review, correctness-pass, ground-truth, review-oracle, resync-conflict
 **Applicable when:** Watch for this when a spec, design, or plan asserts that something "is never shipped" / "does not exist" / "can never conflict", and downstream code, tests, and reviews all treat that absence claim as true without one independent `ls` or `git ls-files` against ground truth.
 
-A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
+A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/pd-xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
 
 **Full doc:** docs/solutions/harness/unverified-premise-propagates-through-plan-anchored-reviews.md
 ---
@@ -188,7 +188,7 @@ An STE rewrite of `feature-intake` dropped two conditions in one task. A sentenc
 
 ## [2026-10-16] ste-ratchet-blind-to-fenced-prompt-prose
 **Type:** failure
-**Module:** skills/asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
+**Module:** skills/pd-asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
 **Tags:** ste100, ste-lint, ratchet-blind-spot, fenced-dispatch-prompt, green-is-not-correct
 **Applicable when:** You change the prose of a `*-prompt.md` dispatch prompt and use the STE lint count (the baseline ratchet or the review package's `## STE lint` section) as evidence.
 
