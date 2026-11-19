@@ -37,6 +37,17 @@ until you stop it. Verifies: a board for this project answers on the printed URL
 that the board outlives the Claude Code session, or that the directory is the one Claude Code writes its runs under (if
 the board shows "No ship.js run found" during a run, start it with `--project <path>` by hand).
 
+## Health check
+
+`GET /healthz` is a cheap check for a script: it does not load the page or the event stream. It answers 200 with
+`content-type: application/json` and `{"ok":true,"run":<run id or null>,"running":<true|false>}`. `run` is the id
+of the run the board shows (`null` when there is none); `running` is true while that run has not ended. A query
+string is ignored.
+
+```
+curl -s http://127.0.0.1:4317/healthz
+```
+
 ## Embed it in another page
 
 - `?embed=1` hides the board's own header and footer note and makes the background transparent, so a host

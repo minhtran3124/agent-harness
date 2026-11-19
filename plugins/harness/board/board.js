@@ -342,6 +342,10 @@ function start(opts) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(flow));
     }
+    if (url === '/healthz') {
+      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      return res.end(JSON.stringify({ ok: true, run: tail ? tail.run.id : null, running: !!tail && !tail.ended }));
+    }
     if (url === '/state.json') {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify({ project_dir: projDir, run: tail ? tail.run.id : null, events: history }));
