@@ -17,11 +17,11 @@
 # found with `gh pr view`. With no number it uses the PR of the current branch; if that lookup fails
 # it exits silently. `clean-worktrees.sh SessionStart` takes no payload and sweeps every branch,
 # answering with additionalContext. A SessionStart sweep has a time budget (CLEAN_BUDGET seconds, default 20, under the 30s hook timeout; 0 = none; other modes default to none): it is checked before each branch, so a branch is never left half-cleaned, and the sweep stops with a "stopped" line in the summary. Run by hand with no argument, it sweeps and prints plain text.
-# Dry run: CLEAN_DRY_RUN set to any value except empty or 0 (use 1) makes no write at all, in every mode: no
+# Dry run: CLEAN_DRY_RUN set to any value except empty or 0 (use 1) makes none of its own writes, in every mode: no
 # worktree remove, branch delete, upstream config write, `git worktree prune` or CLEAN_RECREATE push. It chooses
 # the same branches and prints `would remove worktree <path>`, `would delete branch <name>` and
 # `would recreate <remote>/<name>` where it reports today (stdout by hand, additionalContext in a hook).
-# `git fetch --prune` still runs: it only updates remote-tracking refs.
+# `git fetch --prune` still runs: it only updates remote-tracking refs (and FETCH_HEAD).
 set -u
 SECONDS=0
 only=""  # set in hook mode: clean only the branch of the PR that was just merged
@@ -178,8 +178,9 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
     if in_use "$p"; then out+="kept $b: a running process uses $p"$'\n'; continue; fi
     if [ -n "$dry" ]; then
       # `git worktree remove` would refuse a locked worktree or one with changes (untracked files count).
+      # A failed status (broken or unreadable worktree) also counts as kept, so the report never overstates.
       if git worktree list --porcelain | awk -v p="$p" '/^worktree /{w=substr($0,10)} w==p && /^locked/{f=1} END{exit !f}' \
-        || [ -n "$(git --no-optional-locks -C "$p" status --porcelain 2>/dev/null)" ]; then out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; fi
+        || ! st=$(git --no-optional-locks -C "$p" status --porcelain 2>/dev/null) || [ -n "$st" ]; then out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; fi
       out+="would remove worktree $p"$'\n'
     else
       git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
