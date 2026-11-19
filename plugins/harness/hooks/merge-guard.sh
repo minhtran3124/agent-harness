@@ -212,7 +212,9 @@ judge_api_merge() {  # judge_api_merge <segment>
 segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g; s/([<>])&/\1 /g; s/>\|/> /g' | awk '
     # fold: lowercase, quotes and backslashes removed. Words that only start with "merge" (mergeable, mergedAt,
     # mergeStateStatus, mergeCommit, merge-base, merge_method, merge-guard) are not a merge and become "mrg".
-    function fold(s) { s = tolower(s); gsub(/["\047\\]/, "", s); gsub(/[\n\t]/, " ", s)
+    # A backslash-newline is removed first: the shell joins it in code, double quotes and unquoted heredocs, and an
+    # interpreter joins it inside its own string literal (single quotes, a quoted heredoc), so "mer\<newline>ge" counts.
+    function fold(s) { s = tolower(s); gsub(/\\\n/, "", s); gsub(/["\047\\]/, "", s); gsub(/[\n\t]/, " ", s)
       gsub(/merge(able|d|state|commit|base|_base|-base|-guard|_state|_commit|_method)/, "mrg", s); return s }
     function loose(s) { return fold(s) ~ /gh.*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
     function wordy(s) { return s ~ /(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$).*merge|(^|[^a-z0-9])pr[^a-z0-9]+merge|pulls\/.*merge|mergepullrequest|enablepullrequestautomerge|mergebranch|enqueuepullrequest|repos\/.*\/merges/ }
