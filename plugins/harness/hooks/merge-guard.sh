@@ -34,12 +34,15 @@ payload=$(cat)
 # in its JSON form removed first) so "g""h", GH-case, me\rge or a word continued on the next line do not
 # skip the guard.
 fold() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d '\n' | sed 's/\\\\\\n//g' | tr -d "\"'\\\\"; }
+# is_merge_like <text> [old]: the pre-filter. With "old", only the merge patterns; without it, also a gh api
+# call with an expansion (its endpoint may be built from variables, #680 F9).
 is_merge_like() {
   local f; f=$(fold "$1")
   # "pr merge" with gh after it or in a variable (echo 'pr merge 7' | xargs gh; set -- pr merge 7; gh "$@")
   if printf '%s' "$f" | grep -qE '(^|[^a-z0-9])pr[^a-z0-9]+merge'; then return 0; fi
+  if [ -z "${2:-}" ]; then case "$f" in *gh*api*[\$\`]*) return 0 ;; esac; fi
   case "$f" in
-    *gh*api*[\$\`]*|*gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*enqueuepullrequest*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
+    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*enqueuepullrequest*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
   esac
   return 1
 }
@@ -61,6 +64,24 @@ fi
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null) || deny "the command could not be parsed."
 [ -n "$cmd" ] || deny "the command is empty or could not be parsed."
 is_merge_like "$cmd" || exit 0
+# mergeword <text>: the text holds the word merge (lowercase, quotes and backslashes removed, harmless words
+# such as mergeable or merge-base mapped away).
+mergeword() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | sed -E 's/merge(able|d|state|commit|base|_base|-base|-guard|_state|_commit|_method)/mrg/g' | grep -q 'merge'
+}
+# APIONLY: the call passed the pre-filter only as a gh api call with an expansion. It is judged only by the
+# gh api endpoint rule (F9); the other rules keep the old gate. With no "merg" at all, F9 cannot apply.
+APIONLY=0
+if ! is_merge_like "$cmd" old; then
+  # unmapped substring: a stored value can be sliced at run time (B=mergeable; ${B%able})
+  printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' || exit 0
+  APIONLY=1
+fi
+# RTFALL: the call can move any text into a variable at run time ($( ), backticks, process substitution,
+# read, mapfile, source), so every word merge in it counts for F9 (RTM below).
+RTFALL=0
+printf '%s' "$cmd" | grep -qE '\$\(|`|[<>]\(|(^|[^A-Za-z0-9_-])(read|mapfile|readarray|source)([^A-Za-z0-9_-]|$)' && RTFALL=1
+RTM=0  # the word merge where it can reach a gh api endpoint at run time
 
 DEADLINE=20  # seconds for the whole hook; the registered hook timeout is 30
 GH_OUT=""
@@ -366,6 +387,7 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         s2 = s; sub(/(^|[^a-z0-9_-])gh([^a-z0-9_.-]|$)/, " ", s2); if (wordy(s2)) f = f "g"
         if (fold(QH[i]) ~ /pulls\/[^ ]*merge|repos\/[^ ]*\/merges/) f = f "a"
         if (!plainexp(EX[i])) f = f "x"
+        r = tolower(RAW[i]); gsub(/\\\n/, "", r); gsub(/["\047\\]/, "", r); if (r ~ /merg/) f = f "G"  # unmapped, for F9
         if (FNDEF[i]) f = f "d"
         o = OUT[i]; sub(/^[ \t]+/, "", o); sub(/[ \t]+$/, "", o)
         if (ISPAT[i] && o ~ /^[A-Za-z0-9_.*?!@+-]+$/) OUT[i] = ":"  # a case pattern word (no expansion, no redirection)
@@ -455,6 +477,18 @@ inert() {
 # its value when an earlier VAR= of the call set it to a plain literal (no ? # and no merge); any other
 # $VAR, {branch} or other placeholder is opaque: its value can hold "pulls/7/merge?" and swallow the rest of
 # the path as a query. Denied: graphql, a $( ) or backtick, a quoted endpoint, any opaque part.
+# apif9 <gh api segment>: deny a request that can write, whose endpoint is built from a variable or substitution
+# apiok cannot resolve, when the word merge can reach the endpoint at run time (RTM).
+apif9() {
+  apiok "$1" && return 0
+  case "$APIEP" in
+    *'$'*|*'`'*)
+      if [ "$APIMUT" -eq 1 ] && [ "$RTM" -eq 1 ]; then
+        deny "a gh api write request whose endpoint is built from a variable or substitution, next to the word merge, cannot be judged; write the endpoint literally."
+      fi ;;
+  esac
+  return 0
+}
 APIEP=""; APIMUT=0  # set by apiok: the raw endpoint, and 1 when the request can be other than GET
 apiok() {
   local w ep="" skip="" v n meth=""
@@ -476,6 +510,8 @@ apiok() {
   done
   # a field makes gh send POST unless the method is GET; a method the hook cannot read can be PUT
   case "$meth" in '') ;; [Gg][Ee][Tt]) APIMUT=0 ;; *) APIMUT=1 ;; esac
+  # a method override header (X-HTTP-Method-Override, any case, quoted or not) can turn a GET into a PUT
+  printf '%s' "$cmd" | grep -qi 'method-override' && APIMUT=1
   APIEP=$ep
   case "$ep" in ''|QUOTED|graphql|*\$\(*|*'`'*) return 1 ;; esac
   ep=$(printf '%s' "$ep" | sed -E 's/\{(owner|repo)\}/x/g')
@@ -631,12 +667,29 @@ while IFS= read -r seg; do
   T=0
   case "$FL" in *q*) T=1 ;; esac
   if printf '%s' "$seg" | grep -qE '^gh([[:space:]]|$)'; then case "$FL" in *g*) T=1 ;; esac; else case "$FL" in *w*) T=1 ;; esac; fi
+  # RTM: an assignment, a for/select/case word list, a command that sets a variable, or a segment with an
+  # evaluating expansion counts all its text; any other segment counts only its unquoted words (a quoted
+  # string with a space, or a heredoc body, is data that this call does not move into a variable).
+  # A value that is stored can be sliced at run time (B=mergeable; ${B%able}), so where text can reach a variable
+  # the test is the unmapped substring merg; in other unquoted words it is the word merge (mergeable is not).
+  if [ "$RTFALL" -eq 1 ]; then printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' && RTM=1
+  else
+    case "$ASG/${seg%%[[:space:]]*}/$FL" in
+      1/*|0//*|*/for/*|*/select/*|*/case/*|*/declare/*|*/typeset/*|*/local/*|*/export/*|*/readonly/*|*/printf/*|*/getopts/*|*/let/*|*x*)
+        case "$FL" in *G*) RTM=1 ;; esac ;;
+      *) mergeword "$seg" && RTM=1 ;;
+    esac
+  fi
   if [ -z "$seg" ]; then
     [ "$ASG" -eq 1 ] && setvars "$orig"
     # A keyword or redirection alone still counts as a command, so a merge next to it is not "the only command".
     [ "$KW" -eq 1 ] && NSEGS=$((NSEGS + 1))
     # A bare assignment (or a keyword line) that holds merge-like text is a source of that text.
     [ "$T" -eq 1 ] && SRC=1
+    continue
+  fi
+  if [ "$APIONLY" -eq 1 ]; then
+    if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api([[:space:]]|$)'; then apif9 "$seg"; fi
     continue
   fi
   # A shell or wrapper name with a path, a backslash anywhere, or zsh's =cmd runs the same program. A glob
@@ -684,14 +737,7 @@ while IFS= read -r seg; do
     # substitution that apiok cannot resolve, in a request that can be other than GET, in a call that holds the
     # word merge anywhere (A=pulls/7; B=merge; gh api -X PUT repos/o/r/$A/$B), may be one: deny it. With no word
     # merge in the call the endpoint is built at run time (#675) and is not judged here.
-    if ! apiok "$seg"; then
-      case "$APIEP" in
-        *'$'*|*'`'*)
-          if [ "$APIMUT" -eq 1 ] && printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | sed -E 's/merge(able|d|state|commit|base|_base|-base|-guard|_state|_commit|_method)/mrg/g' | grep -q 'merge'; then
-            deny "a gh api write request whose endpoint is built from a variable or substitution, next to the word merge, cannot be judged; write the endpoint literally."
-          fi ;;
-      esac
-    fi
+    apif9 "$seg"
     # An endpoint built from a variable or substitution next to the word merge ($P/merge) cannot be judged.
     case "$seg" in
       *'$'*|*'`'*)
@@ -767,6 +813,7 @@ if [ "$SRC" -eq 1 ] && [ "$WRITES" -eq 1 ] && [ "$CONFS" -gt 0 ]; then
   deny "merge-like text is written to a file in the same Bash call as git, gh or rg, which read configuration files. Write the file in a separate Bash call."
 fi
 
+[ "$APIONLY" -eq 0 ] || exit 0
 [ "$ASKS" -gt 0 ] || exit 0
 # Something targets a non-feat base. It may be put to the owner only when it is the one and only merge.
 if [ "$ASKS" -ne 1 ] || [ "$MERGES" -ne 1 ]; then
