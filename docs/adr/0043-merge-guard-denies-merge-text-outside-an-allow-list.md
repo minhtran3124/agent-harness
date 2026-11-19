@@ -67,6 +67,16 @@ the owner's session transcripts.
    not a sure target, a function defined in the call may be called (its body is judged; a name that is
    already a command is not honored), case patterns after `;;` are data, an escaped backtick in an
    unquoted heredoc is text, and an assignment in front of git, gh or rg takes it off the list.
+   gh api (review and replay, owner decision on 2026-11-20): a merge goes only through the CLI,
+   `gh pr merge`, where the owner is asked; `gh api` is never a valid merge path (glab gets its own
+   ticket). So a `gh api` request that can write (`-X`/`--method` other than GET, a field or
+   `--input`, a method-override header) with an endpoint built from a variable or substitution the
+   hook cannot resolve is denied when the call holds the substring `merg` anywhere. The owner chose
+   this simple call-wide rule over narrower ones: each narrowing of where `merg` counts opened a
+   bypass (a function or a loop that sets the variable after the gh api text, an array value), and
+   the cost is a few benign denials of `gh api -X PATCH .../issues/$n` next to prose that says
+   "merged". A call that reaches the hook only as a `gh api` call with an expansion is judged by
+   this rule alone.
 9. The wrapper list stays as a second net: it is the only check that denies a merge built at run time
    behind bash -c, eval or xargs, which holds no literal text.
 
