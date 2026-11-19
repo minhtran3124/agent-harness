@@ -74,10 +74,13 @@ whether the ticket is risky, the suite command, the worker's session name and ch
 2. Run the acceptance check the contract asks for, in a fresh agent. Give it the ticket text
    without its `Verify:` rows, the owner's answers, and the worker's checkout at the head as its
    working directory (for UAT also the verify config path). `harness:pd-uat` drives a browser
-   through the Playwright MCP and reads `verify.config.json`. Before the first UAT, check that the
-   MCP tools are there; when they are not, or the repository has no config, write the config to
-   `specs/fleet/<run>/verify.config.json`, pass that path, and let the agent drive a browser with
-   `npx playwright` from a temporary folder outside the checkout. Record the setup in the ledger. It gets no plan, no diff and no report.
+   only through the Playwright MCP tools and reads `verify.config.json`. When the repository has no
+   config, write one to `specs/fleet/<run>/verify.config.json` and pass that path. Before the first
+   UAT, check that the MCP tools are there. When they are not, ask the owner to connect them; if
+   that cannot happen, do not start `harness:pd-uat`: give a fresh agent the same inputs and the
+   task "check each acceptance criterion on the running app with `npx playwright` from a temporary
+   folder outside the checkout; return pass or fail per criterion with evidence". Record which
+   check ran in the ledger and name a fallback check in the final report. It gets no plan, no diff and no report.
    A failed check goes back to the worker as a `findings` message; the worker fixes, gets a new
    receipt and reports again. After 3 such cycles, treat the ticket as stuck. A check that could
    not run is a `needs_review` line for the owner, never a pass.
