@@ -141,6 +141,38 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
 .embed body{background:transparent}
 .embed .top,.embed .note{display:none}
 .embed .page{max-width:none;padding:2px 0 0}
+/* Phone (under 600 px, ticket 689): a stacked step list replaces the fixed 1488x730 diagram. Text is 12 px or more, tap
+   targets are 44x44 px, nothing scrolls sideways, the log has the full height. Desktop and ?embed=1 at >= 600 px are untouched. */
+.stepList{display:none}
+@media (max-width:599px){
+  .canvasCard,.deskonly{display:none}
+  .page{padding:16px 12px 24px}
+  .stepList{display:block}
+  .stepList ol{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .st{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .st[data-s="running"]{border-color:var(--run);background:var(--fill-run)} .st[data-s="done"]{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+  .st[data-s="failed"]{border-color:var(--bad)} .st[data-s="waiting"]{border-color:var(--warn)}
+  .sth{display:flex;align-items:center;gap:10px;min-width:0}
+  .sth .txt{flex:1}
+  .sth .txt b{font-size:15px;white-space:normal}.sth .txt i{font-size:12px;white-space:normal}
+  .sth .pill{flex:none}
+  .st .stm,.st .stt{font:500 12px/1.4 var(--font-mono);color:var(--muted);overflow-wrap:anywhere}
+  .st .sta,.st .sho{font-size:13px;line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
+  .st .sho{color:var(--muted)}
+  .st .stl{display:flex;flex-wrap:wrap;gap:4px 6px}
+  .st .stl span{font:500 12px/1.4 var(--font-mono);background:var(--canvas);color:var(--muted);border-radius:6px;padding:1px 8px}
+  button,select{min-height:44px;min-width:44px;font-size:14px}
+  .ctrl{width:100%}.ctrl select{flex:1 1 120px}
+  .conn{font-size:12px}
+  .lrow{grid-template-columns:minmax(0,1fr)}
+  .lrow h2{font-size:12px;padding-top:0}
+  .chips.r1,.chips.r2,.chips.r3{max-height:none;overflow:visible}
+  .nowtime{font-size:22px}
+  .msg{-webkit-line-clamp:unset;display:block;overflow:visible}
+  .log{height:auto;overflow:visible}
+  .log li{grid-template-columns:62px 8px minmax(0,1fr)}
+  .log .who{font-size:12px}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -149,7 +181,7 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
   <header class="top">
     <div>
       <h1>Agent Flow Board</h1>
-      <p class="sub">Live view of one ship.js run, read from the run's journal on this machine. Click a box to pin it; click Back to live to return.</p>
+      <p class="sub">Live view of one ship.js run, read from the run's journal on this machine. <span class="deskonly">Click a box to pin it; click Back to live to return.</span></p>
     </div>
     <div class="ctrl">
       <label for="tk">Ticket</label><select id="tk"><option value="all">All tickets</option></select>
@@ -177,6 +209,8 @@ svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;poin
     <div class="canvasTop"><h2 class="canvasHead">Workflow</h2><div class="legendRow" aria-label="Status colors"><span><u style="background:var(--idle)"></u>Waiting</span><span><u style="background:var(--run)"></u>Running</span><span><u style="background:var(--ok)"></u>Done</span><span><u style="background:var(--bad)"></u>Failed</span><span><u style="background:var(--warn)"></u>Needs you</span></div></div>
     <div class="scroller" id="scroller"><div class="sizer" id="sizer"><div class="world" id="world"></div></div></div>
   </section>
+
+  <section class="stepList" id="steps" aria-label="Workflow steps"><h2 class="canvasHead">Workflow</h2><ol id="stepol"></ol></section>
 
   <section><article class="panel"><h2 style="margin-bottom:10px">Event log</h2><ul class="log" id="log" aria-live="polite"></ul></article></section>
 
@@ -351,9 +385,22 @@ function renderCards(){
  renderCaps();
  FLOW.edges.forEach(function(d,i){var cl='edge'+(d[2]==='join'?' nohead':'')+' '+edgeCls(d);if(E[i].cls!==cl){E[i].cls=cl;document.getElementById('e'+i).setAttribute('class',cl);}});
 }
+var STCLS={running:'',done:'ok',failed:'bad',waiting:'warn',idle:'idle'};
+// The phone's stacked list: the same facts as the cards, as visible text (nothing needs hover). Display is set by CSS.
+function renderSteps(){
+ var ol=document.getElementById('stepol');if(!FLOW||!ol)return;
+ var nodes=FLOW.nodes.slice().sort(function(a,b){return a.y-b.y||a.x-b.x;});
+ setHTML(ol,'steps',nodes.map(function(n){
+  var c=C[n.id],a=latest(n.id),s=c.s,tl=a&&a.tools?a.tools:[],ho=handoffOf(a);
+  return '<li class="st" data-s="'+s+'"><div class="sth"><span class="ico">'+ICON[s]+'</span><span class="txt"><b>'+esc(n.t)+'</b><i>'+esc(n.a)+'</i></span><span class="pill '+STCLS[s]+'">'+esc(capText(n))+'</span></div>'+
+   '<div class="stm">'+esc(modelText(a))+'</div><div class="stt">'+esc(c.tktT)+'</div>'+
+   (c.actT?'<div class="sta">'+esc(c.actT)+'</div>':'')+(ho?'<div class="sho">'+esc(ho)+'</div>':'')+
+   (tl.length?'<div class="stl">'+tl.map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div>':'')+'</li>';
+ }).join(''));
+}
 function render(){
  if(!FLOW)return;
- renderCards();
+ renderCards();renderSteps();
  document.getElementById('round').textContent=round()+' / '+MAX_ROUNDS;
  var u=checkPhase(),ue=document.getElementById('uatstate');ue.textContent=u[0];ue.className='pill '+u[1];
  document.getElementById('runid').textContent=RUN.id||'—';
@@ -416,7 +463,7 @@ function connect(){
 }
 document.getElementById('detail').addEventListener('click',function(e){if(e.target&&e.target.id==='unpin'){sel=null;render();}});
 document.getElementById('tk').addEventListener('change',function(e){view=e.target.value;render();});
-setInterval(function(){var nt=document.getElementById('nowTime'),a=nowId&&latest(nowId);if(nt&&a&&a.status==='running')nt.textContent=dur(a);if(FLOW&&ORDER.some(function(k){return A[k].status==='running';}))renderCaps();},1000);
+setInterval(function(){var nt=document.getElementById('nowTime'),a=nowId&&latest(nowId);if(nt&&a&&a.status==='running')nt.textContent=dur(a);if(FLOW&&ORDER.some(function(k){return A[k].status==='running';}))renderCaps();renderSteps();},1000);
 window.addEventListener('resize',fit);
 // In embed mode, tell the host page our height so its iframe needs no inner scroll bar. Only a number is sent.
 if(EMBED&&window.parent!==window&&window.ResizeObserver){var lastH=0;new ResizeObserver(function(){var h=Math.ceil(document.querySelector('.page').getBoundingClientRect().height);if(h!==lastH){lastH=h;window.parent.postMessage({type:'afb-height',height:h},'*');}}).observe(document.querySelector('.page'));}

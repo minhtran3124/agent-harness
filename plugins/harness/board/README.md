@@ -39,6 +39,7 @@ the board shows "No ship.js run found" during a run, start it with `--project <p
 
 ## Embed it in another page
 
+- Under 600 px the diagram is replaced by a stacked step list (name, state, model and effort, tokens, handoff, tool names), with 44 px tap targets, text of 12 px or more and a full-height event log. At 600 px and wider nothing changes.
 - `?embed=1` hides the board's own header and footer note and makes the background transparent, so a host
   page (such as a local dashboard) can show the board in an `<iframe>`. `?theme=light|dark` follows the host's theme.
 - In embed mode the page posts `{type: 'afb-height', height}` to its parent when its height changes, so the
@@ -82,7 +83,7 @@ previous agent of the same ticket.
   values. A model with no entry shows `tokens n/a` and no bar.
 - **Round cap:** a Re-check that fails in fix round 3 shows `Needs you`; after the run ends, boxes that never ran show `Not run`.
 - Verifies: the cards, badges, arrows and fallbacks for the fixtures in `tests/board/board-ui.test.js`, in headless Chromium (`BOARD_PERF=1` adds a slow-CPU smoothness case).
-- Does not verify: that real transcripts carry `usage` and `tool_use` blocks (only fixtures were checked); a phone or narrow layout (below a scale of 0.6 the diagram scrolls sideways inside its panel); several tickets in parallel.
+- Does not verify: that real transcripts carry `usage` and `tool_use` blocks (only fixtures were checked); a real phone (only 390x844 and 360x800 Chromium viewports were tested); several tickets in parallel.
 
 ## Limits
 
