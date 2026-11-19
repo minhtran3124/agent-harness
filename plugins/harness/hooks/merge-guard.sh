@@ -681,11 +681,15 @@ while IFS= read -r seg; do
     fi
     case "$FL" in *a*) deny "a gh api merge path inside a quoted string cannot be judged; write the path without quotes." ;; esac
     # A merge is a PUT (pulls/<n>/merge) or a POST (repos/<o>/<r>/merges). An endpoint built from a variable or
-    # substitution that apiok cannot resolve, in a request that can be other than GET, may be one (A=pulls/7;
-    # B=merge; gh api -X PUT repos/o/r/$A/$B): deny it, with or without merge-like text in the call.
+    # substitution that apiok cannot resolve, in a request that can be other than GET, in a call that holds the
+    # word merge anywhere (A=pulls/7; B=merge; gh api -X PUT repos/o/r/$A/$B), may be one: deny it. With no word
+    # merge in the call the endpoint is built at run time (#675) and is not judged here.
     if ! apiok "$seg"; then
       case "$APIEP" in
-        *'$'*|*'`'*) [ "$APIMUT" -eq 0 ] || deny "a gh api write request whose endpoint is built from a variable or substitution cannot be judged; write the endpoint literally." ;;
+        *'$'*|*'`'*)
+          if [ "$APIMUT" -eq 1 ] && printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | sed -E 's/merge(able|d|state|commit|base|_base|-base|-guard|_state|_commit|_method)/mrg/g' | grep -q 'merge'; then
+            deny "a gh api write request whose endpoint is built from a variable or substitution, next to the word merge, cannot be judged; write the endpoint literally."
+          fi ;;
       esac
     fi
     # An endpoint built from a variable or substitution next to the word merge ($P/merge) cannot be judged.
