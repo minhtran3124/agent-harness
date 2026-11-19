@@ -474,7 +474,11 @@ for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
          "cat > \$SCRATCH/gh/pr700.md <<'EOF'${NL}gh pr merge is denied${NL}EOF" \
          "git add -A && git commit -q -F - <<'EOF'${NL}fix: deny gh pr merge in quotes (\$(x) and \${y:z} are text)${NL}EOF" \
          "gh pr create --base main --head x --title t --body-file - <<'EOF'${NL}gh pr merge in a string is denied; \${a[1]}${NL}EOF" \
-         "REPO=\$(gh repo view --json nameWithOwner -q .nameWithOwner); cat > \$SCRATCH/body.md <<EOF${NL}PR for \$REPO: gh pr merge is denied in \${REPO} and \\\$((1)).${NL}\$(gh repo view --json nameWithOwner -q .nameWithOwner)${NL}EOF"; do
+         "REPO=\$(gh repo view --json nameWithOwner -q .nameWithOwner); cat > \$SCRATCH/body.md <<EOF${NL}PR for \$REPO: gh pr merge is denied in \${REPO} and \\\$((1)).${NL}\$(gh repo view --json nameWithOwner -q .nameWithOwner)${NL}EOF" \
+         "f=/tmp/x/body.md && git push 2>&1 | tail -1; cat > \$f <<'EOF'${NL}gh pr merge is denied${NL}EOF" \
+         "img(){ echo \"![\$1](\$U/\$1.png?raw=true)\"; }; gh pr create --title t --body \"\$(cat <<EOF${NL}gh pr merge is denied, see \\\`code\\\` here${NL}\$(img before-x)${NL}EOF${NL})\"" \
+         "for x in p1 p2; do case \$x in p1) T='a b';; p2) T='c d';; esac; gh issue create --repo o/r --title \"\$T\" --body-file t-\$x.md; done; echo 'gh pr merge is text'" \
+         "grep -qx '.claude.bak/' .git/info/exclude || echo '.claude.bak/' >> .git/info/exclude; cat > /tmp/x/x.md <<'EOF'${NL}gh pr merge is denied${NL}EOF"; do
   t "#680: a replay false-positive shape is allowed: $c"; g "$c"
   if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 done
@@ -498,7 +502,15 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "cd .git/hooks && echo 'gh pr merge 7 --repo o/r' > pre-commit && cd ../.. && git commit -m x" \
          "D=.git; echo 'gh pr merge 7 --repo o/r' > \$D/hooks/pre-commit; git commit -m x" \
          "cat > .husky/pre-commit <<'EOF'${NL}gh pr merge 7 --repo o/r${NL}EOF" \
-         "echo 'gh pr merge 7 --repo o/r' | tee .git/hooks/pre-commit"; do
+         "echo 'gh pr merge 7 --repo o/r' | tee .git/hooks/pre-commit" \
+         "D=.git/hooks; echo 'gh pr merge 7 --repo o/r' > \$D/post-checkout; git status" \
+         "echo 'gh pr merge 7 --repo o/r' > \$X/post-checkout; git status" \
+         "echo '--pre=sh' > \$S/rg.md; echo 'gh pr merge 7 --repo o/r' > \$S/x.txt; RIPGREP_CONFIG_PATH=\$S/rg.md rg . \$S/x.txt" \
+         "echo 'import os; os.system(\"gh pr merge 7 --repo o/r\")' > x.py; cat <<EOF${NL}\$(python3 x.py)${NL}EOF${NL}python3(){ :; }" \
+         "f(){ python3 -c \"\$1\"; }; f 'import os; os.system(\"gh pr merge 7 --repo o/r\")'" \
+         "f 'import os; os.system(\"gh pr merge 7 --repo o/r\")'; f(){ :; }" \
+         "echo 'gh pr merge 7 --repo o/r' > x.sh; case a in b) :;; \$(sh<x.sh)) :;; esac" \
+         "echo 'gh pr merge 7 --repo o/r' > x.sh; case a in b) :;; esac; sh<x.sh"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the

@@ -62,6 +62,11 @@ the owner's session transcripts.
    A command with any expansion other than `$NAME`, `${NAME}`, a special parameter or `$( )` is never
    listed: `$((`, `$[`, `${s:x}`, `${a[x]}` and `${!x}` in bash and `${(e)x}`, `$~x` in zsh evaluate a
    value, and an array subscript or `(e)` in that value runs `$( )` (checked in bash and zsh).
+   After replay rounds 1 and 2: a write target is judged by its file name (a data name such as `.md`
+   under `$VAR/` is not configuration; `VAR=` set earlier in the call is resolved), `.git/info/*` is
+   not a sure target, a function defined in the call may be called (its body is judged; a name that is
+   already a command is not honored), case patterns after `;;` are data, an escaped backtick in an
+   unquoted heredoc is text, and an assignment in front of git, gh or rg takes it off the list.
 9. The wrapper list stays as a second net: it is the only check that denies a merge built at run time
    behind bash -c, eval or xargs, which holds no literal text.
 
