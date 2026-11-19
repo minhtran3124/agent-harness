@@ -476,11 +476,32 @@ apiok() {
     esac
     case "$n" in ''|*[!A-Za-z0-9_]*) return 1 ;; esac
     case "$VARS" in *"|$n="*) v=${VARS##*"|$n="}; v=${v%%|*} ;; *) return 1 ;; esac
+    onlyset "$n" || return 1
     case "$v" in UNKNOWN|*'?'*|*'#'*|*[Mm][Ee][Rr][Gg][Ee]*) return 1 ;; esac
     ep=${ep/"$w"/$v}
   done
   case "$ep" in *'{'*|*'}'*|*[Mm][Ee][Rr][Gg][Ee]*) return 1 ;; esac
   return 0
+}
+
+# onlyset <NAME>: 0 when, in the whole command text, NAME appears only as one plain NAME= at the start of a
+# word and as $NAME or ${NAME} reads. Any other appearance can set or change it: declare, local, export, read,
+# printf -v, mapfile, getopts, for NAME, unset, NAME+=, NAME[..]=, ${NAME:=..}, eval "NAME=..", a nameref
+# (ref=NAME), or a second NAME= in a function, a subshell or a $( ).
+onlyset() {
+  printf '%s\n' "$cmd" | awk -v n="$1" '
+    { t = t $0 "\n" }
+    END {
+      a = 0; o = 0; L = length(n); m = length(t)
+      for (i = 1; i <= m - L + 1; i++) {
+        if (substr(t, i, L) != n) continue
+        p = (i > 1) ? substr(t, i - 1, 1) : ""; q = substr(t, i + L, 1)
+        if (p ~ /[A-Za-z0-9_]/ || q ~ /[A-Za-z0-9_]/) continue
+        if (p == "$") continue
+        if (p == "{" && i > 2 && substr(t, i - 2, 1) == "$" && q == "}") continue
+        if (q == "=" && (p == "" || p ~ /[ \t\n;&|(]/)) { a++; continue }
+        o++ }
+      exit !(a == 1 && o == 0) }'
 }
 
 # cfgtarget <segment>: 0 when the segment writes (a > or >> redirection, or tee) to a target that can be a
@@ -511,15 +532,23 @@ cfgmaybe() {
 # VARS: "|NAME=value|" for each bare assignment seen so far in the call (value UNKNOWN when it holds an
 # expansion or a quoted string); resolve <word> puts a known value in for a leading $NAME or ${NAME}.
 VARS="|"
+# setvars <segment> [unknown]: record each NAME=value word. A value is UNKNOWN when it holds an expansion or
+# a quoted string, when the word is NAME+= or NAME[..]= (an append or an element write changes the old value),
+# when NAME was already set in the call (a function body or a branch can run the writes in another order),
+# and for every assignment in front of a command (unknown).
 setvars() {
   local a n v
   for a in $1; do
     case "$a" in
       [A-Za-z_]*=*)
         n=${a%%=*}; v=${a#*=}
-        case "$n" in *[!A-Za-z0-9_]*) continue ;; esac
+        case "$n" in *'['*|*+) v=UNKNOWN; n=${n%%[[+]*} ;; esac
+        case "$n" in ''|*[!A-Za-z0-9_]*) continue ;; esac
         case "$v" in *'$'*|*'`'*|*QUOTED*|*'('*|*'~'*) v=UNKNOWN ;; esac
+        case "$VARS" in *"|$n="*) v=UNKNOWN ;; esac
+        [ -z "${2:-}" ] || v=UNKNOWN
         VARS="$VARS$n=$v|" ;;
+      *) break ;;
     esac
   done
 }
@@ -581,6 +610,9 @@ while IFS= read -r seg; do
       *) break ;;
     esac
   done
+  # Variables a segment can change: assignments in front of a command, and the name of a for loop.
+  [ "$ASG" -eq 1 ] && [ -n "$seg" ] && setvars "$orig" unknown
+  case "$seg" in for[[:space:]]*) setvars "$(printf '%s' "$seg" | awk '{print $2}')=x" unknown ;; esac
   # A redirection to a file anywhere in the segment (2>&1 and >&2 are > /dev/null by now).
   # A write to a file that git, gh or rg can read as configuration (rule R4 below).
   cfgtarget "$orig"
