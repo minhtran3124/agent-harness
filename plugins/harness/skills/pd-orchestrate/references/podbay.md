@@ -68,6 +68,9 @@ it for a slash command, or when a session does not accept cross-session messages
 2. Start the session and keep its `title`, `name` and `uuid`.
 3. Set the model: `tmux send-keys -t '=<name>:' '/model <model id>' Enter`, then read the status
    line with `detail` and confirm the model name. A session keeps its default model otherwise.
+   `/model` also saves that model as the machine's default for new sessions. Note the default
+   before the run (`model` in `~/.claude/settings.json`) and list it in the final report, so the
+   owner can set it back.
 4. Keep every session of a run in the same permission mode as yours. A session in another mode
    holds your messages until its user approves them. Workers, reviewers and advisors run tests and
    other project commands: in a mode that prompts for each one, they stop at every prompt, so tell
