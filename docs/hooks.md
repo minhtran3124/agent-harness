@@ -46,10 +46,14 @@ no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` e
 stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto`,
 `gh api graphql ... mergePullRequest`, `{owner}/{repo}` placeholders in a `gh api` path, a merge inside `bash -c`, `eval`,
 `xargs` or another wrapper, a merge that is not at command position (`command gh`, `/usr/bin/gh`, backticks), and
-`gh alias set|import` next to the word merge. One narrow case is not denied (#671): a shell that runs a script file,
-such as `S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh`, where the word merge is only part of a file or
-helper name. It is still denied when the command has a pipe, a heredoc or a redirection, text built at run time
-(`$(...)`, backticks, `$'...'`), `gh` next to a variable, a merge API path, or merge as a word of its own. Any denied segment blocks the whole command. A Bash call that is not a merge
+`gh alias set|import` next to the word merge. One narrow case is not denied (#671): a shell that runs a named script
+file, such as `S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh`, where the word merge is only part of a file
+or helper name. Only the flags `-e -u -x -v -n` may come before the file; any other option (`-c`, `-s`, `-O extglob`,
+`-o posix`, `--init-file f`), a file operand that is only a variable (`$F`), or stdin under another name (`/dev/stdin`)
+is not a script run and is denied. The exemption is also denied when the command has a pipe, `<<`, `<(` or `>`, an
+interpreter (python, perl, node, ruby, awk, ...), text built at run time (`$(...)`, backticks, `$'...'`), `gh` next to a
+variable, a merge API path, or merge as a word of its own. Merge text built with `${v#x}`, braces or IFS is not recognized
+as such (#675). Any denied segment blocks the whole command. A Bash call that is not a merge
 exits 0 before any parsing, so it costs nothing. There is no environment-variable bypass.
 `Verifies:` the PR base and default branch of every judged merge. `Does not verify:` the owner's own `!` or terminal
 merges (the hook never sees them), a local `git merge`, a merge through the web UI or another client, a command built at

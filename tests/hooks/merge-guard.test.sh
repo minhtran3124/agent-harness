@@ -209,6 +209,27 @@ for c in 'echo gh pr xmerge 7 --repo o/r | sed s/x// | bash' 'echo gh pr Xmerge 
          'echo gh api -X POST repos/o/r/xmerges -f base=main -f head=x | sed s/x// | bash'; do
   t "#671 review: a merge built at run time stays denied: $c"; g "$c"; assert_rc 2
 done
+# Second security review of #674: an option that takes a value hid a later -c, a variable operand, stdin
+# under another name, and an interpreter writing the script. Each was denied before #674.
+for c in "echo \$HOME/xmerge; bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash +O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash -o posix -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash --init-file /dev/null -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash -eO extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; zsh -o shwordsplit -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; sh -o errexit -c 'M=xmerge G=ig; \${G#i}h pr \${M#x} 7 --repo o/r'" \
+         "echo \$HOME/xmerge; F=-c; bash \$F 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; env -- bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; nohup bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; time -p bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r' < /dev/null" \
+         "echo \$HOME/xmerge; sudo bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; command -p bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "python3 -c \"open('f.sh','w').write('gh pr xmerge 7 --repo o/r'.replace('x',''))\"; bash f.sh" \
+         "echo \$HOME/xmerge; bash /dev/stdin" "echo \$HOME/xmerge; bash -- -c 'gh pr m{e..e}rge 7'"; do
+  t "#671 review 2: a shell run with options or a hidden script stays denied: $c"; g "$c"; assert_rc 2
+done
+t "#671 review 2: value-free flags before a script file are still a script run"; g 'S=/tmp/x; bash -eu $S/run.sh tests/hooks/post-merge-hooks.test.sh'; assert_rc 0
 
 reset; setbase feat/x; printf 'main\n' > "$D/base.8"
 t "chain: 7 on feat/x, 8 on main: the whole command is denied"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 2

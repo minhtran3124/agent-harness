@@ -14,9 +14,12 @@
 # Verifies: the PR base read live with `gh pr view --json baseRefName` for every PR number of every merge
 #   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is not protected (see above) and is not the repo default branch.
 #   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs, a merge
-#   that is not at command position, and `gh alias set|import` next to the word merge. A shell that runs a
-#   script file (`bash $S/run.sh`) is not denied for the word merge inside a file name; it is denied when the
-#   command has a pipe, heredoc or redirection, text built at run time, or merge as a word of its own (#671).
+#   that is not at command position, and `gh alias set|import` next to the word merge. One exemption (#671):
+#   a shell that runs a named script file (`bash $S/run.sh`, only -e -u -x -v -n before the file) is not
+#   denied for the word merge inside a file name. It is still denied when the command has a pipe, `<<`, `<(`
+#   or `>`, an interpreter (python, perl, node, ruby, awk, ...), `$(`, a backtick or `$'`, gh next to a
+#   variable, a merge API path, or merge as a word of its own. Merge text built with `${v#x}`, braces or IFS
+#   is not recognized as such (#675).
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
 #   merge through the web UI or another client, a script that builds the command at run time, or whether
 #   the PR is ready (the workflow gate checks that).
@@ -61,16 +64,25 @@ runs_script_file() {
   done
   case "${w[$i]:-}" in bash|sh|zsh|dash|ksh) ;; *) return 1 ;; esac
   i=$((i + 1))
+  # Only value-free flags may come before the script file: -e -u -x -v -n, alone or clustered (-eu).
+  # Any other option is not a plain script run: -c and -s read code from a string or stdin, and an option
+  # that takes a value (-O extglob, -o posix, --init-file f) would make its value look like the file.
+  local f
   while [ "$i" -lt "$n" ]; do
     case "${w[$i]}" in
       --) i=$((i + 1)); break ;;
-      -*c*|-*s*|+*c*|+*s*) return 1 ;;  # -c string or -s stdin (also inside a cluster such as -ec)
-      -*|+*) i=$((i + 1)) ;;
+      -*) f=${w[$i]#-}; case "$f" in ''|*[!euxvn]*) return 1 ;; esac; i=$((i + 1)) ;;
+      +*) return 1 ;;
       *) break ;;
     esac
   done
   [ "$i" -lt "$n" ] || return 1  # no operand: the shell reads its code from stdin
-  case "${w[$i]}" in '<'*|QUOTED) return 1 ;; esac
+  case "${w[$i]}" in
+    '<'*|QUOTED|-*) return 1 ;;                         # redirection, quoted text or an option, not a file
+    /dev/stdin|/dev/fd/*|/proc/*) return 1 ;;           # stdin under another name
+  esac
+  # An operand that is only a variable ($F, ${F}) can expand to -c: not a file we can name.
+  printf '%s' "${w[$i]}" | grep -qE '^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$' && return 1
   return 0
 }
 
@@ -306,6 +318,9 @@ while IFS= read -r seg; do
         elif case "$cmd" in *'|'*|*'<<'*|*'<('*|*'>'*) true ;; *) false ;; esac; then
           # A pipe, heredoc or redirection can build or write the script that the shell then runs.
           deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: a pipe, heredoc or redirection next to a shell run)."
+        elif printf '%s' "$(fold "$cmd")" | grep -qE '(^|[^a-z0-9_])(python[0-9.]*|perl|node|ruby|g?awk|php|lua)([^a-z0-9_.]|$)'; then
+          # An interpreter in the same command can write the script file without a pipe or redirection.
+          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: an interpreter next to a shell run)."
         elif can_carry_merge "$cmd"; then
           deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: $CARRY_WHY)."
         fi ;;
