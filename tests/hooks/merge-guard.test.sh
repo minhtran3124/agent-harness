@@ -365,6 +365,147 @@ t "ls does not call gh"; if [ ! -s "$LOG" ]; then pass; else fail "log: $(cat "$
 t "a gh call that is not a merge is allowed without a base read"; g 'gh pr view 7 --json state'; assert_rc 0
 t "gh pr view does not call gh from the guard"; if [ ! -s "$LOG" ]; then pass; else fail "log: $(cat "$LOG")"; fi
 
+# Issue #680: merge-like text that is not a judged merge is allowed only in a command that never runs its
+# arguments (the allow list). The four classes of the ticket reached gh pr merge with no owner prompt.
+NL='
+'
+reset; setbase main
+for c in "python3 -c \"import os; os.system('gh pr merge 7 --repo o/r')\"" \
+         "perl -e 'system(\"gh pr merge 7 --repo o/r\")'" \
+         "awk 'BEGIN{system(\"gh pr merge 7 --repo o/r\")}'" \
+         'find . -exec sh -c "gh pr merge 7 --repo o/r" \;' \
+         "git -c alias.x='!gh pr merge 7 --repo o/r' x" \
+         "gh pr mer\\${NL}ge 7 --repo o/r" \
+         "gh pr mer\\${NL}ge 7 --repo o/r --match-head-commit $SHA"; do
+  t "#680: a command of the ticket is denied: $c"; g "$c"; assert_rc 2
+done
+reset; setbase feat/x
+t "#680: a backslash-newline inside the merge word is denied on a feat/* base too"; g "gh pr mer\\${NL}ge 7 --repo o/r"; assert_rc_contains 2 "backslash"
+t "#680: a backslash-newline inside the merge word does not skip the pre-filter (gh is not called, the command is denied)"
+if [ "$RC" = 2 ] && [ ! -s "$LOG" ]; then pass; else fail "rc=$RC log: $(cat "$LOG" 2>/dev/null)"; fi
+reset; setbase main
+t "#680: a merge continued on the next line between words is one plain merge, put to the owner"
+g "gh pr merge 7 --repo o/r \\${NL}  --match-head-commit $SHA"; assert_ask "Merge PR #7 of o/r into main"
+t "#680: an escaped backslash before a newline is not a continuation; the merge on the next line is judged"
+g "echo x \\\\${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA"; assert_rc_contains 2 "only command"
+# Found while designing #680: the same text reached a command through other quoting, stdin, a variable, the
+# environment, a substitution inside quotes or a heredoc. Each was allowed before.
+for c in "perl -e 'exec\"gh\",\"pr\",\"merge\",\"7\",\"--repo\",\"o/r\"'" \
+         'git -c alias.x=!gh\ pr\ merge\ 7\ --repo\ o/r x' \
+         "echo 'gh pr merge 7 --repo o/r' | python3 -c \"import os,sys; os.system(sys.stdin.read())\"" \
+         "python3 - <<'EOF'${NL}import os; os.system(\"gh pr merge 7 --repo o/r\")${NL}EOF" \
+         "python3 <<< 'import os; os.system(\"gh pr merge 7 --repo o/r\")'" \
+         "python3 -c \"import os,sys; os.system('gh pr '+sys.argv[1]+' 7 --repo o/r')\" merge" \
+         "X='gh pr merge 7 --repo o/r'; python3 -c \"import os; os.system('\$X')\"" \
+         "GIT_SSH_COMMAND='gh pr merge 7 --repo o/r #' git fetch" \
+         "GH_PAGER='gh pr merge 9 --repo o/r' gh pr merge 7 --repo o/r --match-head-commit $SHA" \
+         "gh api -X PUT 'repos/o/r/pulls/7/merge?a=b&c=d'" \
+         "echo 'gh pr merge 7 --repo o/r' > /tmp/x.sh; python3 /tmp/x.sh" \
+         "cat <<EOF${NL}\$(gh pr merge 7 --repo o/r)${NL}EOF" \
+         "echo \"\$(case x in x) gh pr merge 7 --repo o/r;; esac)\"" \
+         "echo \"\$(gh pr merge 7 --repo o/r --match-head-commit $SHA)\"" \
+         "echo \\'; gh pr merge 7 --repo o/r --match-head-commit $SHA; echo \\'" \
+         "cat <<EOF${NL}x${NL}EO\\${NL}F${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}EOF" \
+         "rg --pre 'sh -c \"gh pr merge 7 --repo o/r\"' x ." \
+         "git fetch --upload-pack='gh pr merge 7 --repo o/r #' /tmp/repo" \
+         "trap 'gh pr merge 7 --repo o/r' EXIT" "ssh host 'gh pr merge 7 --repo o/r'" \
+         "gh pr comment 5 --repo o/r --body \"\$(python3 -c 'import os; os.system(\"gh pr merge 7 --repo o/r\")')\""; do
+  t "#680: merge-like text that a command could run is denied: $c"; g "$c"; assert_rc 2
+done
+# Adversarial review of the #680 design: a heredoc whose end the hook read differently from the shell, an
+# allow-list command that evaluates or runs its input after all, text written to a configuration file that
+# git reads in the same call, and "pr merge" text with gh after it. Each ran a merge in a stand-in test.
+for c in "cat <<EOF-${NL}EOF-${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}EOF" \
+         "cat <<E\\OF${NL}EOF${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}E" \
+         "cat <<EOF${NL}  EOF${NL}echo '${NL}EOF${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}#'" \
+         "cat <<EOF${NL}foo\\${NL}EOF${NL}echo '${NL}EOF${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}#'" \
+         "cat <<A <<B${NL}B${NL}A${NL}echo '${NL}B${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}#'" \
+         "# <<X${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}X" \
+         "[[ 1 -eq 'x[\$(gh pr merge 7 --repo o/r)]' ]]" "test -v 'x[\$(gh pr merge 7 --repo o/r)]'" \
+         "printf -v 'x[\$(gh pr merge 7 --repo o/r)]' %s 1" "X='a[\$(gh pr merge 7 --repo o/r)]'; [[ 1 -eq \$X ]]" \
+         "cat <<EOF | sort -S 1K --co=sh${NL}gh pr merge 7 --repo o/r${NL}EOF" \
+         "git push --e='gh pr merge 7 --repo o/r #' /tmp/bare HEAD" \
+         "echo 'fsmonitor = gh pr merge 7 --repo o/r' >> .git/config; git status" \
+         "echo 'fsmonitor = gh pr merge 7 --repo o/r' | tee -a .git/config; git status" \
+         "E=graphql; gh api \"\$E\" -f query='mutation{mergePullRequest(input:{pullRequestId:\"P\"}){clientMutationId}}'" \
+         "gh api graphql -f query='mutation{mergeBranch(input:{repositoryId:\"R\",base:\"main\",head:\"x\"}){clientMutationId}}'" \
+         "gh api graphql -f query='mutation{enqueuePullRequest(input:{pullRequestId:\"P\"}){clientMutationId}}'" \
+         "echo 'pr merge 7 --repo o/r' | xargs gh" 'set -- pr merge 7 --repo o/r; gh "$@"' \
+         "printf 'aliases:\\n  v: pr merge 7 --repo o/r\\n' >> ~/.config/gh/config.yml; gh v"; do
+  t "#680 review: a parser gap or an allow-list command that runs its input is denied: $c"; g "$c"; assert_rc 2
+done
+t "#680 review: a heredoc body after the one plain merge is data; the merge is still put to the owner"
+g "$MA --body-file=-<<EOF${NL}  EOF${NL}rm -rf /tmp/victim${NL}EOF"; assert_ask "Merge PR #7 of o/r into main"
+t "#680 review: two heredocs on one line are both read as data"; g "cat <<'A' <<'B'${NL}x${NL}A${NL}gh pr merge 7 --repo o/r${NL}B"; assert_rc 0
+t "#680: the denial names the command that is not on the allow list"; g "python3 -c \"import os; os.system('gh pr merge 7 --repo o/r')\""; assert_rc_contains 2 "'python3'"
+# The allow list: these commands print, store or send the text and never run it. They must stay allowed.
+reset
+for c in "echo 'gh pr merge 7 --repo o/r'" 'printf "%s\n" "gh pr merge 7"' \
+         "git commit -m \"\$(cat <<'EOF'${NL}fix: gh pr merge 7 is denied${NL}EOF${NL})\"" \
+         "cd /tmp/x && git add -A && git commit -m \"\$(cat <<'EOF'${NL}fix: gh pr merge 7${NL}EOF${NL})\" && git push -u origin fix/680" \
+         "gh pr create --title 'deny gh pr merge in quotes' --body \"\$(cat <<'EOF'${NL}gh pr merge in a string is denied${NL}EOF${NL})\"" \
+         'gh pr comment 5 --repo o/r --body "do not run gh pr merge 7 here"' \
+         'gh issue create --repo o/r --title x --body "gh pr merge 7 --repo o/r reaches main"' \
+         'grep -rn "gh pr merge" plugins/ docs/ | head -20' "rg -n 'gh pr merge|pulls/.*/merge' plugins | wc -l" \
+         "cat > /tmp/notes.md <<'EOF'${NL}Run gh pr merge 7 --repo o/r by hand.${NL}EOF" \
+         'echo "PR $(gh pr view 5 --repo o/r --json state -q .state) is not merged"' \
+         'for f in a b; do echo "gh pr merge $f"; done' \
+         'gh pr view 7 --repo o/r --json mergeable,mergeStateStatus && npm test' \
+         'gh pr view 7 --repo o/r --json mergeable | python3 -c "import sys,json; print(json.load(sys.stdin))"' \
+         "gh api graphql -f query='query(\$o:String!){repository(owner:\$o,name:\"r\"){pullRequest(number:7){mergeable}}}' -f o=o" \
+         'BODY="see gh pr merge"; gh pr comment 5 --repo o/r --body "$BODY"'; do
+  t "#680: text in a command on the allow list is allowed: $c"; g "$c"
+  if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+done
+# #680 false-positive shapes of the replay on session transcripts: a word that only starts with "merge"
+# (mergeable_state), read-only git next to merge text, a write to a file git does not read next to git add,
+# and a heredoc with a simple $( ) or $VAR in a gh pr create body. They must stay allowed.
+reset
+for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
+         "git ls-remote origin refs/pull/7/head; gh api repos/o/r/pulls/7 -q .mergeable_state" \
+         "git rev-list --count origin/main..HEAD; git commit -m 'deny gh pr merge in quotes'" \
+         "cat > notes.md <<'EOF'${NL}- run gh pr merge 7 --repo o/r after review${NL}EOF${NL}git add notes.md && git commit -m notes" \
+         "cat >> docs/hooks.md <<EOF${NL}merge-guard denies gh pr merge in a shell string${NL}EOF${NL}git add docs/hooks.md" \
+         "gh pr create --title x --body \"\$(cat <<EOF${NL}gh pr merge in a string is denied${NL}- head: \$(git rev-parse --short HEAD) on \$BRANCH${NL}EOF${NL})\"" \
+         "sleep 5; git log --grep='gh pr merge' --oneline | head" \
+         "gh api repos/o/r/pulls/7 | jq '.mergeable'; grep -c 'gh pr merge' docs/hooks.md" \
+         "sed -n '1,40p' docs/hooks.md; grep -n 'gh pr merge' docs/hooks.md"; do
+  t "#680: a replay false-positive shape is allowed: $c"; g "$c"
+  if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+done
+# #680 design review: an expansion that evaluates a value (bash arithmetic and ${!x}, zsh ${(e)x} and $~x), a
+# substitution in an unquoted heredoc body, a heredoc that bash ends at "EOF)", an option that makes a listed
+# command run a program, and a hook or config file written next to git. Each must be denied.
+reset; setbase main
+for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh pr merge 7 --repo o/r)]'; echo \$[x]" \
+         "x='a[\$(gh pr merge 7 --repo o/r)]'; cat <<EOF${NL}\${s:x}${NL}EOF" \
+         "X='\$(gh pr merge 7 --repo o/r)'; echo \"\${(e)X}\"" "X='a[\$(gh pr merge 7 --repo o/r)]'; echo \"\${!X}\"" \
+         "X='*(e:gh pr merge 7 --repo o/r:)'; echo \$~X" \
+         "python3 -c 'import os; os.system(\"gh pr merge\\x207 --repo o/r\")'" \
+         "cat <<EOF${NL}\$(python3 -c \"import os; os.system('gh pr merge 7 --repo o/r')\")${NL}EOF" \
+         "X='gh pr merge 7 --repo o/r'; cat <<EOF${NL}\$(bash -c \"\$X\")${NL}EOF" \
+         "cat <<EOF${NL}gh pr merge 7 --repo o/r \$(sed 1e x)${NL}EOF" \
+         "cat <<EOF${NL}\\\\\\\\\$(gh pr merge 7 --repo o/r)${NL}EOF" \
+         "x=\$(cat <<EOF${NL}hi${NL}EOF)${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA${NL}EOF" \
+         "rg --pr=./x 'gh pr merge 7 --repo o/r' docs" "git push --rece='gh pr merge 7 --repo o/r' origin x" \
+         "git ls-remote -u 'gh pr merge 7 --repo o/r' origin" "git grep -O'sh -c \"gh pr merge 7 --repo o/r\"' foo" \
+         "sed -n 1p f -e 'e gh pr merge 7 --repo o/r'" "sed -n '1e gh pr merge 7 --repo o/r' x" \
+         "cd .git/hooks && echo 'gh pr merge 7 --repo o/r' > pre-commit && cd ../.. && git commit -m x" \
+         "D=.git; echo 'gh pr merge 7 --repo o/r' > \$D/hooks/pre-commit; git commit -m x" \
+         "cat > .husky/pre-commit <<'EOF'${NL}gh pr merge 7 --repo o/r${NL}EOF" \
+         "echo 'gh pr merge 7 --repo o/r' | tee .git/hooks/pre-commit"; do
+  t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
+done
+reset; setbase main
+t "#680: a merge-like --subject on the one plain merge is still put to the owner"; g "$MA --subject \"gh: merge it\""; assert_ask "Merge PR #7 of o/r into main"
+# Issue #675 stays open on purpose: a merge that is encoded at run time holds no merge-like text, and text
+# matching cannot see it. These tests document the limit; branch protection on main is the backstop.
+reset
+for c in "python3 -c \"import os; os.system('g'+'h p'+'r mer'+'ge 7 --repo o/r')\"" \
+         "python3 -c \"import os,base64; os.system(base64.b64decode('Z2ggcHIgbWVyZ2UgNw==').decode())\""; do
+  t "#675 (known limit, not closed by #680): a merge encoded at run time is not seen: $c"; g "$c"; assert_rc 0
+done
+
 reset; setbase feat/x; touch "$D/slow"
 t "a stalled gh is killed and the merge is denied within the time budget"
 s=$SECONDS; g "$M"; e=$((SECONDS - s))
