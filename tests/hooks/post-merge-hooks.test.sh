@@ -340,4 +340,50 @@ t "docs: CLAUDE.md hook row ties the live-process skip to the SessionStart sweep
 ROW=$(grep '^| `clean-worktrees.sh`' "$ROOT/CLAUDE.md")
 if printf '%s' "$ROW" | grep -q 'session-start sweep also skips a worktree a live process uses' && ! printf '%s' "$ROW" | grep -q 'protected names ([^)]*) and a worktree a live process uses'; then pass; else fail "row=$ROW"; fi
 
+# ---- CLEAN_DRY_RUN=1: report only ----
+dry_run() { OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1); RC=$?; }
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+t "dry run by hand: branch and worktree stay, one 'would remove worktree' and one 'would delete branch' line, no 'removed'"
+dry_run
+if [ "$RC" = 0 ] && [ -d "$WT" ] && git -C "$MAIN" rev-parse -q --verify feat >/dev/null \
+   && [ "$(printf '%s\n' "$OUT" | grep -c '^would delete branch feat$')" = 1 ] \
+   && [ "$(printf '%s\n' "$OUT" | grep -c '^would remove worktree .*-wt$')" = 1 ] && ! printf '%s' "$OUT" | grep -q 'removed'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge; echo d > "$WT/new.txt"; git -C "$WT" add new.txt
+t "dry run: a dirty worktree still gets both 'would' lines and no 'kept' line"
+dry_run
+if [ -f "$WT/new.txt" ] && printf '%s' "$OUT" | grep -q '^would delete branch feat$' && printf '%s' "$OUT" | grep -q '^would remove worktree .*-wt$' && ! printf '%s' "$OUT" | grep -q 'kept'; then pass; else fail "out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+t "CLEAN_DRY_RUN=true is not a dry run: the branch and worktree are removed"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=true PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ ! -d "$WT" ] && ! git -C "$MAIN" rev-parse -q --verify feat >/dev/null && ! printf '%s' "$OUT" | grep -q 'would'; then pass; else fail "out=$OUT"; fi
+
+rsetup; git -C "$MAIN" checkout -q -b feat; git -C "$MAIN" commit -q --allow-empty -m w; git -C "$MAIN" checkout -q main
+git -C "$MAIN" merge -q --no-ff feat -m m
+RWT="$MAIN-rwt"; _CLEANUP_DIRS+=("$RWT"); git -C "$MAIN" worktree add -q "$RWT" feat; ghstub feat "$(git -C "$MAIN" rev-parse feat)"
+t "dry run in SessionStart mode: additionalContext has both 'would' lines, nothing is removed"
+rrun SessionStart CLEAN_DRY_RUN=1
+C=$(printf '%s' "$OUT" | jq -r '.hookSpecificOutput.additionalContext // empty' 2>/dev/null)
+if [ -d "$RWT" ] && has feat && printf '%s' "$C" | grep -q 'would remove worktree .*-rwt' && printf '%s' "$C" | grep -q 'would delete branch feat'; then pass; else fail "out=$OUT"; fi
+
+setup2
+t "dry run in PostToolUse mode for PR 7: only feat is named; WT, WT2, feat and feat2 all remain"
+PAYLOAD='{"tool_name":"Bash","tool_input":{"command":"gh pr merge 7"}}'
+OUT=$(cd "$MAIN" && printf '%s' "$PAYLOAD" | CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh PostToolUse 2>/dev/null)
+C=$(printf '%s' "$OUT" | jq -r '.hookSpecificOutput.additionalContext // empty' 2>/dev/null)
+if [ -d "$WT" ] && [ -d "$WT2" ] && git -C "$MAIN" rev-parse -q --verify feat >/dev/null && git -C "$MAIN" rev-parse -q --verify feat2 >/dev/null \
+   && printf '%s' "$C" | grep -q 'would delete branch feat$' && printf '%s' "$C" | grep -q 'would remove worktree .*-wt$' && ! printf '%s' "$C" | grep -q feat2; then pass; else fail "out=$OUT"; fi
+
+rsetup
+t "dry run with CLEAN_RECREATE: nothing is pushed and the output says 'would recreate branch automation'"
+rrun "" CLEAN_DRY_RUN=1 CLEAN_RECREATE=automation
+if ! git -C "$REM" rev-parse -q --verify refs/heads/automation >/dev/null && printf '%s' "$OUT" | grep -q '^would recreate branch automation$'; then pass; else fail "out=$OUT"; fi
+
+rsetup; for b in release/x keepme; do git -C "$MAIN" checkout -q -b "$b"; git -C "$MAIN" commit -q --allow-empty -m "w-$b"; git -C "$MAIN" checkout -q main; done
+printf '#!/bin/sh\ngit -C "%s" rev-parse -q --verify "refs/heads/$4"\n' "$MAIN" > "$STUB/gh"; chmod +x "$STUB/gh"
+t "dry run keeps the protected names: no 'would' line for release/x or a CLEAN_KEEP name"
+rrun "" CLEAN_DRY_RUN=1 CLEAN_KEEP=keepme
+if ! printf '%s' "$OUT" | grep -qE 'would .*(release/x|keepme)'; then pass; else fail "out=$OUT"; fi
+
 finish

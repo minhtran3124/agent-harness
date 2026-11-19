@@ -125,6 +125,7 @@ Settings (space-separated lists), set in the `env` block of `.claude/settings.js
 | `CLEAN_KEEP` | empty | Extra protected branch names, added to `main master`, the long-lived names above and the current branch |
 | `CLEAN_STRICT` | empty | Globs (for example `run/*`). A match is removed only by rule 1 (exact-tip merged PR), never by rules 2 or 3 |
 | `CLEAN_RECREATE` | empty | Base branches to recreate (a name with a leading dash, a glob or an invalid ref name, and long-lived names such as `develop` or `release/*`, are skipped; the push is never forced): when `git ls-remote` says the name is missing (exit 2), push `<remote>/main` as that branch. Any other `ls-remote` failure does nothing |
+| `CLEAN_DRY_RUN` | empty | `1` turns on report-only mode (any other value does nothing): same candidates as a real run, but no worktree remove, branch delete, `git worktree prune` or push; `git fetch --prune` still runs. It prints `would remove worktree <path>`, `would delete branch <name>` and `would recreate branch <name>`: on stdout when run by hand, in the `additionalContext` summary in hook modes. A dirty or locked worktree gets no simulated refusal |
 
 ```json
 {
