@@ -161,17 +161,15 @@ for c in 'command gh pr merge 7 --repo o/r' 'env gh pr merge 7 --repo o/r' 'exec
 done
 t "gh alias set with merge is denied"; g "gh alias set mm 'pr merge'"; assert_rc 2
 
-# Issue #671: a wrapper segment (bash, env, ...) is denied only when the command can carry a PR merge,
-# not because a file or helper name such as post-merge-hooks.test.sh or merge_pr has the word in it.
+# Issue #671: the word merge in a file name is not a merge when the command is not merge-like (no $ or
+# backtick before it) or has no wrapper. The known false positive (a $ before such a name, with a shell)
+# stays denied on purpose: an exemption for it was dropped after four security reviews (docs/hooks.md).
 reset; setbase main
-for c in 'S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh' 'bash $HOME/x.sh; echo post-merge' \
-         'echo $HOME; bash tests/hooks/post-merge-hooks.test.sh' 'H=/tmp; bash $H/merge-guard.sh < /dev/null' \
-         'D=/r; env FOO=1 bash $D/merge_pr.sh' 'R=/r; sh $R/git-merge-base.sh main HEAD' \
-         'bash tests/hooks/post-merge-hooks.test.sh' 'echo $HOME; grep -n merge_pr tests/scripts/release.test.sh' \
+for c in 'bash tests/hooks/post-merge-hooks.test.sh' 'echo $HOME; grep -n merge_pr tests/scripts/release.test.sh' \
          'bash tests/hooks/post-merge-hooks.test.sh > /tmp/out.log; echo done'; do
-  t "#671: a wrapper with only a merge-named file, no PR merge, is allowed: $c"; g "$c"; assert_rc 0
+  t "#671: a merge-named file with no wrapper or no \$ before it is allowed: $c"; g "$c"; assert_rc 0
 done
-t "#671: a script-file deny names what it matched"; g 'N=7; bash $HOME/x.sh merge $N'; assert_rc_contains 2 "matched: the word merge on its own"
+t "#671: the accepted false positive is denied, as documented"; g 'S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh'; assert_rc 2
 # A wrapper that runs code from a string or stdin stays denied, including merges built at run time
 # (the bypasses found in review of the first fix), and a script-file run that could carry a merge.
 for c in 'X="gh pr merge 7 --repo o/r"; bash -c "$X"' 'X=me; bash -c "gh pr ${X}rge 7 --repo o/r"' \
@@ -229,7 +227,53 @@ for c in "echo \$HOME/xmerge; bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'
          "echo \$HOME/xmerge; bash /dev/stdin" "echo \$HOME/xmerge; bash -- -c 'gh pr m{e..e}rge 7'"; do
   t "#671 review 2: a shell run with options or a hidden script stays denied: $c"; g "$c"; assert_rc 2
 done
-t "#671 review 2: value-free flags before a script file are still a script run"; g 'S=/tmp/x; bash -eu $S/run.sh tests/hooks/post-merge-hooks.test.sh'; assert_rc 0
+# Third security review: an operand that expands to an option, and a writer that is not an interpreter.
+# Each was denied before #674 and must stay denied.
+for c in "echo \$HOME/xmerge; bash \\-c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash [-]c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash ?c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash {-c,} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash \${F:--c} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; set -- -c; bash \$1 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash \$* 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; A=(-c x); bash \${A[0]} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash \${F%x} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; A=-; B=c; bash \$A\$B 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; sudo bash \\-c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; cp /etc/hostname f.sh; sed -i 's/.*/gh pr xmerge 7 --repo o\\/r/;s/x//' f.sh; bash f.sh" \
+         "echo \$HOME/xmerge; sed -n 's/.*/gh pr xmerge 7/;s/x//;w f.sh' /etc/hostname; bash f.sh" \
+         "echo \$HOME/xmerge; sort -o f.sh g.txt; bash f.sh" "echo \$HOME/xmerge; nodejs w.js; bash f.sh" \
+         "echo \$HOME/xmerge; IFS=:; S='-c:g[h] pr m{e..e}rge 7 --repo o/r #'; bash \$S/run.sh"; do
+  t "#671 review 3: an option-like operand or a same-call writer stays denied: $c"; g "$c"; assert_rc 2
+done
+
+# Issue #677: a literal merge in a shell string behind a keyword, !, an unlisted wrapper, or a path or
+# backslash on the shell name was not denied (it reached gh pr merge with no owner prompt).
+reset; setbase main
+for c in 'if bash -c "gh pr merge 7 --repo o/r"; then :; fi' '! bash -c "gh pr merge 7 --repo o/r"' \
+         'while bash -c "gh pr merge 7 --repo o/r"; do break; done' 'until bash -c "gh pr merge 7 --repo o/r"; do :; done' \
+         'true; then bash -c "gh pr merge 7 --repo o/r"' \
+         'nice bash -c "gh pr merge 7 --repo o/r"' 'timeout 5 bash -c "gh pr merge 7 --repo o/r"' \
+         'stdbuf -o0 bash -c "gh pr merge 7 --repo o/r"' 'setsid bash -c "gh pr merge 7 --repo o/r"' \
+         'ionice -c2 bash -c "gh pr merge 7 --repo o/r"' 'taskset 1 bash -c "gh pr merge 7 --repo o/r"' \
+         '/bin/bash -c "gh pr merge 7 --repo o/r"' '\bash -c "gh pr merge 7 --repo o/r"' \
+         '/usr/bin/env bash -c "gh pr merge 7 --repo o/r"' 'if eval "gh pr merge 7 --repo o/r"; then :; fi' \
+         '! /bin/sh -c "gh pr merge 7 --repo o/r"' 'if ! bash -c "gh pr merge 7 --repo o/r"; then :; fi'; do
+  t "#677: a merge behind a keyword, wrapper or shell path is denied: $c"; g "$c"; assert_rc 2
+done
+t "#677: a keyword in front of an ordinary command is still allowed"; g 'if true; then echo merged; fi'; assert_rc 0
+
+# Fourth security review of the dropped #671 exemption: a $VAR/ operand that word-splits into -c, env's
+# split-string option in a form the old check missed, and $( assembled from pieces (PS4, test -v). Each ran
+# gh pr merge in a sandbox through the exemption; with no exemption they must be denied.
+for c in "S='-c \"\$@\" '; bash \$S/post-merge.sh gh pr m{e..e}rge 7 --repo o/r" \
+         "printf -v S %s '-c \"\$@\" '; bash \$S/post-merge.sh gh pr m{e..e}rge 7 --repo o/r" \
+         "env -vSbash -c '{gh,pr,m{e..e}rge,7,--repo=o/r}' bash tests/post-merge.sh" \
+         "env --split=bash -c '{gh,pr,m{e..e}rge,7,--repo=o/r}' bash tests/post-merge.sh" \
+         "PS4=\"\\\$\"'(gh pr m{e..e}rge 7 --repo o/r)' bash -x tests/post-merge.sh" \
+         "x='a['\"\\\$\"'(gh pr m{e..e}rge 7 --repo o/r)]'; test -v 'b[x]'; bash tests/post-merge.sh"; do
+  t "#671 review 4: a script run built to carry a merge is denied: $c"; g "$c"; assert_rc 2
+done
 
 reset; setbase feat/x; printf 'main\n' > "$D/base.8"
 t "chain: 7 on feat/x, 8 on main: the whole command is denied"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 2
