@@ -1,13 +1,13 @@
-# Evals for /harness:own
+# Evals for /harness:pd-own
 
 Each folder is one case, in the layout `claude plugin eval` reads: `prompt.md` (settings block,
 then the owner's prompt), `case.yaml` (expected outcome), `graders/` (one assertion per file) and
 `files/` (inputs, copied into the run directory by `place-files.sh`).
 
-The cases live here, not under `plugins/harness/skills/own/`, so they do not ship with the plugin.
+The cases live here, not under `plugins/harness/skills/pd-own/`, so they do not ship with the plugin.
 Runs cost model usage, so CI does not run them. Results are not committed.
 
-`/harness:own` is interactive, and an eval run has no live owner. So each `prompt.md` carries the
+`/harness:pd-own` is interactive, and an eval run has no live owner. So each `prompt.md` carries the
 owner's answers and a "Test rules" block: no `AskUserQuestion`, every question and reply goes to
 `transcript.md`, files only under the run directory.
 
@@ -32,7 +32,7 @@ without the plugin, so the baseline here is "no skill".
 ## Run with sub-agents (skill-creator loop)
 
 Ask Claude to run the evals in `tests/evals/own` with the skill-creator skill. For each case, a
-sub-agent reads `plugins/harness/skills/own/SKILL.md`, runs the prompt in a fresh directory that
+sub-agent reads `plugins/harness/skills/pd-own/SKILL.md`, runs the prompt in a fresh directory that
 holds the case's `files/`, and saves `transcript.md` and the written files there. A useful
-baseline is the base skill alone: the same prompt with `/harness:grilling` or
-`/harness:brainstorming` in place of `/harness:own <mode>`. It shows what `own` adds.
+baseline is the base skill alone: the same prompt with `/harness:pd-grilling` or
+`/harness:pd-brainstorming` in place of `/harness:pd-own <mode>`. It shows what `own` adds.

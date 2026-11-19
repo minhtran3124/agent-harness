@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 CHECKER = Path(__file__).resolve().parent / "check_ste_baseline.py"
-LINTER = "plugins/harness/skills/asd-ste100/scripts/ste-lint.py"
+LINTER = "plugins/harness/skills/pd-asd-ste100/scripts/ste-lint.py"
 
 FAKE_LINTER = """\
 import json, sys

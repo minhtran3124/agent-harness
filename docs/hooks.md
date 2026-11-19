@@ -149,7 +149,7 @@ The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `
 
 ## Permissions
 
-The root `settings.json` carries a `permissions.deny` list (no `allow` rules). The plugin cannot ship it, so `/harness:setup` merges these rules into a consuming project's `.claude/settings.json` with `merge-deny.sh`:
+The root `settings.json` carries a `permissions.deny` list (no `allow` rules). The plugin cannot ship it, so `/harness:pd-setup` merges these rules into a consuming project's `.claude/settings.json` with `merge-deny.sh`:
 
 | Rule | Blocks |
 |---|---|
@@ -159,7 +159,7 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
-`/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still stops every merge into a protected base. The root `settings.json` has no allow rules.
+`/harness:pd-setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still stops every merge into a protected base. The root `settings.json` has no allow rules.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
 
 ## What is intentionally not enforced

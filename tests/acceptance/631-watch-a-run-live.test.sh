@@ -14,8 +14,8 @@ else fail "docs/research/watch-a-run-live.md is missing"; fi
 t "AC2: names the board command and the address"
 [ -f "$DOC" ] && grep -qF 'node plugins/harness/board/board.js' "$DOC" && grep -qF 'http://127.0.0.1:4317' "$DOC" && pass || fail "command or address missing"
 
-t "AC3: says to start the board before or during /harness:autopilot"
-[ -f "$DOC" ] && grep -qF '/harness:autopilot' "$DOC" && grep -Eqi 'before|during' "$DOC" && pass || fail "no autopilot start advice"
+t "AC3: says to start the board before or during /harness:pd-autopilot"
+[ -f "$DOC" ] && grep -qF '/harness:pd-autopilot' "$DOC" && grep -Eqi 'before|during' "$DOC" && pass || fail "no autopilot start advice"
 
 t "AC4: states the limit: log() lines and PR link appear only after the run ends"
 [ -f "$DOC" ] && grep -qF 'log()' "$DOC" && grep -qi 'PR link' "$DOC" && grep -Eqi 'after the run|run ends|only after|once the run' "$DOC" && pass || fail "limit not stated"

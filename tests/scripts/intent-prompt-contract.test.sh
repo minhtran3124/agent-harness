@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../lib.sh"
-SKILL="plugins/harness/skills/intent-review/SKILL.md"
+SKILL="plugins/harness/skills/pd-intent-review/SKILL.md"
 AGENT="plugins/harness/agents/intent-reviewer.md"
 
 t "intent review stops when the verbatim request is missing"

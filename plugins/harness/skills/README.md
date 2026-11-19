@@ -7,7 +7,7 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 ## Runtime entry syntax
 
 Claude Code is the only runtime. The plugin is named `harness`, so a user types `/harness:<skill>`
-(for example `/harness:intake`) and a subagent type is `harness:<role>`. Prose that tells a model to
+(for example `/harness:pd-intake`) and a subagent type is `harness:<role>`. Prose that tells a model to
 invoke another skill uses the same namespaced name. That the Skill tool resolves a bare name inside a
 plugin is not verified, so the namespaced form is used where a model must invoke a skill.
 
@@ -18,7 +18,7 @@ plugin is not verified, so the namespaced form is used where a model must invoke
 ### Full Cycle (3+ layers, migration, or spans multiple services)
 
 ```
-init-structure.sh --root <project>   (first-time setup; /harness:setup runs it)
+init-structure.sh --root <project>   (first-time setup; /harness:pd-setup runs it)
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
 intake  (readiness gate — run first on every ticket)
@@ -89,55 +89,55 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, slug, depth, deps, questions, reason) and `specs/<slug>/intent.md` |
+| `pd-intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, slug, depth, deps, questions, reason) and `specs/<slug>/intent.md` |
 
 ### Setup
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `setup` | **User-invoked** (`/harness:setup`), once per project after installing the plugin | `specs/` and `docs/solutions/` scaffold files, a proposed `## Run and test` section in `CLAUDE.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, and an approved removal of an old copied install |
+| `pd-setup` | **User-invoked** (`/harness:pd-setup`), once per project after installing the plugin | `specs/` and `docs/solutions/` scaffold files, a proposed `## Run and test` section in `CLAUDE.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, and an approved removal of an old copied install |
 
 ### Discovery & Design
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket, the same list in `intent.md` and `decision.md`, + a short decision list for the caller |
-| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` and a design ADR in `docs/adr/` (depth L) |
-| `own` | **User-invoked only** (`/harness:own <grill \| brainstorm> <target>`). Runs `grilling` or `brainstorming` in ownership mode: on at most 3 big decisions (hard to reverse, or low agent confidence) the owner answers first, then sees the agent's recommendation and a counter-argument, then decides. `brainstorm` adds the owner's sketch, design-breaking assumptions and an optional teach-back. Never in autopilot or `--no-ask` runs | The base skill's output, plus owner first answer, agent recommendation and counter-argument per big decision in `decision.md`; `## Owner reasoning` in `design.md` (brainstorm) |
-| `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
-| `diagnosing-bugs` | **User- or intake-invoked**. Run `/harness:diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
+| `pd-grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket, the same list in `intent.md` and `decision.md`, + a short decision list for the caller |
+| `pd-brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` and a design ADR in `docs/adr/` (depth L) |
+| `pd-own` | **User-invoked only** (`/harness:pd-own <grill \| brainstorm> <target>`). Runs `grilling` or `brainstorming` in ownership mode: on at most 3 big decisions (hard to reverse, or low agent confidence) the owner answers first, then sees the agent's recommendation and a counter-argument, then decides. `brainstorm` adds the owner's sketch, design-breaking assumptions and an optional teach-back. Never in autopilot or `--no-ask` runs | The base skill's output, plus owner first answer, agent recommendation and counter-argument per big decision in `decision.md`; `## Owner reasoning` in `design.md` (brainstorm) |
+| `pd-xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
+| `pd-diagnosing-bugs` | **User- or intake-invoked**. Run `/harness:pd-diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
 
 ### Planning
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `writing-plans` | After intake, at every depth | `specs/<slug>/plan.md`: steps with Files, Effort, Done-when and parallel group; a short `design.md` at depth S and M |
+| `pd-writing-plans` | After intake, at every depth | `specs/<slug>/plan.md`: steps with Files, Effort, Done-when and parallel group; a short `design.md` at depth S and M |
 
 ### Execution
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `using-git-worktrees` | Manual runs that need an isolated worktree from the right base (a Workflow uses `isolation: 'worktree'`) | Isolated worktree + branch |
-| `implement` | Carrying out an agreed plan — a fresh implementer subagent per step in an isolated worktree, Done-when run, fix loop capped at 3 | Commits, files touched and verify output per step |
+| `pd-using-git-worktrees` | Manual runs that need an isolated worktree from the right base (a Workflow uses `isolation: 'worktree'`) | Isolated worktree + branch |
+| `pd-implement` | Carrying out an agreed plan — a fresh implementer subagent per step in an isolated worktree, Done-when run, fix loop capped at 3 | Commits, files touched and verify output per step |
 
 ### Review & Shipping
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `intent-review` | Checks the diff range against the owner's original request verbatim, blind to the plan; dispatches the `intent-reviewer` agent with only those two inputs. **Standalone** on any diff plus its request, or run by the ship workflow as its last pass | Findings classified `gap` / `excess` / `drift` → fix · ask the owner (auto mode: record a decision) · list in the PR |
-| `tickets` | **User-invoked** (`/harness:tickets <brief path> [--max 30] [--milestone <name> \| --no-milestone]`). Reads a brief, splits it into tickets, shows one table, asks one go/no-go question, then creates the issues and an epic with `gh`, under a milestone if the owner chooses one. Stops on a secret in the brief. Each ticket is written to pass `intake` as READY. Never edits existing issues | GitHub issues, an epic and an optional milestone; next step `/harness:autopilot <milestone>` or `/harness:autopilot #n #m ...` |
-| `autopilot` | **User-invoked** (`/harness:autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask] [--no-board]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`intake`), groups them by dependency (`skills/autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go. Just before the launch it starts the run board with `skills/autopilot/scripts/board-start.sh` and opens it in a browser when a desktop is there (skip with `--no-board`; stop it with `--stop`). The script writes `specs/` files as each stage ends: `intent.md` after the intent stage (at depth S also `design.md` and `plan.md`), `design.md`, `plan.md` and `research-brief.md` after the plan stage, `decision.md` at the end, and it rewrites the others at the end; the run result carries `summary.md` in `specFiles` and the main session writes it | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
-| `decision-record` | **Stage- or user-invoked**. A model decided something on its own during an autonomous run. Stage agents return `decisions[]`. The final ADR stage runs `scripts/write_adrs.py`, commits `docs/adr/NNNN-*.md` and renders the PR `## Decisions` section | ADR files + a `## Decisions` PR section |
-| `recall` | **User-invoked only** (`/harness:recall <task description>`). Use it when you start a task and want to see what `docs/solutions/` already knows about it. Manual only, with no automatic trigger. Read-only: it runs in a forked `Explore` context with `Read`, `Grep` and `Glob`, opens at most 3 records and never writes a file. Not `compound` (which writes records) | Matching record paths with one line each, things to avoid from `failure` and `bug` records, and a `Search surface:` line that lists every file read. With no match it prints `no match` and the `Search surface:` line |
-| `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings |
-| `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items become an `intake` task. Durable knowledge goes to `compound` |
-| `release-notes` | **User-invoked** (`/harness:release-notes --milestone <name>` or `<from>..<to>`). Drafts technical GitHub Release notes: breaking changes (title `!:`, body or commit footer `BREAKING CHANGE:`, or a breaking label), groups by conventional-commit type, known limitations from PR bodies. Version from `--version`, a manifest, the latest tag, else `[NEEDS HUMAN]`. Draft only: never tags, pushes, publishes or merges | A draft `.md` plus a fact-list JSON beside it, handed to `release-summary` |
-| `release-summary` | **User-invoked** (`/harness:release-summary [<fact-list.json>] [--audience team\|client\|stakeholder] [--out <path>]`). Reads the fact-list JSON from `release-notes` and drafts a plain-language summary: breaking changes with `What you need to do:`, what is new by outcome, what to watch, and items to confirm tagged `[NEEDS HUMAN]`. Every line cites a PR. Leaves out Internal types, excluded PRs and commits with no PR. Draft only: never tags, pushes, publishes or merges | `docs/releases/v<version>-summary.md`. the harness repo script `scripts/check_release_summary.py` checks the format |
-| `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. Implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
-| `verify` | Use it when a ticket has a `Verify:` row and its code is ready, or run `/harness:verify`. Picks the checks by ticket type (BE, FE, FE+BE, docs). Browser steps use the Claude Code Playwright plugin tools only, and pass or fail comes from assertions. The agent infers the start recipe and writes `verify.config.json` (names of the login variables, never values). Never a project-level skill named `verify` | A pass or fail table, stills in `.playwright-mcp/<ticket>/` (gitignored), and a committed `verify.config.json`. A fixture app in `tests/fixtures/verify-app/` lets you try it by hand |
-| `uat` | Use it after a ticket is built, for FE, BE and FE+BE tickets, or run `/harness:uat N`. Reads only the issue body and the Confirmed decisions comment (never the plan, the diff or the `Verify:` row), numbers the acceptance bullets AC1..ACn, and checks the running app through `verify/references/run-app.md`. `ship.js` runs it as the UAT phase between intent review and testing | A table of scenarios (each naming an AC id, negative, extra or not-browser-checkable) with PASS or FAIL, assertion and still path. Never fixes code |
+| `pd-intent-review` | Checks the diff range against the owner's original request verbatim, blind to the plan; dispatches the `intent-reviewer` agent with only those two inputs. **Standalone** on any diff plus its request, or run by the ship workflow as its last pass | Findings classified `gap` / `excess` / `drift` → fix · ask the owner (auto mode: record a decision) · list in the PR |
+| `pd-tickets` | **User-invoked** (`/harness:pd-tickets <brief path> [--max 30] [--milestone <name> \| --no-milestone]`). Reads a brief, splits it into tickets, shows one table, asks one go/no-go question, then creates the issues and an epic with `gh`, under a milestone if the owner chooses one. Stops on a secret in the brief. Each ticket is written to pass `intake` as READY. Never edits existing issues | GitHub issues, an epic and an optional milestone; next step `/harness:pd-autopilot <milestone>` or `/harness:pd-autopilot #n #m ...` |
+| `pd-autopilot` | **User-invoked** (`/harness:pd-autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask] [--no-board]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`intake`), groups them by dependency (`skills/pd-autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go. Just before the launch it starts the run board with `skills/pd-autopilot/scripts/board-start.sh` and opens it in a browser when a desktop is there (skip with `--no-board`; stop it with `--stop`). The script writes `specs/` files as each stage ends: `intent.md` after the intent stage (at depth S also `design.md` and `plan.md`), `design.md`, `plan.md` and `research-brief.md` after the plan stage, `decision.md` at the end, and it rewrites the others at the end; the run result carries `summary.md` in `specFiles` and the main session writes it | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
+| `pd-decision-record` | **Stage- or user-invoked**. A model decided something on its own during an autonomous run. Stage agents return `decisions[]`. The final ADR stage runs `scripts/write_adrs.py`, commits `docs/adr/NNNN-*.md` and renders the PR `## Decisions` section | ADR files + a `## Decisions` PR section |
+| `pd-recall` | **User-invoked only** (`/harness:pd-recall <task description>`). Use it when you start a task and want to see what `docs/solutions/` already knows about it. Manual only, with no automatic trigger. Read-only: it runs in a forked `Explore` context with `Read`, `Grep` and `Glob`, opens at most 3 records and never writes a file. Not `compound` (which writes records) | Matching record paths with one line each, things to avoid from `failure` and `bug` records, and a `Search surface:` line that lists every file read. With no match it prints `no match` and the `Search surface:` line |
+| `pd-compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings |
+| `pd-session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items become an `intake` task. Durable knowledge goes to `compound` |
+| `pd-release-notes` | **User-invoked** (`/harness:pd-release-notes --milestone <name>` or `<from>..<to>`). Drafts technical GitHub Release notes: breaking changes (title `!:`, body or commit footer `BREAKING CHANGE:`, or a breaking label), groups by conventional-commit type, known limitations from PR bodies. Version from `--version`, a manifest, the latest tag, else `[NEEDS HUMAN]`. Draft only: never tags, pushes, publishes or merges | A draft `.md` plus a fact-list JSON beside it, handed to `release-summary` |
+| `pd-release-summary` | **User-invoked** (`/harness:pd-release-summary [<fact-list.json>] [--audience team\|client\|stakeholder] [--out <path>]`). Reads the fact-list JSON from `release-notes` and drafts a plain-language summary: breaking changes with `What you need to do:`, what is new by outcome, what to watch, and items to confirm tagged `[NEEDS HUMAN]`. Every line cites a PR. Leaves out Internal types, excluded PRs and commits with no PR. Draft only: never tags, pushes, publishes or merges | `docs/releases/v<version>-summary.md`. the harness repo script `scripts/check_release_summary.py` checks the format |
+| `pd-asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/pd-asd-ste100/UPSTREAM.md`. Implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/pd-asd-ste100/scripts/ste-lint.py` checks the structural rules. |
+| `pd-verify` | Use it when a ticket has a `Verify:` row and its code is ready, or run `/harness:pd-verify`. Picks the checks by ticket type (BE, FE, FE+BE, docs). Browser steps use the Claude Code Playwright plugin tools only, and pass or fail comes from assertions. The agent infers the start recipe and writes `verify.config.json` (names of the login variables, never values). Never a project-level skill named `pd-verify` | A pass or fail table, stills in `.playwright-mcp/<ticket>/` (gitignored), and a committed `verify.config.json`. A fixture app in `tests/fixtures/verify-app/` lets you try it by hand |
+| `pd-uat` | Use it after a ticket is built, for FE, BE and FE+BE tickets, or run `/harness:pd-uat N`. Reads only the issue body and the Confirmed decisions comment (never the plan, the diff or the `Verify:` row), numbers the acceptance bullets AC1..ACn, and checks the running app through `pd-verify/references/run-app.md`. `ship.js` runs it as the UAT phase between intent review and testing | A table of scenarios (each naming an AC id, negative, extra or not-browser-checkable) with PASS or FAIL, assertion and still path. Never fixes code |
 | `qa-verifier` (agent, `agents/qa-verifier.md`) | `ship.js` runs it in the UAT phase for a `docs` ticket (docs, config, CLI, scripts, plugin files) at depth M and L; depth S skips it. Plan-blind like `uat`: it gets the issue body and owner block with every `Verify:` row stripped, runs commands and reads the delivered files, and never reads the diff, `git log`, `specs/`, `docs/adr/` or a plan | One row per AC: `PASS` or `FAIL` with command and exit code, or `not-checkable` (never a pass, never a failure), plus `head_sha`. Never fixes code |
-| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges), writes `specs/<slug>/summary.md` |
+| `pd-finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges), writes `specs/<slug>/summary.md` |
 
 ---
 
@@ -199,7 +199,7 @@ reads  ◄── brainstorming  (applicable decisions — avoid re-proposing rej
        ◄── compound       (related-docs pass — overlap by module + tags; high overlap is a recurrence)
 ```
 
-Schema reference: `docs/solutions/README.md` (scaffolded by `/harness:setup`).
+Schema reference: `docs/solutions/README.md` (scaffolded by `/harness:pd-setup`).
 
 ---
 
@@ -220,14 +220,14 @@ This is one of several wired hooks — see the full table in the root `CLAUDE.md
 ---
 
 > **Maintainer notes.** Everything below explains how the harness is built and how to fork it.
-> `skills/compound/README.md` holds the same kind of content in full.
+> `skills/pd-compound/README.md` holds the same kind of content in full.
 
 ## Per-skill Design Rationales
 
 Notes preserved from the former per-skill READMEs. For full runtime behavior read each skill's `SKILL.md`.
 The diagrams below render natively in the GitHub README — no clone needed.
 
-### `compound`
+### `pd-compound`
 
 > **One-liner:** the orchestrator runs four read-only passes over the session it holds, then writes every knowledge doc itself.
 
@@ -253,7 +253,7 @@ graph LR
 - **INDEX full rebuild (not append-only).** `scripts/rebuild_solution_index.py` runs after every run, even a run that wrote nothing. Prevents orphaned rows when files are renamed/moved/deleted. `docs/solutions/` grows to tens of files, not thousands — full scan is negligible.
 - **Mistake twice.** A learning that matches an existing record at `high` overlap is a second occurrence. The run updates that record, adds a `**Recurred:** <date>` line, and updates or adds its `critical-patterns.md` entry instead of a new append. A path-specific learning also gets a proposed path-scoped rule in the report, never a written one: adding `paths:` to `rules/` changes what loads, so a human decides. `moderate` overlap is not a recurrence.
 - **Bug root cause from the diagnosis.** When `specs/<slug>/diagnosis.md` exists, the bug track takes its root cause from the `Confirmed:` hypothesis.
-- **STE-flavored records.** Each new record gets `skills/asd-ste100/SKILL.md` in STE-flavored mode. Fenced code and literal strings that a test or hook matches stay unchanged.
+- **STE-flavored records.** Each new record gets `skills/pd-asd-ste100/SKILL.md` in STE-flavored mode. Fenced code and literal strings that a test or hook matches stay unchanged.
 - **Never auto-write to `CLAUDE.md`.** At end of run, if `CLAUDE.md` does not reference `docs/solutions/`, propose an addition — wait for developer approval.
 
 **Severity triage** — `critical` requires **all three**; anything else is `standard`:
@@ -271,11 +271,11 @@ graph LR
 | **Moderate** | partial match | Write `[slug]-2.md` |
 | **Low** | no real match | Write `[slug].md` |
 
-### `xia2`
+### `pd-xia2`
 
 > **One-liner:** research before building. No depth classifier: look locally first, and outside the repo only when the change has an external surface.
 
-- **Portable by design.** Copy `skills/xia2/`; there is no per-project config.
-- **Fork to another project:** copy the folder, then run `/harness:setup` in the new repo. Keep `skills/xia2/tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
+- **Portable by design.** Copy `skills/pd-xia2/`; there is no per-project config.
+- **Fork to another project:** copy the folder, then run `/harness:pd-setup` in the new repo. Keep `skills/pd-xia2/tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
 
 <!-- harness-only:end -->

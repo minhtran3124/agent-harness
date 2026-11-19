@@ -18,7 +18,7 @@ A design doc makes a factual claim about **what the repository currently contain
 
 ## Symptom
 
-`sync_protected_dir` restored a consumer's `skills/xia2/PROJECT.md.proposed` unconditionally. The result: a consumer's copy was frozen forever, and source updates were silently discarded — **even under `--overwrite-conflicts`**. Reproduced: seed a stale `.proposed`, run `deploy --overwrite-conflicts`, observe the stale copy survive.
+`sync_protected_dir` restored a consumer's `skills/pd-xia2/PROJECT.md.proposed` unconditionally. The result: a consumer's copy was frozen forever, and source updates were silently discarded — **even under `--overwrite-conflicts`**. Reproduced: seed a stale `.proposed`, run `deploy --overwrite-conflicts`, observe the stale copy survive.
 
 ## Wrong Approach
 
@@ -26,9 +26,9 @@ A design doc makes a factual claim about **what the repository currently contain
 
 > "The harness source does not ship it, so there is never a conflict: snapshot before the dir copy, restore after, always."
 
-The premise was false. `skills/xia2/PROJECT.md.proposed` (7140 bytes) and `agents/PROJECT.md.proposed` were both tracked in git, committed in `f7d2d58` as artifacts of a `bootstrap-xia2` run against this repo itself.
+The premise was false. `skills/pd-xia2/PROJECT.md.proposed` (7140 bytes) and `agents/PROJECT.md.proposed` were both tracked in git, committed in `f7d2d58` as artifacts of a `bootstrap-xia2` run against this repo itself.
 
-Nobody ran `ls skills/xia2/`. The claim was inferred from having seen `agents/PROJECT.md.proposed` and *not having looked* at the sibling directory.
+Nobody ran `ls skills/pd-xia2/`. The claim was inferred from having seen `agents/PROJECT.md.proposed` and *not having looked* at the sibling directory.
 
 ## Why It Failed
 
@@ -41,7 +41,7 @@ A false "what exists" premise defeats **every plan-anchored gate at once**, beca
 | the test author | `design.md` | ✅ passed — and *enshrined* the premise in a comment: "`.proposed`, never shipped by the harness" |
 | `/correctness review` | **runtime, blind to the plan** | ❌ caught it |
 
-The consistency is the trap. Three independent reviewers agreeing means nothing when all three read the same wrong sentence. A reviewer that can see the plan anchors on it and re-confirms its misreading — which is precisely why `/correctness review` and `/intent-review` are dispatched blind to `PLAN.md`.
+The consistency is the trap. Three independent reviewers agreeing means nothing when all three read the same wrong sentence. A reviewer that can see the plan anchors on it and re-confirms its misreading — which is precisely why `/correctness review` and `/pd-intent-review` are dispatched blind to `PLAN.md`.
 
 Note the test suite made it *worse*: it encoded the false premise as a comment, converting an unverified assumption into apparent documentation.
 
@@ -50,7 +50,7 @@ Note the test suite made it *worse*: it encoded the false premise as a comment, 
 Verify "what the repo currently ships" against the filesystem and git, never against the design doc. One command would have caught this:
 
 ```bash
-git ls-files skills/xia2/ | grep proposed
+git ls-files skills/pd-xia2/ | grep proposed
 ```
 
 This is a direct instance of `rules/behavior.md` §1 — **`not_observed != absent`**. A missing search result, an unread file, or an unrun `ls` means *unknown*, not *absent*. Before writing "X does not exist" into a design, state where you looked; if you did not look, do not write it.

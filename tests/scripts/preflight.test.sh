@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# plugins/harness/skills/autopilot/scripts/preflight.sh checks the setup an autopilot run needs before
+# plugins/harness/skills/pd-autopilot/scripts/preflight.sh checks the setup an autopilot run needs before
 # triage: git, gh, jq and python3 in PATH, a gh login, and specs/ ignored in the checkout. Each case
 # runs it with a private fake PATH (a git symlink and stubs for gh, jq and python3) and a private git
 # config, so the result does not depend on the host's gh login, jq or global gitignore.
 set -uo pipefail
 root=$(cd "$(dirname "$0")/../.." && pwd)
-pre="$root/plugins/harness/skills/autopilot/scripts/preflight.sh"
+pre="$root/plugins/harness/skills/pd-autopilot/scripts/preflight.sh"
 bash_bin=$(command -v bash)
 git_bin=$(command -v git)
 

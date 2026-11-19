@@ -11,7 +11,7 @@ as contracts when you change a hook, a skill or a script.
 - `plugins/harness/agents/` - the subagent role files (model, effort and tools are in their frontmatter).
 - `plugins/harness/hooks/` - `hooks.json` plus the Bash hooks listed in the `CLAUDE.md` Hooks table.
 - `plugins/harness/rules/behavior.md` - the one behavioral rule.
-- `plugins/harness/workflows/ship.js` - the autonomous Workflow script that `/harness:autopilot` launches.
+- `plugins/harness/workflows/ship.js` - the autonomous Workflow script that `/harness:pd-autopilot` launches.
 - `plugins/harness/templates/structure/` - scaffold files that `plugins/harness/scripts/init-structure.sh` copies into a consumer repo.
 - `plugins/harness/scripts/` - the runtime scripts (`init-structure.sh`, `write_adrs.py`, `rebuild_solution_index.py`).
 - `scripts/` - lint and validation utilities for this repo, plus their `test_*.py` unit tests.

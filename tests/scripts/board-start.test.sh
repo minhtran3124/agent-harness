@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# plugins/harness/skills/autopilot/scripts/board-start.sh starts the run board in the background for
-# /harness:autopilot and opens it in a browser. It is advisory: it always exits 0. The cases use free
+# plugins/harness/skills/pd-autopilot/scripts/board-start.sh starts the run board in the background for
+# /harness:pd-autopilot and opens it in a browser. It is advisory: it always exits 0. The cases use free
 # ports, a fake browser opener on PATH and a private TMPDIR, and they stop every server they start.
 set -uo pipefail
 root=$(cd "$(dirname "$0")/../.." && pwd)
-start="$root/plugins/harness/skills/autopilot/scripts/board-start.sh"
+start="$root/plugins/harness/skills/pd-autopilot/scripts/board-start.sh"
 if ! command -v node >/dev/null 2>&1; then
   echo 'board-start: skip — no node'
   exit 0

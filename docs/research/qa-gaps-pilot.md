@@ -6,7 +6,7 @@ ticket PR: `feat/qa-gaps`.
 
 ## How the pilot ran
 
-- **Launch.** `/harness:autopilot` is interactive and the session plugin was older than `feat/qa-gaps`. So the
+- **Launch.** `/harness:pd-autopilot` is interactive and the session plugin was older than `feat/qa-gaps`. So the
   tickets were triaged by hand and launched with `claude -p --plugin-dir <pilot worktree>/plugins/harness`, which
   calls `Workflow` with `scriptPath` on the pilot worktree's `ship.js`. One single-ticket run per ticket.
 - **Agent path.** The run journals show agent type `harness:qa-verifier` for every QA check. The agent type
@@ -19,8 +19,8 @@ ticket PR: `feat/qa-gaps`.
 - **Part 2 (tickets with an app) was not run.** No project with an app and a `verify.config.json` was chosen for
   the pilot.
 - **Tickets that were dropped.** #311, #314, #265 and #266 name files that no longer exist, so they are stale:
-  #311 names `templates/INTENT.template.md` and a sentence that is not in `compound/SKILL.md`; #314 names
-  `skills/finishing-a-development-branch/references/pr-body.md`; #265 and #266 name `scripts/check_plan_contract.py`,
+  #311 names `templates/INTENT.template.md` and a sentence that is not in `pd-compound/SKILL.md`; #314 names
+  `skills/pd-finishing-a-development-branch/references/pr-body.md`; #265 and #266 name `scripts/check_plan_contract.py`,
   which is gone. #482 documents sandbox scripts that are not in the repo yet. The owner may want to close or
   rewrite them. They were not edited or closed.
 

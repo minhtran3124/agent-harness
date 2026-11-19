@@ -19,8 +19,8 @@ PATH="$FAKE" "$BASH_BIN" "$ROOT/scripts/check-shellcheck.sh" >/dev/null 2>&1; rc
 want=$(cd "$ROOT" && { ls plugins/harness/hooks/*.sh plugins/harness/scripts/*.sh; \
   printf '%s\n' scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh \
   scripts/release.sh scripts/release-tag.sh scripts/release-guard.sh \
-  plugins/harness/skills/autopilot/scripts/board-start.sh \
-  plugins/harness/skills/autopilot/scripts/preflight.sh; })
+  plugins/harness/skills/pd-autopilot/scripts/board-start.sh \
+  plugins/harness/skills/pd-autopilot/scripts/preflight.sh; })
 if [ "$rc" -eq 0 ] && [ "$(cat "$ARGS" 2>/dev/null)" = "$want" ]; then pass; else fail "rc=$rc, args differ from the CI list"; fi
 
 t "the file list holds 16 files"

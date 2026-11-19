@@ -5,7 +5,7 @@ tags: version-bump, changelog, post-merge-maintenance, event-sourced, finishing-
 severity: standard
 applicable_when: Finishing a branch / opening a PR in harness-skills, or editing VERSION / CHANGELOG.md by hand — anywhere you are tempted to bump the version or add a CHANGELOG entry before merge.
 affects:
-  - skills/finishing-a-development-branch/SKILL.md
+  - skills/pd-finishing-a-development-branch/SKILL.md
 supersedes: null
 confidence: high
 confirmed_at: 2026-07-21

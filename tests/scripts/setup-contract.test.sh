@@ -2,13 +2,13 @@
 # Contract tests for the setup skill: its SKILL.md steps and the old-install finder.
 source "$(dirname "$0")/../lib.sh"
 
-DIR="$ROOT/plugins/harness/skills/setup"
+DIR="$ROOT/plugins/harness/skills/pd-setup"
 SKILL="$DIR/SKILL.md"
 OLD="$DIR/scripts/old-install.sh"
 
 t "SKILL.md frontmatter: name setup, user-invoked only, declares allowed-tools"
 fm=$(awk 'NR==1&&/^---$/{inb=1;next} inb&&/^---$/{exit} inb' "$SKILL")
-if printf '%s\n' "$fm" | grep -q '^name: setup$' && printf '%s\n' "$fm" | grep -q '^disable-model-invocation: true$' \
+if printf '%s\n' "$fm" | grep -q '^name: pd-setup$' && printf '%s\n' "$fm" | grep -q '^disable-model-invocation: true$' \
    && printf '%s\n' "$fm" | grep -qE '^allowed-tools:.*AskUserQuestion'; then pass; else fail "frontmatter: $fm"; fi
 
 t "SKILL.md is at most 80 lines and under 600 words"
@@ -94,10 +94,10 @@ t "implementer keeps a legacy agents/PROJECT.md fallback like test-runner"
 if grep -q 'agents/PROJECT.md' "$ROOT/plugins/harness/agents/implementer.md" 2>/dev/null; then pass; else fail "implementer.md has no agents/PROJECT.md fallback"; fi
 
 t "setup allowed-tools includes Write and Edit (step 2 writes CLAUDE.md)"
-if sed -n '1,/^---$/p;' "$ROOT/plugins/harness/skills/setup/SKILL.md" | grep -E '^allowed-tools:' | grep -q 'Write' \
-   && grep -E '^allowed-tools:' "$ROOT/plugins/harness/skills/setup/SKILL.md" | grep -q 'Edit'; then pass; else fail "allowed-tools lacks Write or Edit"; fi
+if sed -n '1,/^---$/p;' "$ROOT/plugins/harness/skills/pd-setup/SKILL.md" | grep -E '^allowed-tools:' | grep -q 'Write' \
+   && grep -E '^allowed-tools:' "$ROOT/plugins/harness/skills/pd-setup/SKILL.md" | grep -q 'Edit'; then pass; else fail "allowed-tools lacks Write or Edit"; fi
 
 t "setup deletes the old PROJECT.md by an absolute CLAUDE_PROJECT_DIR path"
-if grep -qF 'rm -- ${CLAUDE_PROJECT_DIR}/agents/PROJECT.md' "$ROOT/plugins/harness/skills/setup/SKILL.md"; then pass; else fail "rm of agents/PROJECT.md is not anchored to CLAUDE_PROJECT_DIR"; fi
+if grep -qF 'rm -- ${CLAUDE_PROJECT_DIR}/agents/PROJECT.md' "$ROOT/plugins/harness/skills/pd-setup/SKILL.md"; then pass; else fail "rm of agents/PROJECT.md is not anchored to CLAUDE_PROJECT_DIR"; fi
 
 finish

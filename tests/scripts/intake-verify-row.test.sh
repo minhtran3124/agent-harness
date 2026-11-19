@@ -2,7 +2,7 @@
 # Contract test: intake needs a Verify: row; no row gives CONFIRM; auto mode records needs_review.
 source "$(dirname "$0")/../lib.sh"
 
-SKILL="$ROOT/plugins/harness/skills/intake/SKILL.md"
+SKILL="$ROOT/plugins/harness/skills/pd-intake/SKILL.md"
 
 t "READY requires a Verify: row"
 if grep -qF 'a `Verify:` row exists' "$SKILL"; then pass; else fail "READY Verify: condition"; fi

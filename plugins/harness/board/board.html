@@ -382,7 +382,7 @@ function renderDetail(){
  var p=pickNow(),id=p.id,el=document.getElementById('detail');nowId=id;
  var main=FLOW.nodes.filter(function(n){return !n.cond;});
  var finMain=main.filter(function(n){var s=nodeState(n.id);return s==='done'||s==='failed';});
- if(!id){el.setAttribute('data-s','idle');setHTML(el,'detail','<div class="nowtop"><h2>Now</h2></div><p class="msg">'+(RUN.id?'The run started; no agent has reached a box yet.':'No ship.js run found for this project yet. Start /harness:autopilot; the board picks up the newest run.')+'</p>');}
+ if(!id){el.setAttribute('data-s','idle');setHTML(el,'detail','<div class="nowtop"><h2>Now</h2></div><p class="msg">'+(RUN.id?'The run started; no agent has reached a box yet.':'No ship.js run found for this project yet. Start /harness:pd-autopilot; the board picks up the newest run.')+'</p>');}
  else{
   var n=N[id],s=nodeState(id),a=latest(id),cls={running:'',done:'ok',failed:'bad',waiting:'warn',idle:'idle'}[s];
   el.setAttribute('data-s',s);

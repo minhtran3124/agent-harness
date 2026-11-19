@@ -5,7 +5,7 @@ timeout_seconds: 900
 allowed_tools: [Read, Glob, Grep, Write, Edit, Skill]
 ---
 
-/harness:own grill #900
+/harness:pd-own grill #900
 
 The issue text is in issue-900.md (do not call gh). I am the owner. Here is how I will answer,
 so you can run the whole session without waiting for me:

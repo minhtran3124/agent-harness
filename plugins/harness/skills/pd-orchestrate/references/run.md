@@ -5,9 +5,9 @@ Defaults, the brief, what to do when a ticket reports, and the final report. Par
 
 ## Before you assign
 
-- **Triage in parallel, ask once.** One agent per ticket follows `harness:intake` and returns the
+- **Triage in parallel, ask once.** One agent per ticket follows `harness:pd-intake` and returns the
   verdict, the depth and its questions; it does not ask the owner. You collect every CONFIRM
-  question and ask them in one batch, then run `harness:grilling` for each GRILL ticket. Record the
+  question and ask them in one batch, then run `harness:pd-grilling` for each GRILL ticket. Record the
   answers verbatim in the ledger and as a "Confirmed decisions" comment on the issue.
 - **Classify.** Write into the ledger for each ticket: `kind` (bug, feature, docs), `depth`, `app`
   (`fe`, `be` or `none`: is there a running app to test?), `risky` (protocol, last paragraph) and
@@ -30,11 +30,11 @@ Leave a default when the ticket gives you a reason, and say why in the ledger.
 | Reviewer | a different session, Opus 5.5, skill `harness:pd-review` | never the worker's session; never you alone |
 | Order | dependency groups (command below); tickets of one group in parallel | two tickets edit the same files: run them in sequence |
 | Budget | 60 minutes per ticket | depth L, or the owner gave a deadline |
-| Acceptance check | you start it after the receipt: `harness:uat` when `app` is `fe` or `be`, the `harness:qa-verifier` agent for a ticket with no app at depth M or L | depth S docs or config: the review covers it |
+| Acceptance check | you start it after the receipt: `harness:pd-uat` when `app` is `fe` or `be`, the `harness:qa-verifier` agent for a ticket with no app at depth M or L | depth S docs or config: the review covers it |
 | Mode | one pull request per ticket into the base | the owner said `local`: commit only, no push, no pull request |
 
 Order the tickets: pipe `[{"n":1,"deps":[2]}]` into
-`python3 ${CLAUDE_PLUGIN_ROOT}/skills/autopilot/scripts/plan_groups.py`; exit 2 names a dependency
+`python3 ${CLAUDE_PLUGIN_ROOT}/skills/pd-autopilot/scripts/plan_groups.py`; exit 2 names a dependency
 cycle, which you show to the owner. When a ticket ends `blocked`, mark its dependents `skipped`.
 
 A dependent ticket needs its dependency's code. Either wait until the owner merged the dependency
@@ -87,7 +87,7 @@ whether the ticket is risky, the suite command, the worker's session name and ch
 4. Deliver, unless the mode is `local`. Push from the worker's checkout
    (`git -C <worker checkout> push -u origin <branch>`, never force) and open the pull request with
    `gh pr create --head <branch> --base <base>`. Use the body sections of
-   `harness:finishing-a-development-branch` (Summary, Why, Changes, Decisions, Testing, Risk, How to
+   `harness:pd-finishing-a-development-branch` (Summary, Why, Changes, Decisions, Testing, Risk, How to
    revert, Notes) and fill them from the report and the receipt; do not run that skill's steps,
    which are for a single session that tests and fixes its own branch. Then wait for CI on the
    receipt's SHA: no checks, a pending check, all checks skipped, or CI on another SHA is not

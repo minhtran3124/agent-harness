@@ -1,10 +1,10 @@
 #!/bin/bash
-# Contract for the harness:verify skill and its fixture. CI cannot drive a browser (the
+# Contract for the harness:pd-verify skill and its fixture. CI cannot drive a browser (the
 # Playwright plugin exists only in a Claude session), so this checks the text contract,
 # the no-secrets rule for verify.config.json, and that the fixture server starts.
 source "$(dirname "$0")/../lib.sh"
-SKILL="$ROOT/plugins/harness/skills/verify/SKILL.md"
-RUN="$ROOT/plugins/harness/skills/verify/references/run-app.md"
+SKILL="$ROOT/plugins/harness/skills/pd-verify/SKILL.md"
+RUN="$ROOT/plugins/harness/skills/pd-verify/references/run-app.md"
 FIX="$ROOT/tests/fixtures/verify-app"
 
 t "verify SKILL.md stays under 600 words"
@@ -14,9 +14,9 @@ t "verify description has a use/when cue"
 desc=$(awk 'NR==1&&/^---$/{inb=1;next} inb&&/^---$/{exit} inb&&/^description:/' "$SKILL")
 echo "$desc" | grep -qiE '\b(use|when)\b' && pass || fail "no use/when cue in: $desc"
 
-t "name verify exists only under plugins/harness/skills, never as a project skill"
-if [ -f "$ROOT/plugins/harness/skills/verify/SKILL.md" ] && [ ! -e "$ROOT/.claude/skills/verify" ] \
-   && grep -q '^name: verify$' "$SKILL"; then pass; else fail "verify skill misplaced"; fi
+t "name pd-verify exists only under plugins/harness/skills, never as a project skill"
+if [ -f "$ROOT/plugins/harness/skills/pd-verify/SKILL.md" ] && [ ! -e "$ROOT/.claude/skills/pd-verify" ] \
+   && grep -q '^name: pd-verify$' "$SKILL"; then pass; else fail "verify skill misplaced"; fi
 
 t "SKILL.md names the Playwright tools; run-app.md names them and the two login variables"
 miss=""
@@ -117,7 +117,7 @@ else fail "codes=[$codes] or server still up"; fi
 t "fixture config uses a \${PORT} baseUrl and an env map"
 grep -q 'baseUrl.*127.0.0.1:\${PORT}' "$FIX/verify.config.json" && grep -q '"env"' "$FIX/verify.config.json" && pass || fail "fixture config lacks PORT placeholder or env"
 
-REF="$ROOT/plugins/harness/skills/verify/references/config.md"
+REF="$ROOT/plugins/harness/skills/pd-verify/references/config.md"
 t "references/config.md pins env, PORT, throwaway consent, fill_form rule, ship.js note"
 miss=""
 for w in 'env' '${PORT}' 'throwaway credentials OK' 'browser_fill_form' 'browser_run_code_unsafe' 'openssl rand' 'ship.js'; do
@@ -156,8 +156,8 @@ t "verify SKILL.md is at most 450 words"
 [ "$(wc -w < "$SKILL")" -le 450 ] && pass || fail "over 450 words"
 
 t "uat SKILL.md locates run-app.md through CLAUDE_PLUGIN_ROOT, not a path relative to the skill folder"
-UAT="$ROOT/plugins/harness/skills/uat/SKILL.md"
-if grep -q 'CLAUDE_PLUGIN_ROOT}/skills/verify/references/run-app.md' "$UAT" && ! grep -q '\.\./verify/' "$UAT"; then pass; else fail "uat still uses ../verify path"; fi
+UAT="$ROOT/plugins/harness/skills/pd-uat/SKILL.md"
+if grep -q 'CLAUDE_PLUGIN_ROOT}/skills/pd-verify/references/run-app.md' "$UAT" && ! grep -q '\.\./verify/' "$UAT"; then pass; else fail "uat still uses ../verify path"; fi
 
 t "uat SKILL.md takes the recipe path from the prompt before CLAUDE_PLUGIN_ROOT"
 if grep -q 'The recipe file is' "$UAT" && grep -q 'does not resolve' "$UAT"; then pass; else fail "uat Step 0 depends only on CLAUDE_PLUGIN_ROOT"; fi

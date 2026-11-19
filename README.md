@@ -21,14 +21,14 @@ Skills are Markdown prompt programs you summon with `/harness:skill-name`. The h
 ## How a change flows
 
 ```
-ticket -> /harness:intake -> verdict + depth -> build -> review -> ship
+ticket -> /harness:pd-intake -> verdict + depth -> build -> review -> ship
 ```
 
-- `/harness:intake` returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
+- `/harness:pd-intake` returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
 - Depth S goes straight to `implement`. Depth M adds `writing-plans`. Depth L adds `brainstorming` and `xia2` first.
 - A bug fix first runs `diagnosing-bugs`: the root cause is proved before any fix.
 - `/code-review` and `intent-review` check the diff. `finishing-a-development-branch` pushes and opens the PR.
-- `/harness:autopilot` asks the owner every open question once, then runs the whole flow for one or more tickets.
+- `/harness:pd-autopilot` asks the owner every open question once, then runs the whole flow for one or more tickets.
 
 One principle drives it: **ceremony scales with the size of the change, and human interruption scales with ambiguity.**
 
@@ -44,7 +44,7 @@ claude plugin marketplace add minhtran3124/agent-harness
 claude plugin install harness@agent-harness
 ```
 
-Then, in the project, run `/harness:setup`. It scaffolds `specs/` and `docs/solutions/`, proposes a `## Run and test` section for your `CLAUDE.md` if it has none, merges the `permissions.deny` rules into `.claude/settings.json` (needs [jq](https://jqlang.github.io/jq/)), and adds `specs/` to `.gitignore`. Every step is safe to run twice. A plugin cannot ship `permissions.deny`, which is why setup does it. Restart Claude Code after installing so it loads the skills, agents and hooks.
+Then, in the project, run `/harness:pd-setup`. It scaffolds `specs/` and `docs/solutions/`, proposes a `## Run and test` section for your `CLAUDE.md` if it has none, merges the `permissions.deny` rules into `.claude/settings.json` (needs [jq](https://jqlang.github.io/jq/)), and adds `specs/` to `.gitignore`. Every step is safe to run twice. A plugin cannot ship `permissions.deny`, which is why setup does it. Restart Claude Code after installing so it loads the skills, agents and hooks.
 
 Needs `git` and `python3`. The ship workflow also needs the `Workflow` tool.
 
@@ -54,13 +54,13 @@ Version 5.0.0 is a breaking change: skills become `/harness:<name>`, hook profil
 
 ### Move from the old copied install
 
-Earlier versions copied the harness into the project's `.claude/` with `install-harness.sh`. That script is gone. Run `/harness:setup`: it lists the old copied files (by the names this plugin ships) and deletes them only after you approve. Keep both copies and every hook would run twice.
+Earlier versions copied the harness into the project's `.claude/` with `install-harness.sh`. That script is gone. Run `/harness:pd-setup`: it lists the old copied files (by the names this plugin ships) and deletes them only after you approve. Keep both copies and every hook would run twice.
 
 ### Known limits
 
 - Not verified yet (tracked for the dogfood run, #352): an unattended `ship.js` run from the plugin cache, the hooks firing in a live session, and a git-sourced marketplace install.
 - Merge policy: the workflow merges gated ticket PRs into `feat/<slug>`. It also merges the final PR when its base is not protected (not main, master, develop, development, staging, production, release/* or the default branch) and every gate passed; every PR into a protected base is a human merge, and `merge-guard.sh` enforces that. On a `feat/*` base, a ticket gate that fails only on review findings or `needs_review` decisions asks the advisor once; the advisor may accept those items at ticket level, and the final PR body lists them under `## Accepted by advisor`. Setup offers no allow rule: the owner who wants ticket PRs merged by the run must allow `gh pr merge` into `feat/<slug>*` (for example a `Bash(gh pr merge *)` allow rule; the guard still blocks other bases). In default permission mode the merge stage is otherwise denied; the run then reports the missing permission as the reason and does not work around it.
-- `/harness:autopilot` launches the `autopilot-run` workflow by name (`harness:autopilot-run`), which works from any working directory. If a session does not know the name, the Workflow tool refuses a `scriptPath` it cannot read: add the plugin directory with `/add-dir`, or pass `ship.js` inline through `script`.
+- `/harness:pd-autopilot` launches the `autopilot-run` workflow by name (`harness:autopilot-run`), which works from any working directory. If a session does not know the name, the Workflow tool refuses a `scriptPath` it cannot read: add the plugin directory with `/add-dir`, or pass `ship.js` inline through `script`.
 - After a plugin update, a running session can keep a stale `harness:autopilot-run`. Restart Claude Code (the main fix; `/reload-plugins` is named by the plugin CLI help but not confirmed here). Or, when `plugins/harness/workflows/ship.js` of this repo is inside the working directory or an added directory (`/add-dir`), launch it with `scriptPath`. The completion report names the script that ran, from the `Script file:` line of the Workflow result.
 - The workflow was renamed from `ship` to `autopilot-run` (PR 509). The by-name launch is not yet verified under the new name: after a restart, run a `--no-ask` dry run and confirm the Workflow tool finds `harness:autopilot-run`. `docs/adr/0001-workflow-capabilities.md` still records the earlier `harness:ship` check.
 

@@ -2,7 +2,7 @@
 
 Workflow scripts for the Claude Code `Workflow` tool. `ship.js` is the autonomous second half of
 Harness v5 (epic #338, ADR 0001): it ships 1..N already-triaged tickets to one reviewable PR with
-no human in the loop. `/autopilot` asks the owner everything first, then launches it by name:
+no human in the loop. `/pd-autopilot` asks the owner everything first, then launches it by name:
 `Workflow({name: "harness:autopilot-run", args})`. The plugin registers `./workflows/ship.js` in `plugin.json`.
 
 ## args
@@ -43,7 +43,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
   block the final PR by itself; a protected base keeps it a human merge.
 - **Guard**: the `merge-guard.sh` PreToolUse hook blocks any merge whose PR base is not `feat/*`; it fails closed
   (`docs/hooks.md`). A workflow or subagent never merges into base; only the owner, approving one PR in the session prompt, does. Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
-  a nested Workflow), so `/harness:setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
+  a nested Workflow), so `/harness:pd-setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
 - **Local mode** has no PRs: there is no guard, no gate and no CI check. The merge stage runs `git merge --no-ff` and
   `git merge --abort` on a conflict. The PR body block still renders in `PR-BODY.md`, with CI as `n/a (local mode)`.
 
@@ -52,7 +52,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
 1. Setup: validate args, create the integration branch (multi only).
 2. Tickets: intent, then plan by depth (S in the prompt, M written by the implement agent itself before it codes, L research + design + plan + advisor),
    implement, verify, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
-   Verify runs the `harness:verify` skill in the implement worktree against the issue's `Verify:` row
+   Verify runs the `harness:pd-verify` skill in the implement worktree against the issue's `Verify:` row
    (default agent, not read-only). A failure gets one retry: a pass on retry is `flaky`, a second failure
    blocks the ticket and comments on the issue. FE and FE+BE tickets also run the steps on the base commit
    in a separate worktree (base mode); they must fail there, else the ticket is blocked as a weak test.
@@ -87,7 +87,7 @@ readiness checklist (CI, review, intent, open decisions, ADR files, UAT) between
    more go to one fix agent per round (one commit per finding, reported by finding id); re-review only the fix commits; at most 2 rounds.
    Every review call (run review, per-ticket gate review, fix-range re-review) reads `REVIEW.md` from the run's base branch with `git show <base>:REVIEW.md`, never from the worktree and never from the integration branch, so the PR cannot edit its own rules and a ticket merged earlier in the run cannot change the rules for a later ticket's gate. Without a `REVIEW.md` on the base the review runs as before.
 5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
-6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
+6. UAT: a plan-blind acceptance test of the running app (`skills/pd-uat`), serial over the tickets, for FE, BE and
    FE+BE tickets (local mode skips it with a log line). A `docs` ticket (docs, config, CLI, scripts, plugin
    files) has no app: at depth S it is skipped (`skipped: docs ticket at depth S`); at depth M and L the plan-blind
    `qa-verifier` agent (Sonnet 5.5, `medium`) gets the same stripped body and owner block, runs commands and reads

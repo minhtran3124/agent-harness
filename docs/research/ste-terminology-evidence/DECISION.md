@@ -114,7 +114,7 @@ for. §3 reaches a write-flow only through an **explicit Read step** in the cons
 This also reorders the leverage. The highest-value target both analyses agree on is the
 `Action:` / `Verify:` fields an LLM writes fresh each run — and a `PostToolUse` linter is the
 weakest tool for it, firing after the text exists and only warning. The same rule placed in
-`templates/PLAN.template.md` and `skills/writing-plans/SKILL.md` acts at generation time.
+`templates/PLAN.template.md` and `skills/pd-writing-plans/SKILL.md` acts at generation time.
 
 ### 6. `rules/research-depth.md` — the reported "bug" was a misdiagnosis
 
