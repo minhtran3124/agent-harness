@@ -13,13 +13,10 @@
 # on stderr). A Bash call that is not a merge exits 0 at once, before any parsing.
 # Verifies: the PR base read live with `gh pr view --json baseRefName` for every PR number of every merge
 #   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is not protected (see above) and is not the repo default branch.
-#   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs, a merge
-#   that is not at command position, and `gh alias set|import` next to the word merge. One exemption (#671):
-#   a shell that runs a named script file (`bash $S/run.sh`, only -e -u -x -v -n before the file) is not
-#   denied for the word merge inside a file name. It is still denied when the command has a pipe, `<<`, `<(`
-#   or `>`, an interpreter (python, perl, node, ruby, awk, ...), `$(`, a backtick or `$'`, gh next to a
-#   variable, a merge API path, or merge as a word of its own. Merge text built with `${v#x}`, braces or IFS
-#   is not recognized as such (#675).
+#   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs or another
+#   wrapper on a best-effort list (also behind an assignment, keyword, zsh prefix or redirection, or with a
+#   path, backslash or = on the name; #677), a merge that is not at command position, and `gh alias
+#   set|import` next to the word merge. Not on the list: interpreters (python, perl, awk), find -exec, git -c.
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
 #   merge through the web UI or another client, a script that builds the command at run time, or whether
 #   the PR is ready (the workflow gate checks that).
@@ -37,66 +34,6 @@ is_merge_like() {
   return 1
 }
 is_merge_like "$payload" || exit 0
-# Wrapper segments (#671). A wrapper that runs code from a string or stdin (bash -c, bash -s, a bare
-# bash, eval, xargs, env -S, source) can run a merge the hook cannot see, so it is denied whenever the
-# command is merge-like, as before; so is a pass-through wrapper (command, time, env, ...) in front of
-# anything but such a shell. Only a shell that runs a script FILE (bash $S/run.sh ...) gets a narrower
-# test: the script's own content was never visible, and the word merge inside a file or helper name
-# (post-merge-hooks.test.sh, merge_pr, merge-guard.sh) must not block it. That segment is still denied
-# when the command has a pipe, heredoc or redirection (they can build the script), or could carry a
-# merge (can_carry_merge).
-
-# runs_script_file <segment>: 0 when the segment, after prefix wrappers (env, time, nohup, command,
-# builtin, exec, sudo), runs bash/sh/zsh/dash/ksh on a script file operand, with no -c or -s.
-runs_script_file() {
-  local -a w; local i=0 n
-  read -r -a w <<<"$1"; n=${#w[@]}
-  while [ "$i" -lt "$n" ]; do
-    case "${w[$i]}" in
-      env) i=$((i + 1))
-        while [ "$i" -lt "$n" ]; do
-          case "${w[$i]}" in -S*|--split-string*) return 1 ;; -*|*=*) i=$((i + 1)) ;; *) break ;; esac
-        done ;;
-      time|nohup|command|builtin|exec|sudo) i=$((i + 1))
-        while [ "$i" -lt "$n" ] && [ "${w[$i]#-}" != "${w[$i]}" ]; do i=$((i + 1)); done ;;
-      *) break ;;
-    esac
-  done
-  case "${w[$i]:-}" in bash|sh|zsh|dash|ksh) ;; *) return 1 ;; esac
-  i=$((i + 1))
-  # Only value-free flags may come before the script file: -e -u -x -v -n, alone or clustered (-eu).
-  # Any other option is not a plain script run: -c and -s read code from a string or stdin, and an option
-  # that takes a value (-O extglob, -o posix, --init-file f) would make its value look like the file.
-  local f
-  while [ "$i" -lt "$n" ]; do
-    case "${w[$i]}" in
-      --) i=$((i + 1)); break ;;
-      -*) f=${w[$i]#-}; case "$f" in ''|*[!euxvn]*) return 1 ;; esac; i=$((i + 1)) ;;
-      +*) return 1 ;;
-      *) break ;;
-    esac
-  done
-  [ "$i" -lt "$n" ] || return 1  # no operand: the shell reads its code from stdin
-  case "${w[$i]}" in
-    '<'*|QUOTED|-*) return 1 ;;                         # redirection, quoted text or an option, not a file
-    /dev/stdin|/dev/fd/*|/proc/*) return 1 ;;           # stdin under another name
-  esac
-  # An operand that is only a variable ($F, ${F}) can expand to -c: not a file we can name.
-  printf '%s' "${w[$i]}" | grep -qE '^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$' && return 1
-  return 0
-}
-
-# can_carry_merge <command>: 0 when the command could still carry a merge. Sets CARRY_WHY.
-CARRY_WHY=""
-can_carry_merge() {
-  local f; f=$(fold "$1")
-  # shellcheck disable=SC2016  # the patterns are literal text: $( and a backtick, not expansions
-  case "$1" in *'$('*|*'`'*|*"\$'"*) CARRY_WHY="text built at run time (\$(...), a backtick or \$'...')"; return 0 ;; esac
-  if printf '%s' "$f" | grep -qE '(^|[^a-z0-9_-])merge([^a-z0-9_-]|$)'; then CARRY_WHY="the word merge on its own"; return 0; fi
-  if printf '%s' "$f" | grep -qE '(^|[^a-z0-9_])gh([^a-z0-9_]|$).*[$]'; then CARRY_WHY="gh next to a variable"; return 0; fi
-  case "$f" in *mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*pulls/*) CARRY_WHY="a merge API path or name"; return 0 ;; esac
-  return 1
-}
 
 TMPF=""
 trap '[ -z "$TMPF" ] || rm -f "$TMPF"' EXIT
@@ -247,7 +184,9 @@ judge_api_merge() {  # judge_api_merge <segment>
 # bodies and quoted strings that hold whitespace or separators (each leaves one QUOTED word, so a value
 # option such as --body still has its value and does not swallow the PR number), so text that only
 # mentions a merge never matches; then split on separators and standalone braces.
-segs=$(printf '%s\n' "$cmd" | awk '
+# Redirections that hold & or | (2>&1, >&f, <&3, >|f) would be cut at that character and leave their
+# target as a command word; turn them into a plain > or < first.
+segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g; s/([<>])&/\1 /g; s/>\|/> /g' | awk '
     { L[NR] = $0 }
     END {
       q = ""; qb = ""; out = ""; hd = ""
@@ -282,11 +221,59 @@ set -f
 NSEGS=0
 while IFS= read -r seg; do
   seg=$(printf '%s' "$seg" | sed -E 's/^[[:space:]]+//'); orig=$seg
-  while printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*([[:space:]]+|$)'; do
-    seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//')
+  # #677: variable assignments, shell keywords (if then else elif do while until !), zsh prefixes (noglob,
+  # nocorrect, -) and redirections (>f, 2>&1, <f, <<<w) in front of a command do not change what runs.
+  # Strip them in one loop until nothing changes, so `if X=1 bash -c ...` and `>/dev/null bash -c ...`
+  # reach the wrapper check below. KW records that a keyword, prefix or redirection was stripped.
+  KW=0
+  drop_word() { case "$seg" in *[[:space:]]*) seg=$(printf '%s' "${seg#*[[:space:]]}" | sed -E 's/^[[:space:]]+//') ;; *) seg="" ;; esac; }
+  while :; do
+    if printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*([[:space:]]+|$)'; then
+      seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?\+?=[^[:space:]]*[[:space:]]*//'); continue
+    fi
+    w0=${seg%%[[:space:]]*}
+    case "$w0" in
+      if|then|else|elif|do|while|until|'!'|noglob|nocorrect|-) KW=1; drop_word ;;
+      [0-9]*'<'*|[0-9]*'>'*|'<'*|'>'*)
+        KW=1; drop_word
+        # an operator with its target in the next word (`> f`, `2> f`, `<<< w`): drop that word too
+        case "$w0" in *'<'|*'>'|*'>&'|*'<&') drop_word ;; esac ;;  # *'<' also covers <<<
+      *) break ;;
+    esac
   done
-  [ -n "$seg" ] || continue
+  if [ -z "$seg" ]; then
+    # A keyword or redirection alone still counts as a command, so a merge next to it is not "the only command".
+    [ "$KW" -eq 1 ] && NSEGS=$((NSEGS + 1))
+    continue
+  fi
+  # A shell or wrapper name with a path, a backslash anywhere, or zsh's =cmd runs the same program. A glob
+  # (/bin/bas?) or a brace word ({bash,-c,...}) in the command name cannot be judged.
+  w0=${seg%%[[:space:]]*}
+  case "$w0" in
+    '['|'[['|'{'|'}') ;;
+    *'*'*|*'?'*|*'['*) deny "a command name with glob characters next to the word merge cannot be judged." ;;
+    '{'*,*|'{'*..*) deny "a command name built by brace expansion next to the word merge cannot be judged." ;;
+  esac
+  b=${w0//\\/}; b=${b#=}; b=${b##*/}  # drop every backslash, zsh's leading =, and any path
+  case "$b" in
+    bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su|watch|unshare)
+      seg="$b${seg#"$w0"}" ;;
+  esac
   NSEGS=$((NSEGS + 1))
+  # A gh merge behind a keyword, prefix or redirection is not a plain merge to put to the owner.
+  if [ "$KW" -eq 1 ] && printf '%s' "$seg" | grep -qE '^gh[[:space:]]'; then
+    if printf '%s' "$(fold "$seg")" | grep -qE 'pr[[:space:]]+merge|/merge|graphql'; then
+      deny "a gh merge behind a shell keyword, prefix or redirection cannot be put to the owner; run the merge alone."
+    fi
+  fi
+  # A backslash inside the gh words (g\h pr merge, gh pr mer\ge) does not change what runs, but it hides
+  # the words from the checks below: deny such a segment when it reads as a gh merge without the backslashes.
+  case "$seg" in
+    *\\*)
+      if printf '%s' "$(fold "${seg//\\/}")" | grep -qE '^gh[[:space:]].*(pr[[:space:]]+merge|/merge|graphql)'; then
+        deny "a gh merge spelled with a backslash cannot be judged."
+      fi ;;
+  esac
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
@@ -299,7 +286,7 @@ while IFS= read -r seg; do
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; fi
-  elif case "${seg%%[[:space:]]*}" in *[\$\`]*) printf '%s' "$(fold "$seg")" | grep -q 'merge' ;; *) false ;; esac; then
+  elif case "${seg%%[[:space:]]*}" in *[\$\`]*) printf '%s' "$(fold "$cmd")" | grep -q 'merge' ;; *) false ;; esac; then
     deny "a command name built from a variable or substitution next to the word merge cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+)?[^[:space:]]*[$`]'; then
     deny "a gh pr subcommand built from a variable or substitution cannot be judged."
@@ -312,18 +299,14 @@ while IFS= read -r seg; do
   else
     cw=${seg%%[[:space:]]*}
     case "$cw" in
-      bash|sh|zsh|dash|ksh|eval|xargs|env|exec|nohup|time|command|sudo|builtin|source|.)
-        if ! runs_script_file "$seg"; then
-          deny "a merge inside a shell string or wrapper ($cw) cannot be judged."
-        elif case "$cmd" in *'|'*|*'<<'*|*'<('*|*'>'*) true ;; *) false ;; esac; then
-          # A pipe, heredoc or redirection can build or write the script that the shell then runs.
-          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: a pipe, heredoc or redirection next to a shell run)."
-        elif printf '%s' "$(fold "$cmd")" | grep -qE '(^|[^a-z0-9_])(python[0-9.]*|perl|node|ruby|g?awk|php|lua)([^a-z0-9_.]|$)'; then
-          # An interpreter in the same command can write the script file without a pipe or redirection.
-          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: an interpreter next to a shell run)."
-        elif can_carry_merge "$cmd"; then
-          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: $CARRY_WHY)."
-        fi ;;
+      # No exemption for a shell that runs a script file (#671): four security reviews of such an exemption
+      # each found a way to run a merge built at run time. A harmless command that trips this (a $ before a
+      # file name like post-merge-hooks.test.sh) is a known false positive: put the command in a script file
+      # with the Write tool and run that file by a path without the word.
+      # This is a best-effort list of common shells and wrappers, not a complete one (interpreters such as
+      # python or awk, find -exec and git -c alias are not on it; see the follow-up issue).
+      bash|sh|zsh|dash|ksh|rbash|eval|xargs|env|exec|nohup|time|command|sudo|doas|builtin|source|.|nice|timeout|stdbuf|setsid|ionice|taskset|chronic|unbuffer|repeat|coproc|busybox|flock|script|setpriv|prlimit|chrt|strace|fakeroot|runuser|su|watch|unshare)
+        deny "a merge inside a shell string or wrapper ($cw) cannot be judged." ;;
     esac
   fi
 done <<SEGS
