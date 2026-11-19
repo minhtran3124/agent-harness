@@ -403,12 +403,15 @@ inert() {
   case "$FNS" in *" $w "*) return 0 ;; esac
   case "$w" in
     '#'*|echo|:|true|false|cd|pwd|'for'|'case'|'esac'|'done'|'fi'|exit|break|continue|return|sleep|seq|jq|wc|ls|mkdir|touch|rm|date|basename|dirname|realpath|readlink|which|type|stat|du|df) return 0 ;;
-    cat|head|tail|grep|egrep|fgrep|tee|uniq|cut|tr|nl|comm|paste|column|rev|diff|cmp|sha256sum|shasum|md5sum|md5|base64|xxd|od) return 0 ;;
+    cat|head|tail|grep|egrep|fgrep|tee|cut|tr|nl|comm|paste|column|rev|diff|cmp|sha256sum|shasum|md5sum|md5|base64|od) return 0 ;;
+    # uniq writes its second operand, sort writes -o/--output: a named output file is not "never runs" (a git
+    # hook written that way runs at the next git commit), so either form is not listed.
+    uniq) [ "$(printf '%s' "${s#uniq}" | sed -E 's/(^|[[:space:]])-[^[:space:]]+//g' | wc -w)" -lt 2 ] && return 0; return 1 ;;
     printf) printf '%s' "$s" | grep -qE '[[:space:]]-[^[:space:]]*v' && return 1; return 0 ;;
     test|'['|'[[')
       case "$s" in *\\*) return 1 ;; esac
       printf '%s' "$s" | grep -qE '[[:space:]]-(eq|ne|lt|le|gt|ge|v)([[:space:]]|$)' && return 1; return 0 ;;
-    sort) printf '%s' "$s" | grep -qE '[[:space:]]--co' && return 1; return 0 ;;
+    sort) printf '%s' "$s" | grep -qE '[[:space:]](--co|--o|-[A-Za-z]*o)' && return 1; return 0 ;;
     sed)  # only `sed [-n] [-E] 'N[,M]p' [file...]`: a line-range print runs nothing
       printf '%s' "$s" | grep -qE '^sed([[:space:]]+-[nEr]+)*[[:space:]]+[0-9]+(,([0-9]+|\$))?p([[:space:]]+[^-[:space:]][^[:space:]]*)*[[:space:]]*$' && return 0; return 1 ;;
     rg) LEVEL=2; printf '%s' "$s" | grep -qE '[[:space:]]--(pr|hostname-bin)' && return 1; return 0 ;;
@@ -425,7 +428,9 @@ inert() {
         esac
       done
       if printf '%s' "$sub" | grep -qE '^(commit|log|show|diff|status|add|tag|branch|rev-parse|merge-base|stash|switch|checkout|restore|rev-list|show-ref|for-each-ref|describe|blame|ls-files|ls-tree|cat-file|reflog|shortlog|worktree[[:space:]]+list|grep)([[:space:]]|$)'; then
-        printf '%s' "$sub" | grep -qE '[[:space:]](--output|--open|-O|-[A-Za-z]*O)' && return 1
+        # git takes an unambiguous abbreviation of a long option (--op= is --open-files-in-pager, --outp= is
+        # --output): no option that starts like either one
+        printf '%s' "$sub" | grep -qE '[[:space:]](--(no-)?(ou|op)|-[A-Za-z]*O)' && return 1
         return 0
       fi
       # these talk to a remote: only without merge-like text and without a program option
@@ -437,7 +442,10 @@ inert() {
       fi ;;
     gh)
       LEVEL=2
-      printf '%s' "$s" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+(create|comment|edit|review|view|list|checks|diff|status|close|ready|reopen)|issue[[:space:]]+(create|comment|edit|view|list|close|reopen)|run[[:space:]]+(list|view|watch)|release[[:space:]]+(create|edit|view|list)|repo[[:space:]]+view|search|api|label)([[:space:]]|$)' && return 0 ;;
+      printf '%s' "$s" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+(create|comment|edit|review|view|list|checks|diff|status|close|ready|reopen)|issue[[:space:]]+(create|comment|edit|view|list|close|reopen)|run[[:space:]]+(list|view|watch)|release[[:space:]]+(create|edit|view|list)|repo[[:space:]]+view|search|api|label)([[:space:]]|$)' || return 1
+      # gh api acts on its endpoint: an endpoint built from a variable or substitution could be a merge path
+      if printf '%s' "$s" | grep -qE '^gh[[:space:]]+api([[:space:]]|$)'; then case "$s" in *'$'*|*'`'*) return 1 ;; esac; fi
+      return 0 ;;
   esac
   return 1
 }
@@ -596,6 +604,13 @@ while IFS= read -r seg; do
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     case "$FL" in *a*) deny "a gh api merge path inside a quoted string cannot be judged; write the path without quotes." ;; esac
+    # An endpoint built from a variable or substitution next to the word merge ($P/merge) cannot be judged.
+    case "$seg" in
+      *'$'*|*'`'*)
+        if printf '%s' "$seg" | tr '[:upper:]' '[:lower:]' | sed -E 's/merge(able|d|state|commit|base|_base|-base|_state|_commit|_method)/mrg/g' | grep -q 'merge'; then
+          deny "a gh api endpoint built from a variable or substitution next to the word merge cannot be judged."
+        fi ;;
+    esac
     if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; KIND=merge; fi
   elif case "${seg%%[[:space:]]*}" in *[\$\`]*) printf '%s' "$(fold "$cmd")" | grep -q 'merge' ;; *) false ;; esac; then
     deny "a command name built from a variable or substitution next to the word merge cannot be judged."

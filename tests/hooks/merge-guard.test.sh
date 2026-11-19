@@ -522,7 +522,14 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "python3 <<'EOF'${NL}import os; os.system(\"gh pr mer\\${NL}ge 7 --repo o/r\")${NL}EOF" \
          "python3 -c 'import os; os.system(\"gh pr mer\\${NL}ge 7 --repo o/r\")'" \
          "node -e 'require(\"child_process\").execSync(\"gh pr mer\\${NL}ge 7 --repo o/r\")'" \
-         "echo 'gh pr mer\\${NL}ge 7 --repo o/r' | python3 -"; do
+         "echo 'gh pr mer\\${NL}ge 7 --repo o/r' | python3 -" \
+         "printf '#!/bin/sh\\ngh pr merge 7 --repo o/r\\n' | uniq - .git/hooks/pre-commit && git commit --allow-empty -m x" \
+         "printf '#!/bin/sh\\ngh pr merge 7 --repo o/r\\n' | sort -o .git/hooks/pre-commit && git commit --allow-empty -m x" \
+         "printf '#!/bin/sh\\ngh pr merge 7 --repo o/r\\n' | sort --output=.git/hooks/pre-commit; git commit -m x" \
+         "printf 'gh pr merge 7 --repo o/r\\n' > x.sh; git grep --no-index --op=sh -e gh x.sh" \
+         "printf 'gh pr merge 7 --repo o/r\\n' > x.sh; git grep --no-index --ope=sh -e gh x.sh" \
+         "git log -1 --format='gh pr merge 7 --repo o/r' --outp=.git/hooks/pre-commit" \
+         "P=repos/o/r/pulls/7/merge ; gh api -X PUT \$P" "P=repos/o/r/pulls/7; gh api -X PUT \$P/merge"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the
