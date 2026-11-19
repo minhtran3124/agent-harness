@@ -15,11 +15,11 @@
 #   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is not protected (see above) and is not the repo default branch.
 #   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs, a merge
 #   that is not at command position, and `gh alias set|import` next to the word merge. One exemption (#671):
-#   a shell that runs a named script file (`bash $S/run.sh`, only -e -u -x -v -n before the file) is not
-#   denied for the word merge inside a file name. It is still denied when the command has a pipe, `<<`, `<(`
-#   or `>`, an interpreter (python, perl, node, ruby, awk, ...), `$(`, a backtick or `$'`, gh next to a
-#   variable, a merge API path, or merge as a word of its own. Merge text built with `${v#x}`, braces or IFS
-#   is not recognized as such (#675).
+#   a shell that runs a script file given as a plain path (`bash $S/run.sh`, only -e -u -x -v -n before it)
+#   is not denied for the word merge inside a file name. It is still denied when the command has a pipe,
+#   `<<`, `<(` or `>`; any other command than echo, printf, cd, pwd, true, test or a variable assignment;
+#   an IFS assignment; `$(`, a backtick or `$'`; gh next to a variable; a merge API path; or merge as a
+#   word of its own. Merge text built with `${v#x}`, braces or IFS is not recognized as such (#675).
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
 #   merge through the web UI or another client, a script that builds the command at run time, or whether
 #   the PR is ready (the workflow gate checks that).
@@ -43,11 +43,11 @@ is_merge_like "$payload" || exit 0
 # anything but such a shell. Only a shell that runs a script FILE (bash $S/run.sh ...) gets a narrower
 # test: the script's own content was never visible, and the word merge inside a file or helper name
 # (post-merge-hooks.test.sh, merge_pr, merge-guard.sh) must not block it. That segment is still denied
-# when the command has a pipe, heredoc or redirection (they can build the script), or could carry a
-# merge (can_carry_merge).
+# when the command has a pipe, heredoc or redirection (they can build the script), another command than
+# echo, printf, cd or an assignment (only_plain_neighbours), or could carry a merge (can_carry_merge).
 
 # runs_script_file <segment>: 0 when the segment, after prefix wrappers (env, time, nohup, command,
-# builtin, exec, sudo), runs bash/sh/zsh/dash/ksh on a script file operand, with no -c or -s.
+# builtin, exec, sudo), runs bash/sh/zsh/dash/ksh with only -e -u -x -v -n on a plain path operand.
 runs_script_file() {
   local -a w; local i=0 n
   read -r -a w <<<"$1"; n=${#w[@]}
@@ -77,12 +77,31 @@ runs_script_file() {
     esac
   done
   [ "$i" -lt "$n" ] || return 1  # no operand: the shell reads its code from stdin
-  case "${w[$i]}" in
-    '<'*|QUOTED|-*) return 1 ;;                         # redirection, quoted text or an option, not a file
-    /dev/stdin|/dev/fd/*|/proc/*) return 1 ;;           # stdin under another name
-  esac
-  # An operand that is only a variable ($F, ${F}) can expand to -c: not a file we can name.
-  printf '%s' "${w[$i]}" | grep -qE '^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$' && return 1
+  # The operand must be a plain path: an optional $VAR/ or ${VAR}/ prefix, then path characters only, not
+  # starting with a dash. Anything else ($F, ${F:--c}, $1, \-c, ?c, [-]c, {-c,}, $A$B) can expand to an option.
+  printf '%s' "${w[$i]}" | grep -qE '^(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?/)?[A-Za-z0-9_./+][A-Za-z0-9_./+-]*$' || return 1
+  case "${w[$i]}" in /dev/stdin|/dev/fd/*|/proc/*) return 1 ;; esac  # stdin under another name
+  return 0
+}
+
+# only_plain_neighbours <segment>: 0 when every other segment of the command is a plain one: empty after
+# its variable assignments (but no IFS assignment), or echo, printf, cd, pwd, true, :, test, [. Any other
+# command (sed -i, cp, sort -o, an interpreter, ...) could write or change the script the shell then runs.
+only_plain_neighbours() {
+  local s first
+  printf '%s' "$cmd" | grep -qE '(^|[^A-Za-z0-9_])IFS=' && return 1
+  while IFS= read -r s; do
+    s=$(printf '%s' "$s" | sed -E 's/^[[:space:]]+//')
+    while printf '%s' "$s" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*([[:space:]]+|$)'; do
+      s=$(printf '%s' "$s" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//')
+    done
+    [ -n "$s" ] || continue
+    [ "$s" = "$1" ] && continue
+    first=${s%%[[:space:]]*}
+    case "$first" in echo|printf|cd|pwd|true|:|test|'[') ;; *) return 1 ;; esac
+  done <<NEIGHBOURS
+$segs
+NEIGHBOURS
   return 0
 }
 
@@ -318,9 +337,9 @@ while IFS= read -r seg; do
         elif case "$cmd" in *'|'*|*'<<'*|*'<('*|*'>'*) true ;; *) false ;; esac; then
           # A pipe, heredoc or redirection can build or write the script that the shell then runs.
           deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: a pipe, heredoc or redirection next to a shell run)."
-        elif printf '%s' "$(fold "$cmd")" | grep -qE '(^|[^a-z0-9_])(python[0-9.]*|perl|node|ruby|g?awk|php|lua)([^a-z0-9_.]|$)'; then
-          # An interpreter in the same command can write the script file without a pipe or redirection.
-          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: an interpreter next to a shell run)."
+        elif ! only_plain_neighbours "$seg"; then
+          # Another command in the same call (sed -i, cp, an interpreter, an IFS change) can write or reshape the script.
+          deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: a command other than echo, printf, cd or an assignment next to a shell run)."
         elif can_carry_merge "$cmd"; then
           deny "a merge inside a shell string or wrapper ($cw) cannot be judged (matched: $CARRY_WHY)."
         fi ;;

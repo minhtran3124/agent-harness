@@ -48,12 +48,14 @@ stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `time
 `xargs` or another wrapper, a merge that is not at command position (`command gh`, `/usr/bin/gh`, backticks), and
 `gh alias set|import` next to the word merge. One narrow case is not denied (#671): a shell that runs a named script
 file, such as `S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh`, where the word merge is only part of a file
-or helper name. Only the flags `-e -u -x -v -n` may come before the file; any other option (`-c`, `-s`, `-O extglob`,
-`-o posix`, `--init-file f`), a file operand that is only a variable (`$F`), or stdin under another name (`/dev/stdin`)
-is not a script run and is denied. The exemption is also denied when the command has a pipe, `<<`, `<(` or `>`, an
-interpreter (python, perl, node, ruby, awk, ...), text built at run time (`$(...)`, backticks, `$'...'`), `gh` next to a
-variable, a merge API path, or merge as a word of its own. Merge text built with `${v#x}`, braces or IFS is not recognized
-as such (#675). Any denied segment blocks the whole command. A Bash call that is not a merge
+or helper name. Only the flags `-e -u -x -v -n` may come before the file, and the file must be a plain path (an optional
+`$VAR/` prefix, then letters, digits and `_ . / + -`, not starting with `-`); any other option (`-c`, `-s`,
+`-O extglob`, `--init-file f`), any other operand (`$F`, `${F:--c}`, `$1`, `\-c`, `?c`, braces), or stdin under another
+name (`/dev/stdin`) is not a script run and is denied. The exemption is also denied when the command has a pipe, `<<`,
+`<(` or `>`; any other command than `echo`, `printf`, `cd`, `pwd`, `true`, `test` or a variable assignment (a `sed -i`,
+`cp` or interpreter could write the script); an `IFS` assignment; text built at run time (`$(...)`, backticks,
+`$'...'`); `gh` next to a variable; a merge API path; or merge as a word of its own. Merge text built with `${v#x}`,
+braces or IFS is not recognized as such (#675). Any denied segment blocks the whole command. A Bash call that is not a merge
 exits 0 before any parsing, so it costs nothing. There is no environment-variable bypass.
 `Verifies:` the PR base and default branch of every judged merge. `Does not verify:` the owner's own `!` or terminal
 merges (the hook never sees them), a local `git merge`, a merge through the web UI or another client, a command built at

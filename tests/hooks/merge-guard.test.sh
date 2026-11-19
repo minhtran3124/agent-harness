@@ -230,6 +230,26 @@ for c in "echo \$HOME/xmerge; bash -O extglob -c 'gh pr m{e..e}rge 7 --repo o/r'
   t "#671 review 2: a shell run with options or a hidden script stays denied: $c"; g "$c"; assert_rc 2
 done
 t "#671 review 2: value-free flags before a script file are still a script run"; g 'S=/tmp/x; bash -eu $S/run.sh tests/hooks/post-merge-hooks.test.sh'; assert_rc 0
+# Third security review: an operand that expands to an option, and a writer that is not an interpreter.
+# Each was denied before #674 and must stay denied.
+for c in "echo \$HOME/xmerge; bash \\-c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash [-]c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash ?c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash {-c,} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash \${F:--c} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; set -- -c; bash \$1 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash \$* 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; A=(-c x); bash \${A[0]} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; bash \${F%x} 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; A=-; B=c; bash \$A\$B 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; sudo bash \\-c 'gh pr m{e..e}rge 7 --repo o/r'" \
+         "echo \$HOME/xmerge; cp /etc/hostname f.sh; sed -i 's/.*/gh pr xmerge 7 --repo o\\/r/;s/x//' f.sh; bash f.sh" \
+         "echo \$HOME/xmerge; sed -n 's/.*/gh pr xmerge 7/;s/x//;w f.sh' /etc/hostname; bash f.sh" \
+         "echo \$HOME/xmerge; sort -o f.sh g.txt; bash f.sh" "echo \$HOME/xmerge; nodejs w.js; bash f.sh" \
+         "echo \$HOME/xmerge; IFS=:; S='-c:g[h] pr m{e..e}rge 7 --repo o/r #'; bash \$S/run.sh"; do
+  t "#671 review 3: an option-like operand or a same-call writer stays denied: $c"; g "$c"; assert_rc 2
+done
+t "#671 review 3: a plain path operand next to cd and echo is still a script run"; g 'S=/tmp/x; cd /tmp; echo go; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh'; assert_rc 0
 
 reset; setbase feat/x; printf 'main\n' > "$D/base.8"
 t "chain: 7 on feat/x, 8 on main: the whole command is denied"; g 'gh pr merge 7 --repo o/r --merge && gh pr merge 8 --repo o/r --merge'; assert_rc 2
