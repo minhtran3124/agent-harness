@@ -141,6 +141,17 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 ---
 
+### Fleet (free agent sessions, ADR 0041)
+
+No fixed order: each skill states an outcome and a toolbox, and the agent decides. The shared formats (messages, receipt, report, ledger, outcome contract) are in `skills/pd-orchestrate/references/protocol.md`.
+
+| Skill | When | Output |
+|---|---|---|
+| `pd-orchestrate` | The owner asks to run tickets (bug or feature) with agents (`/harness:pd-orchestrate <milestone \| #n ... \| free text> [base=<branch>] [local]`). The main session triages, asks the owner once, assigns one worker session per ticket in a Pod Bay workspace, routes review and acceptance checks, runs `scripts/fleet-check.sh`, pushes and opens the PR. It calls the Opus `advisor` when stuck, then a Fable 5.2 `pd-advise` session | Ledger `specs/fleet/<run>/ledger.json`, one PR per ticket, a final report |
+| `pd-work` | A worker session got an `assign` brief. It chooses its own method and calls the skills and agents the ticket needs | Commits on `fix/<id>` or `feature/<id>`, report v2 |
+| `pd-review` | A reviewer session got a `review-request`. It re-runs the tests in its own worktree and judges the diff against the verbatim request | A receipt pinned to the head commit |
+| `pd-advise` | An advisor session (Fable 5.2, own workspace) got an `advise-request` | A solution with diagnosis, a tested prototype when possible, risks |
+
 ## Skill Handoff Map
 
 ```
@@ -155,6 +166,8 @@ writing-plans              ──► implement
 implement                  ──► /code-review → intent-review → finishing-a-development-branch
 intent-review              ──► (standalone — same pipeline; needs the verbatim request and a BASE..HEAD range)
 tickets                    ──► GitHub issues (optional milestone) → autopilot
+pd-orchestrate             ──► intake / grilling (owner) → pd-work (one session per ticket) ⇄ pd-review → uat / qa-verifier → fleet-check.sh → finishing-a-development-branch
+                               stuck: advisor (Opus) → pd-advise (Fable 5.2 session) → owner
 autopilot                  ──► intake (per ticket) → grilling → workflows/ship.js (launch, terminal)
 decision-record            ──► docs/adr/NNNN-*.md + PR `## Decisions` section (terminal)
 diagnosing-bugs            ──► diagnosis.md → task-reviewer → S: red test → fix → cleanup

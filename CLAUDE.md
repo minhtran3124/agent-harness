@@ -26,7 +26,9 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
   (`test-runner`). Research and search: Haiku 5.5 (`researcher`). Intent review: Sonnet 5.5
   (`intent-reviewer`). Checking a ticket with no app: Sonnet 5.5 (`qa-verifier`).
 - Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.2 only when the Opus advice did not
-  unblock the work, for a high-stakes architecture decision, or when the owner asks.
+  unblock the work, for a high-stakes architecture decision, or when the owner asks. In a fleet run
+  the Fable 5.2 advisor is a session in its own Pod Bay workspace (`harness:pd-advise`): it
+  researches the problem and returns a solution, and the Opus orchestrator decides.
 - The orchestrator chooses the model and the effort for each subagent and each workflow agent,
   based on how hard the task is. It thinks for itself; the models above are defaults, not fixed
   assignments, and it may raise or lower the model or the effort. Effort is not fixed. The Fable 5.2
@@ -64,6 +66,14 @@ intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> qa-verifier plan-blind command and file check of a ticket with no app (ship.js, docs tickets at depth M and L)
   -> finishing-a-development-branch   push and open a PR; a human merges
 ```
+
+**Fleet path (ADR 0041, phase 1).** `/harness:pd-orchestrate` runs the same tickets with free agent
+sessions instead of a fixed script: the main session (Opus 5.5) assigns one worker session per ticket
+in a Pod Bay workspace (`pd-work`), a different session reviews (`pd-review`), and a Fable 5.2 session
+advises when the orchestrator is stuck (`pd-advise`). Order is free; the end state must show the
+evidence of `plugins/harness/skills/pd-orchestrate/references/protocol.md`, which a reviewer and
+`plugins/harness/scripts/fleet-check.sh` (warn mode) check. `ship.js` stays until the trial of
+ADR 0041 ends.
 
 Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above live in `plugins/harness/skills/` and run as `/harness:<name>`; `qa-writer`, `qa-verifier` and `security-reviewer` are agents in `plugins/harness/agents/`. `/harness:autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
 
