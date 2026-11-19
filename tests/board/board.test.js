@@ -184,6 +184,29 @@ test('qb9: the server follows a newer run of the project', async () => {
   } finally { server.close(); }
 });
 
+test('qb9b: /healthz names the run and whether it still runs', async () => {
+  const empty = await B.start({ port: 0, projectDir: tmp(), follow: true, pollMs: 50 });
+  try {
+    const h = await get(empty.port, '/healthz?x=1');
+    assert.strictEqual(h.status, 200);
+    assert.ok(h.type.startsWith('application/json'));
+    assert.strictEqual(h.body, '{"ok":true,"run":null,"running":false}');
+    assert.strictEqual((await get(empty.port, '/healthz')).body, h.body);
+  } finally { empty.server.close(); }
+  const base = tmp();
+  makeRun(base, 'wf_h', [{ type: 'started', key: 'k', agentId: 'a1', label: '#1 implement · t', phase: 'Tickets' }]);
+  const { server, port } = await B.start({ port: 0, projectDir: base, follow: true, pollMs: 30 });
+  try {
+    assert.strictEqual((await get(port, '/healthz')).body, '{"ok":true,"run":"wf_h","running":true}');
+    assert.strictEqual((await get(port, '/healthz?x=1')).body, '{"ok":true,"run":"wf_h","running":true}');
+    fs.mkdirSync(path.join(base, 'sess1', 'workflows'), { recursive: true });
+    fs.writeFileSync(path.join(base, 'sess1', 'workflows', 'wf_h.json'), JSON.stringify({ status: 'completed', durationMs: 1, result: null }));
+    let body = '';
+    for (let i = 0; i < 40; i++) { await sleep(50); body = (await get(port, '/healthz')).body; if (body.includes('"running":false')) break; }
+    assert.strictEqual(body, '{"ok":true,"run":"wf_h","running":false}');
+  } finally { server.close(); }
+});
+
 test('qb10: flow.json is consistent and the page has no external resources', () => {
   const ids = new Set(FLOW.nodes.map(n => n.id));
   assert.strictEqual(ids.size, FLOW.nodes.length, 'duplicate node id');

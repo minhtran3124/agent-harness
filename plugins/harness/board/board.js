@@ -346,6 +346,10 @@ function start(opts) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify({ project_dir: projDir, run: tail ? tail.run.id : null, events: history }));
     }
+    if (url === '/healthz') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, run: tail ? tail.run.id : null, running: !!tail && !tail.ended }));
+    }
     if (url === '/events') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
       res.write(`data: ${JSON.stringify({ kind: 'hello', project_dir: projDir, run_id: tail ? tail.run.id : null })}\n\n`);
