@@ -478,6 +478,10 @@ for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
          "f=/tmp/x/body.md && git push 2>&1 | tail -1; cat > \$f <<'EOF'${NL}gh pr merge is denied${NL}EOF" \
          "img(){ echo \"![\$1](\$U/\$1.png?raw=true)\"; }; gh pr create --title t --body \"\$(cat <<EOF${NL}gh pr merge is denied, see \\\`code\\\` here${NL}\$(img before-x)${NL}EOF${NL})\"" \
          "for x in p1 p2; do case \$x in p1) T='a b';; p2) T='c d';; esac; gh issue create --repo o/r --title \"\$T\" --body-file t-\$x.md; done; echo 'gh pr merge is text'" \
+         "# add #76 follow-ups (nits); it's done${NL}gh pr view 76 --json body -q .body | grep -c 'gh pr merge'" \
+         "# check what gh pr merge would do${NL}gh pr view 7 --repo o/r --json mergeable" \
+         "for i in \$(seq 1 3); do r=\$(gh pr view 7 --repo o/r --json statusCheckRollup --jq '.x'); case \"\$r\" in *COMPLETED:SUCCESS*) exit 0;; *FAILURE*) exit 1;; esac; sleep 10; done; echo 'gh pr merge is text'" \
+         "cat > \$S/t.md <<'EOF'${NL}*gh pr merge* [x] is text?${NL}EOF" \
          "grep -qx '.claude.bak/' .git/info/exclude || echo '.claude.bak/' >> .git/info/exclude; cat > /tmp/x/x.md <<'EOF'${NL}gh pr merge is denied${NL}EOF"; do
   t "#680: a replay false-positive shape is allowed: $c"; g "$c"
   if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
@@ -510,7 +514,10 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "f(){ python3 -c \"\$1\"; }; f 'import os; os.system(\"gh pr merge 7 --repo o/r\")'" \
          "f 'import os; os.system(\"gh pr merge 7 --repo o/r\")'; f(){ :; }" \
          "echo 'gh pr merge 7 --repo o/r' > x.sh; case a in b) :;; \$(sh<x.sh)) :;; esac" \
-         "echo 'gh pr merge 7 --repo o/r' > x.sh; case a in b) :;; esac; sh<x.sh"; do
+         "echo 'gh pr merge 7 --repo o/r' > x.sh; case a in b) :;; esac; sh<x.sh" \
+         "# a comment (with parens); 'quote${NL}python3 -c 'import os; os.system(\"gh pr merge 7 --repo o/r\")'" \
+         "echo x # comment${NL}gh pr merge 7 --repo o/r --match-head-commit $SHA" \
+         "x='a[\$(gh pr merge 7 --repo o/r)]'; exit \$((x))"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the
