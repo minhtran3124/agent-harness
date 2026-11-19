@@ -114,3 +114,20 @@ previous agent of the same ticket.
   number is not in any file the board reads.
 
 Tests: `bash tests/scripts/board.test.sh`.
+
+## Fleet view (`/harness:pd-orchestrate` runs)
+
+A fleet run has no ship.js run; its state is the ledger `specs/fleet/<run>/ledger.json` of the orchestrator's checkout (format: `skills/pd-orchestrate/references/protocol.md`, section "Ledger").
+
+```
+node plugins/harness/board/board.js --ledger <path to ledger.json>
+node plugins/harness/board/board.js --project <dir>     # newest specs/fleet/*/ledger.json under <dir>
+```
+
+Without `--ledger`, the board picks the newest `specs/fleet/*/ledger.json` (by modification time) under `--project` (default: the current directory). The ledger is read again on every request, so a change shows without a restart.
+
+- `GET /fleet`: HTML page, one row per ticket (id, state, worker, reviewer, pull request). `blocked` and `escalated` rows are marked and listed first; a pull request that is an http(s) URL is a link. The page refreshes itself every 3 seconds and fits a 390 px screen.
+- `GET /fleet.json`: `{"run","base","tickets":[{"id","state","kind","depth","worker","reviewer","head","pr"}]}`, sorted by id (all-digit ids numerically, others as strings). `worker` and `reviewer` are the session names; missing fields are `null`; `pr` is passed through unchanged.
+- No fleet run: `404 {"error":"no fleet run"}`. A ledger that does not parse: `503 {"error":"<reason>"}`; the board keeps running.
+
+The existing routes and the ship.js view are unchanged.
