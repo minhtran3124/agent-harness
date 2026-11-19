@@ -228,6 +228,35 @@ t "acceptance: a trailing slash and ./ on --qa-dir are normalised"
 fc --kind feature --no-suite --qa-dir "./$QADIR/" --qa-commit "$Q1" --qa-commit "$Q2"; has 'ok acceptance:'
 t "acceptance: the qa dir compares case-insensitively"
 fc --kind feature --no-suite --qa-dir "Tests/Acceptance" --qa-commit "$Q1" --qa-commit "$Q2"; has 'ok acceptance:'
+commit_file "$R" "$QADIR/café.sh" "true" "later edit with an odd name"; rehead
+t "acceptance: an unlisted commit that adds a non-ASCII name in the qa dir is a MISMATCH"
+fc --kind feature --no-suite --qa-dir "$QADIR" --qa-commit "$Q1" --qa-commit "$Q2"; has "but is not a --qa-commit"
+init_repo
+commit_file "$R" "tests/acceptance/a.sh" "true" "Add acceptance tests for #1"; QC=$LASTC
+commit_file "$R" "src/code.txt" "x" "code"
+commit_file "$R" "TESTS/Acceptance/b.sh" "true" "sneaky case"; rehead
+t "acceptance: an unlisted commit under another case of the qa dir is a MISMATCH"
+fc --kind feature --no-suite --qa-dir tests/acceptance --qa-commit "$QC"; has "but is not a --qa-commit"
+init_repo
+gitc "$R" commit -q --allow-empty -m "Add acceptance tests for #1"; QE=$(gitc "$R" rev-parse HEAD)
+commit_file "$R" "src/code.txt" "x" "code"
+commit_file "$R" "tests/acceptance/a.sh" "true" "Add acceptance tests for #1"; QL=$LASTC; rehead
+t "acceptance: an empty first qa commit does not count as tests before code"
+fc --kind feature --no-suite --qa-dir tests/acceptance --qa-commit "$QE" --qa-commit "$QL"; has "touches nothing in tests/acceptance"
+
+new_fixture
+printf '{"v":1,"ticket":"1","head":"%s","verdict":"pass\\n","findings":[],"commands":[]}\n' "$HEAD" > "$EV/receipt.json"
+t "a verdict that ends in a newline is not pass"; fc "${BUG[@]}"; has 'MISMATCH receipt'
+new_fixture
+printf 'null\n{"v":2,"run":"r","ticket":"1","status":"done","head":"%s"}\n' "$HEAD" > "$EV/report.json"
+t "a report file with two JSON documents is a MISMATCH"; fc "${BUG[@]}"; has 'MISMATCH report'
+new_fixture
+printf '{"v":2,"run":"r","ticket":"1","status":"a\\"b\\\\","head":"%s"}\n' "$HEAD" > "$EV/report.json"
+t "a quote and a backslash in a JSON value still give a valid fleet-check.json"; fc "${BUG[@]}"
+if jq -e . "$EV/fleet-check.json" >/dev/null 2>&1; then pass; else fail "invalid JSON: $(cat "$EV/fleet-check.json")"; fi
+new_fixture
+ln -s tools "$R/scripts"; mkdir "$R/tools"; gitc "$R" add scripts; gitc "$R" commit -q -m "symlink named scripts"; rehead
+t "security: a symlink named scripts is a risky path"; fc "${BUG[@]}"; has 'MISMATCH security'
 
 init_repo
 commit_file "$R" src/code.sh "c" "implement"

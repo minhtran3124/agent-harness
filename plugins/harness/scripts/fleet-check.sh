@@ -134,7 +134,8 @@ record() { # record <name> <ok|mismatch|skip> <detail>
 mirror="$tmp/mirror.git"
 mkdir -p "$tmp/home" "$tmp/ev"
 GENV=(env -i "PATH=$PATH" "HOME=$tmp/home" GIT_NO_REPLACE_OBJECTS=1 GIT_CONFIG_NOSYSTEM=1
-  GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0 GIT_LITERAL_PATHSPECS=1 LC_ALL=C)
+  GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0 GIT_LITERAL_PATHSPECS=1 LC_ALL=C
+  GIT_NO_LAZY_FETCH=1 GIT_ALLOW_PROTOCOL=file) # no lazy fetch from a worker's promisor remote, file transport only
 gm() { "${GENV[@]}" git --git-dir="$mirror" -c core.hooksPath=/dev/null "$@"; }
 gmw() { local w=$1; shift; "${GENV[@]}" git -C "$w" -c core.hooksPath=/dev/null "$@"; }
 
@@ -179,7 +180,14 @@ ev_state() { cat "$tmp/ev/$1.state"; }
 have_jq=1; command -v jq >/dev/null 2>&1 || have_jq=0
 
 JV=""
-jqs() { JV=$(jq -r "$2" "$1" 2>/dev/null); } # sets JV, returns jq's status
+# jqs <file> <filter>: sets JV to the exact output (one trailing newline removed, so a value that ends
+# in a newline or a file with two JSON documents does not compare equal); returns jq's status.
+jqs() {
+  local rc
+  JV=$(jq -r "$2" "$1" 2>/dev/null; rc=$?; printf x; exit "$rc"); rc=$?
+  JV=${JV%x}; JV=${JV%$'\n'}
+  return "$rc"
+}
 
 head_ok() { # head_ok <value from JSON>: full-length hex, equal to --head as lowercase strings
   local v
@@ -224,7 +232,7 @@ check_receipt() {
   st=$(ev_state receipt.json)
   if [ "$st" != ok ]; then record receipt mismatch "receipt.json is $st"; return; fi
   if [ "$have_jq" = 0 ]; then record receipt mismatch "jq is not installed, cannot read receipt.json"; return; fi
-  if ! jq -e 'type == "object"' "$f" >/dev/null 2>&1; then record receipt mismatch "receipt.json does not parse as a JSON object"; return; fi
+  if ! jq -e -s 'length == 1 and (.[0] | type) == "object"' "$f" >/dev/null 2>&1; then record receipt mismatch "receipt.json does not parse as a JSON object"; return; fi
   jqs "$f" '.head | strings' || probs="$probs head could not be read;"
   head_ok "$JV" || probs="$probs head '$(san "$JV")' is not the full --head;"
   jqs "$f" '.verdict | strings' || probs="$probs verdict could not be read;"
@@ -250,7 +258,7 @@ check_report() {
   st=$(ev_state report.json)
   if [ "$st" != ok ]; then record report mismatch "report.json is $st"; return; fi
   if [ "$have_jq" = 0 ]; then record report mismatch "jq is not installed, cannot read report.json"; return; fi
-  if ! jq -e 'type == "object"' "$f" >/dev/null 2>&1; then record report mismatch "report.json does not parse as a JSON object"; return; fi
+  if ! jq -e -s 'length == 1 and (.[0] | type) == "object"' "$f" >/dev/null 2>&1; then record report mismatch "report.json does not parse as a JSON object"; return; fi
   jqs "$f" '.v | numbers' || probs="$probs v could not be read;"
   [ "$JV" = 2 ] || probs="$probs v is '$(san "$JV")', not 2;"
   jqs "$f" '.head | strings' || probs="$probs head could not be read;"
@@ -289,6 +297,7 @@ check_acceptance() {
     if ! grep -qFx -- "$q" "$tmp/range"; then probs="$probs qa commit ${q:0:12} is not in $base..$head;"; continue; fi
     if ! classify "$q"; then probs="$probs cannot read the paths of ${q:0:12};"; continue; fi
     [ "$CL_OUT" = 0 ] || probs="$probs qa commit ${q:0:12} touches paths outside $qa_dir;"
+    [ "$CL_IN" = 1 ] || probs="$probs qa commit ${q:0:12} touches nothing in $qa_dir;"
   done
   while IFS= read -r c; do
     [ -n "$c" ] || continue
@@ -306,7 +315,7 @@ check_acceptance() {
 }
 
 # --- 4. security --------------------------------------------------------------------------------
-risky_re='(^|/)(hooks|migrations?|auth|security|secrets?)(/|$)|(^|/)scripts/|(^|/)\.github/|settings\.json$|settings\.local\.json$|\.sql$|\.env|(^|/)REVIEW\.md$'
+risky_re='(^|/)(hooks|migrations?|auth|security|secrets?)(/|$)|(^|/)(scripts|\.github)(/|$)|settings\.json$|settings\.local\.json$|\.sql$|\.env|(^|/)REVIEW\.md$'
 check_security() {
   local f="$tmp/ev/security-receipt.json" st mb p nrisky=0 risky="" where probs=""
   if ! need_git; then record security mismatch "git mirror not usable: $git_err"; return; fi
@@ -328,7 +337,7 @@ check_security() {
   fi
   if [ "$st" != ok ]; then record security mismatch "$where: security-receipt.json is $st"; return; fi
   if [ "$have_jq" = 0 ]; then record security mismatch "$where: jq is not installed, cannot read security-receipt.json"; return; fi
-  if ! jq -e 'type == "object"' "$f" >/dev/null 2>&1; then record security mismatch "$where: security-receipt.json does not parse as a JSON object"; return; fi
+  if ! jq -e -s 'length == 1 and (.[0] | type) == "object"' "$f" >/dev/null 2>&1; then record security mismatch "$where: security-receipt.json does not parse as a JSON object"; return; fi
   jqs "$f" '.head | strings' || probs="$probs head could not be read;"
   head_ok "$JV" || probs="$probs head '$(san "$JV")' is not the full --head;"
   eval_findings "$f"
