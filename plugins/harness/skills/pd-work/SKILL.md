@@ -29,7 +29,7 @@ Read `references/toolbox.md` now. It maps situations to the skills and agents th
 diagnosis for a bug, research for unknown code, a design note and an advisor review at depth L,
 acceptance tests that are already on your branch, a security review for a risky
 ticket, an advisor when a check fails twice. Skip a tool that adds nothing. You may start agents of your own, in parallel when their work is
-independent, and you choose each one's model and effort from the task. The file also says what to do after you
+independent, and choose each one's model and effort. It also says what to do after you
 reported or escalated.
 
 ## Review
@@ -55,6 +55,7 @@ the orchestrator decides.
 
 ## Report
 
-Write `specs/<ticket>/report.md` (report v2 in the protocol) and send the same text as `report` to
-the orchestrator. `status` is `done` only when the receipt's head equals your head and its verdict
-is `pass`. List under `not_verified` everything you assumed and nobody checked.
+Write `specs/<ticket>/report.md`: the marker line, then one JSON object (report v2 in the
+protocol), not prose. Send it as `report` to the orchestrator. `status` is `done` only when the
+receipt's head equals your head and its verdict is `pass`. List under `not_verified` what nobody
+checked.

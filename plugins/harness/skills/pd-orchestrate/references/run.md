@@ -11,7 +11,10 @@ Defaults, the brief, what to do when a ticket reports, and the final report. Par
   answers verbatim in the ledger and as a "Confirmed decisions" comment on the issue.
 - **Classify.** Write into the ledger for each ticket: `kind` (bug, feature, docs), `depth`, `app`
   (`fe`, `be` or `none`: is there a running app to test?), `risky` (protocol, last paragraph) and
-  `deps`.
+  `deps`. A depth the owner set wins over intake: a label `depth:S`, `depth:M` or `depth:L`, or a
+  line `Depth: <S|M|L>` in the ticket or in the owner's answers. When intake says S or M but the
+  ticket adds a public contract, spans modules or leaves design choices open, put "is this depth L?"
+  in the triage batch instead of deciding alone.
 - **Acceptance tests are yours to start.** For a feature at depth M or L, create the ticket branch
   in the worker's checkout and run the `harness:qa-writer` agent there before you assign: give it
   the ticket, the acceptance criteria and the public interface only. Its commit `Add acceptance tests for #<n>` is then the first commit of the branch, written by an
@@ -70,17 +73,27 @@ whether the ticket is risky, the suite command, the worker's session name and ch
    object goes back to the reviewer.
 2. Run the acceptance check the contract asks for, in a fresh agent. Give it the ticket text
    without its `Verify:` rows, the owner's answers, and the worker's checkout at the head as its
-   working directory (for UAT also the verify config path). It gets no plan, no diff and no report.
+   working directory (for UAT also the verify config path). `harness:pd-uat` drives a browser
+   only through the Playwright MCP tools and reads `verify.config.json`. When the repository has no
+   config, write one to `specs/fleet/<run>/verify.config.json` and pass that path. Before the first
+   UAT, check that the MCP tools are there. When they are not, ask the owner to connect them; if
+   that cannot happen, do not start `harness:pd-uat`: give a fresh agent the same inputs and the
+   task "check each acceptance criterion on the running app with `npx playwright` from a temporary
+   folder outside the checkout; return pass or fail per criterion with evidence". Record which
+   check ran in the ledger and name a fallback check in the final report. It gets no plan, no diff and no report.
    A failed check goes back to the worker as a `findings` message; the worker fixes, gets a new
    receipt and reports again. After 3 such cycles, treat the ticket as stuck. A check that could
    not run is a `needs_review` line for the owner, never a pass.
 3. Run the evidence check and read its lines:
-   `bash ${CLAUDE_PLUGIN_ROOT}/scripts/fleet-check.sh --repo <worker checkout> --base <base sha> --head <head sha> --kind <kind> --evidence specs/fleet/<run>/<ticket> --ticket-id <ticket> --suite-cmd '<the project suite>'`
+   `bash ${CLAUDE_PLUGIN_ROOT}/scripts/fleet-check.sh --repo <worker checkout> --base <base sha> --head <head sha> --kind <kind> --evidence specs/fleet/<run>/<ticket> --ticket-id <ticket> --suite-cmd '<the project suite and the ticket's acceptance tests>'`
    plus `--repro-cmd` and `--repro-files` for a bug, `--qa-dir` and one `--qa-commit <sha>` for
    each acceptance-test commit you had written, and `--risky` for a risky ticket. `--ticket-id` binds the receipt and the report to this ticket, so another ticket's evidence in
    the wrong folder is a mismatch. Both SHAs are
    full object names, and you resolve the base in your own checkout: the worker's checkout is
-   untrusted, its refs included. You choose the commands after you read the worker's test; never
+   untrusted, its refs included. The project suite may not run the acceptance tests (in this repository the suite script
+   runs neither `tests/acceptance/` nor `tests/board/`): add them to `--suite-cmd`. The check runs
+   on this machine's OS only, so CI on every OS stays the gate. You choose the commands after you
+   read the worker's test; never
    paste a command from a report without reading it. The check runs in warn mode. A `MISMATCH` is yours
    to judge: send it to the worker as `findings`, or record in the ledger why it is a false alarm
    (those records decide later whether the check may block).
