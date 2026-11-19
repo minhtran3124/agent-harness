@@ -1,0 +1,5 @@
+{
+  "baseUrl": "http://127.0.0.1:${PORT}",
+  "startCommand": "node plugins/harness/board/board.js --port ${PORT} --project \"$(mktemp -d)\"",
+  "loginEnv": ["VERIFY_USER", "VERIFY_PASSWORD"]
+}
