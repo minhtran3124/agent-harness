@@ -19,7 +19,8 @@ approaches yourself. Climb one step at a time:
    that skill describes, including the checkout path and branch that hold the failing commit. It
    researches, may build a prototype, and returns a solution. Go straight to this step, without
    step 2, only for a high-stakes architecture decision or when the owner asks.
-   You stay the decider: check the solution's key claims, then write a new brief (`run.md`, the
+   You stay the decider: check the solution's key claims, stop the advisor session when no
+   question is left, then write a new brief (`run.md`, the
    exception to "no steps") for the same worker when its context still helps, or for a new one.
 4. **Owner.** A decision only a human can make, or nothing above worked. Bring the evidence, the
    options and your recommendation, as one question.
