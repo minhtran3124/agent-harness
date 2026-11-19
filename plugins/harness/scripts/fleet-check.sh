@@ -141,8 +141,10 @@ gmw() { local w=$1; shift; "${GENV[@]}" git -C "$w" -c core.hooksPath=/dev/null 
 
 git_err=""
 setup_mirror() {
-  local out
-  if ! out=$("${GENV[@]}" git init --bare -q --template= "$mirror" 2>&1); then git_err="cannot create the mirror: $(san "$out")"; return; fi
+  local out fmt=sha1
+  [ "${#head}" -eq 64 ] && fmt=sha256   # the mirror must use the object format of --repo
+  if [ "${#head}" -ne "${#base}" ]; then git_err="--base and --head use different object formats"; return; fi
+  if ! out=$("${GENV[@]}" git init --bare -q --template= --object-format="$fmt" "$mirror" 2>&1); then git_err="cannot create the mirror: $(san "$out")"; return; fi
   if ! out=$(gm -c uploadpack.allowAnySHA1InWant=true fetch -q --no-tags -- "$repo" "$head:refs/fleet/head" "$base:refs/fleet/base" 2>&1); then
     # A by-SHA fetch is not possible: fetch every head and tag into a private namespace instead.
     if ! out=$(gm fetch -q --no-tags -- "$repo" '+refs/heads/*:refs/fleet/h/*' '+refs/tags/*:refs/fleet/t/*' 2>&1); then

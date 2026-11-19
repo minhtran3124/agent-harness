@@ -141,6 +141,21 @@ t "a head that does not descend from base is a MISMATCH"
 OUT=$(cd "$WORK" && bash "$FC" --repo "$R" --base "$HEAD" --head "$BASE" --evidence "$EV" --kind bug "${REPRO[@]}" --no-suite 2>&1); RC=$?
 if printf '%s\n' "$OUT" | grep -qF 'MISMATCH repro: git mirror not usable: head does not descend from base'; then pass; else fail "$OUT"; fi
 
+# --- SHA-256 repository ---------------------------------------------------------------------------
+t "a SHA-256 worker repo is read through a SHA-256 mirror"
+R=$(mktemp -d); WORK=$(mktemp -d); EV=$(mktemp -d); _CLEANUP_DIRS+=("$R" "$WORK" "$EV")
+if git -C "$R" init -q --object-format=sha256 -b main 2>/dev/null; then
+  gitc "$R" config user.email test@test; gitc "$R" config user.name test
+  commit_file "$R" README "base" "base"; BASE=$LASTC
+  printf '%s\n' 'test -f fix.txt' > "$R/t.sh"; printf 'x\n' > "$R/fix.txt"; printf 'x\n' > "$R/ok.txt"
+  gitc "$R" add t.sh fix.txt ok.txt; gitc "$R" commit -q -m "fix"; rehead
+  fc "${BUG[@]}" --ticket-id 1; no_mismatch
+else
+  skip "this git cannot create a SHA-256 repository"
+fi
+new_fixture
+t "--ticket-id that differs from the evidence is a MISMATCH"; fc "${BUG[@]}" --ticket-id 2; has 'MISMATCH receipt'
+
 # --- shallow source -----------------------------------------------------------------------------
 new_fixture
 SRC=$R; CLONE=$(mktemp -d); _CLEANUP_DIRS+=("$CLONE"); rmdir "$CLONE"
