@@ -404,7 +404,9 @@ function start(opts) {
       return res.end(fleetPage);
     }
     if (url === '/fleet.json') {
-      const f = readFleet(opts.ledger, opts.project);
+      let f;
+      try { f = readFleet(opts.ledger, opts.project || process.cwd()); }
+      catch (e) { f = { status: 503, body: { error: 'fleet view failed' } }; }
       res.writeHead(f.status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       return res.end(JSON.stringify(f.body));
     }
