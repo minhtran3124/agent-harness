@@ -23,8 +23,8 @@ want=$(cd "$ROOT" && { ls plugins/harness/hooks/*.sh plugins/harness/scripts/*.s
   plugins/harness/skills/autopilot/scripts/preflight.sh; })
 if [ "$rc" -eq 0 ] && [ "$(cat "$ARGS" 2>/dev/null)" = "$want" ]; then pass; else fail "rc=$rc, args differ from the CI list"; fi
 
-t "the file list holds 15 files"
-if [ "$(wc -l < "$ARGS" | tr -d ' ')" = 15 ]; then pass; else fail "got $(wc -l < "$ARGS") files"; fi
+t "the file list holds 16 files"
+if [ "$(wc -l < "$ARGS" | tr -d ' ')" = 16 ]; then pass; else fail "got $(wc -l < "$ARGS") files"; fi
 
 t "check-shellcheck skips with one loud line (exit 0) without shellcheck by default"
 out=$(PATH="$NOSC" env -u REQUIRE_SHELLCHECK "$BASH_BIN" "$ROOT/scripts/check-shellcheck.sh" 2>&1); rc=$?

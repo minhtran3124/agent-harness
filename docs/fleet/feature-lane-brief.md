@@ -1,5 +1,8 @@
 # Feature lane brief
 
+> Kept as the record of the trials of ADR 0039 and ADR 0040. New runs use `/harness:pd-orchestrate`
+> and the `pd-work` skill (ADR 0041); do not send this brief.
+
 The brief that the free workers of the feature-lane trial got (ADR 0040). It is not yet the default
 way to run a feature ticket: `ship.js` stays the default until a second trial with UAT and a depth L
 ticket confirms the result. Replace each `<...>` before sending. Put the brief in a gitignored file in

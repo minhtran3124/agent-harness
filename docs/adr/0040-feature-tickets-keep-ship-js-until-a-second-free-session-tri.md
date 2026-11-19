@@ -1,7 +1,8 @@
 ---
 ticket: run
 stage: design
-status: accepted
+status: superseded
+superseded_by: 0041
 confidence: medium
 decided_by: owner (2026-11-19)
 date: 2026-11-19
