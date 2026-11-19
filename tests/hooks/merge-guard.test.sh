@@ -539,7 +539,19 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "R=\$(cat r.txt); echo 'gh pr merge is text'; gh api -X PUT repos/\$R/milestones/9" \
          "echo 'gh pr merge is text'; gh api -X PUT 'repos/{owner}/{repo}/{branch}'" \
          "echo 'gh pr merge is text'; gh api -X PUT repos/o/r/pulls/7/\$(echo x)" \
-         "echo 'gh pr merge 7 --repo o/r' > q.txt; gh api graphql -F query=@q.txt"; do
+         "echo 'gh pr merge 7 --repo o/r' > q.txt; gh api graphql -F query=@q.txt" \
+         "R=o/r; R+=/pulls/7/merge?a=; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; R+='/pulls/7/merge?a='; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; R[0]=o/r/pulls/7/merge?a=; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; declare R=o/r/pulls/7/merge?a=; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; read R <<< 'o/r/pulls/7/merge?a='; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; printf -v R %s 'o/r/pulls/7/merge?a='; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; for R in o/r/pulls/7/merge?a=; do gh api -X PUT repos/\$R/milestones/9; done" \
+         "f(){ R=o/r/pulls/7/merge?a=; }; R=o/r; f; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; eval 'R=o/r/pulls/7/merge?a='; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; : \${R:=x} 'gh pr merge is text'; unset R; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; declare -n ref=R; ref=o/r/pulls/7/merge?a=; gh api -X PUT repos/\$R/milestones/9" \
+         "R=o/r; mapfile -t R <<< 'o/r/pulls/7/merge?a='; gh api -X PUT repos/\$R/milestones/9"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the
