@@ -37,6 +37,12 @@ until you stop it. Verifies: a board for this project answers on the printed URL
 that the board outlives the Claude Code session, or that the directory is the one Claude Code writes its runs under (if
 the board shows "No ship.js run found" during a run, start it with `--project <path>` by hand).
 
+## Health check
+
+`GET /healthz` answers `{"ok":true,"run":<run id or null>,"running":<true|false>}` with status 200 and
+`content-type: application/json`. `run` is the run the board shows; `running` is true until that run ends. A query
+string is ignored. Use it to check that the board is up without loading the page or the event stream.
+
 ## Embed it in another page
 
 - `?embed=1` hides the board's own header and footer note and makes the background transparent, so a host
