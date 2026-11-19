@@ -487,6 +487,8 @@ for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
          "R=o/r; cat > \$S/x1.md <<EOF${NL}gh pr merge is denied${NL}EOF${NL}gh api repos/\$R/milestones/9 -q '.title'" \
          "R=\$(gh repo view --json nameWithOwner -q .nameWithOwner); gh api repos/\$R/pulls/7 --jq .mergeable" \
          "N=7; gh api repos/o/r/pulls/\$N/comments --paginate -q '.[].body'" \
+         "N=\$(cat n.txt); gh api -X PATCH repos/o/r/pulls/\$N -f body=done" \
+         "A=pulls/7; B=merge; gh api repos/o/r/\$A/\$B" \
          "grep -qx '.claude.bak/' .git/info/exclude || echo '.claude.bak/' >> .git/info/exclude; cat > /tmp/x/x.md <<'EOF'${NL}gh pr merge is denied${NL}EOF"; do
   t "#680: a replay false-positive shape is allowed: $c"; g "$c"
   if [ "$RC" = 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
@@ -554,9 +556,9 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "R=o/r; : \${R:=x} 'gh pr merge is text'; unset R; gh api -X PUT repos/\$R/milestones/9" \
          "R=o/r; declare -n ref=R; ref=o/r/pulls/7/merge?a=; gh api -X PUT repos/\$R/milestones/9" \
          "R=o/r; mapfile -t R <<< 'o/r/pulls/7/merge?a='; gh api -X PUT repos/\$R/milestones/9" \
-         "A=pulls/7; B=merge; gh api -X PUT repos/o/r/\$A/\$B" "A=pulls/7; B=mer; gh api -X PUT repos/o/r/\$A/\${B}ge" \
-         "A=pulls/7; B=mer; gh api --method=PUT repos/o/r/\$A/\${B}ge" "M=PUT; gh api -X \$M repos/o/r/\$(cat p.txt)" \
-         "B=merges; gh api repos/o/r/\$B -f base=main -f head=x"; do
+         "A=pulls/7; B=merge; gh api -X PUT repos/o/r/\$A/\$B" "B=merge; A=pulls/7; gh api -X PUT repos/o/r/\$A/\$B" \
+         "A=pulls/7; B=merge; gh api --method=PUT repos/o/r/\$A/\$B" "A=pulls/7; B=merge; gh api repos/o/r/\$A/\$B -f x=y" \
+         "M=PUT; B=merge; gh api -X \$M repos/o/r/pulls/7/\$B" "B=merges; gh api repos/o/r/\$B -f base=main -f head=x"; do
   t "#680 design review: a command that could run merge text is denied: $c"; g "$c"; assert_rc 2
 done
 # A quote inside a regex was read as unclosed by the old splitter (denied); the new one reads it like the
@@ -574,7 +576,9 @@ t "#680: a merge-like --subject on the one plain merge is still put to the owner
 # matching cannot see it. These tests document the limit; branch protection on main is the backstop.
 reset
 for c in "python3 -c \"import os; os.system('g'+'h p'+'r mer'+'ge 7 --repo o/r')\"" \
-         "python3 -c \"import os,base64; os.system(base64.b64decode('Z2ggcHIgbWVyZ2UgNw==').decode())\""; do
+         "python3 -c \"import os,base64; os.system(base64.b64decode('Z2ggcHIgbWVyZ2UgNw==').decode())\"" \
+         "B=\$(printf 'm%sge' er); A=pulls/7; gh api -X PUT repos/o/r/\$A/\$B" \
+         "A=pulls/7; B=mer; gh api -X PUT repos/o/r/\$A/\${B}ge"; do
   t "#675 (known limit, not closed by #680): a merge encoded at run time is not seen: $c"; g "$c"; assert_rc 0
 done
 
