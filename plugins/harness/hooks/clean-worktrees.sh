@@ -149,7 +149,7 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   if [ "$budget" -gt 0 ] && [ "$SECONDS" -ge "$budget" ]; then out+="stopped: time budget of ${budget}s reached; the rest is left for the next sweep"$'\n'; break; fi
   [ -z "$only" ] || case "$only" in *" $b "*) ;; *) continue ;; esac
   case "$keep" in *" $b "*) continue ;; esac
-  case "$b" in develop|development|staging|production|release/*|release-*) continue ;; esac  # long-lived branches
+  case "$b" in develop|development|staging|production|release/*) continue ;; esac  # long-lived branches
   tip=$(git rev-parse -q --verify "refs/heads/$b") || continue
   strict=""; is_strict "$b" && strict=1
   p=$(wt_of "$b")
