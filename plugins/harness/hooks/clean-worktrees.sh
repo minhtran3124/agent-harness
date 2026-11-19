@@ -11,6 +11,7 @@
 # A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
 # CLEAN_KEEP, CLEAN_STRICT, CLEAN_RECREATE (space separated; a CLEAN_RECREATE name must be a valid plain
 # branch name, and the push is never forced, so a branch another session created in the race is not overwritten). It runs `git fetch --prune` first.
+# CLEAN_DRY_RUN=1 is report only: it picks the same candidates, makes no remove, delete or push (it still runs `git fetch --prune`), and prints `would remove worktree <path>`, `would delete branch <name>` and `would recreate branch <name>` (stdout by hand, the additionalContext summary in hook modes). Only the value 1 turns it on. It does not simulate a dirty or locked worktree refusal.
 # Hook use: `clean-worktrees.sh PostToolUse` reads the tool payload on stdin. It acts only on a real
 # `gh pr merge <n>` or `gh api .../pulls/<n>/merge` command (heredoc bodies and quoted strings are
 # ignored, so text that merely mentions the phrase does nothing) and cleans only the branches of the PRs it merges (each merge in a chain counts),
@@ -95,6 +96,7 @@ session_branch=$(git symbolic-ref -q --short HEAD 2>/dev/null)
 root=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
 root=${root%/.git}; cd "$root" || exit 0
 remote=${CLEAN_REMOTE:-origin}
+dry=""; [ "${CLEAN_DRY_RUN:-}" = 1 ] && dry=1
 # Fetch first so a branch the remote already deleted is seen. A failed fetch (no network) is not fatal.
 # Rule (3) trusts remote-tracking refs, so it runs only when the fetch succeeded (refs may be stale).
 fetched=""; git fetch -q --prune "$remote" 2>/dev/null && fetched=1
@@ -112,6 +114,7 @@ if [ -n "$base" ]; then
     git check-ref-format --branch "$name" >/dev/null 2>&1 || continue
     git ls-remote --exit-code --heads "$remote" "$name" >/dev/null 2>&1; rc=$?
     [ "$rc" = 2 ] || continue
+    if [ -n "$dry" ]; then out+="would recreate branch $name"$'\n'; continue; fi
     if git push -q "$remote" "$base:refs/heads/$name" 2>/dev/null; then out+="recreated $remote/$name from $remote/main"$'\n'
     else out+="could not recreate $remote/$name"$'\n'; fi
   done
@@ -169,13 +172,15 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
     [ "$p" = "$root" ] && continue
     case "$start/" in "$p"/*) out+="kept $b: the session runs in $p"$'\n'; continue ;; esac
     if in_use "$p"; then out+="kept $b: a running process uses $p"$'\n'; continue; fi
-    git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
+    if [ -n "$dry" ]; then out+="would remove worktree $p"$'\n'
+    else git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }; fi
   fi
+  if [ -n "$dry" ]; then out+="would delete branch $b"$'\n'; continue; fi
   if { [ "$how" = pr ] && git branch -D "$b" >/dev/null 2>&1; } || { [ "$how" != pr ] && del_contained "$b" "$( [ "$how" = gone ] && echo "$base" || containing_ref "$tip" )"; }; then
     out+="removed $b${p:+ and worktree $p}"$'\n'
   else out+="kept branch $b: merged but could not be deleted; delete by hand if wanted"$'\n'; fi
 done
-git worktree prune
+[ -n "$dry" ] || git worktree prune
 [ -n "$out" ] || exit 0
 case "${1:-}" in
   PostToolUse) jq -n --arg t "Worktree cleanup:"$'\n'"$out" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$t}}' ;;
