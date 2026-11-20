@@ -22,6 +22,8 @@
 #   with such text is denied (python3 -c, perl -e, awk, sed with a script, find -exec, git -c alias, ...), and
 #   so is every command that is not on the list in the same Bash call as such text, a write of such text to a
 #   git hook or config file, and an expansion that evaluates a value ($(( )), ${s:x}, ${!x}, zsh ${(e)x}).
+#   gh api is never a merge path (owner decision): a gh api write with an endpoint built from a variable the
+#   hook cannot resolve is denied when the call holds "merg" anywhere; merges go through gh pr merge.
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
 #   merge through the web UI or another client, a merge built at run time with no merge-like text (#675:
 #   `gh pr m{e..e}rge`, $'...', base64, string slicing in an interpreter), a file written in one Bash call
