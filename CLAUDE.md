@@ -72,8 +72,8 @@ sessions instead of a fixed script: the main session (Opus 5.5) assigns one work
 in a Pod Bay workspace (`pd-work`), a different session reviews (`pd-review`), and a Fable 5.2 session
 advises when the orchestrator is stuck (`pd-advise`). Order is free; the end state must show the
 evidence of `plugins/harness/skills/pd-orchestrate/references/protocol.md`, which a reviewer and
-`plugins/harness/scripts/fleet-check.sh` (warn mode) check. `ship.js` stays until the trial of
-ADR 0041 ends.
+`plugins/harness/scripts/fleet-check.sh` (warn mode) check. `ship.js` stays as one of three
+paths (ship.js, the fleet, a single agent), chosen per ticket (ADR 0043).
 
 Decisions made on the way are recorded as ADRs in `docs/adr/`. The skills above live in `plugins/harness/skills/` and run as `/harness:<name>`; `qa-writer`, `qa-verifier` and `security-reviewer` are agents in `plugins/harness/agents/`. `/harness:pd-autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
 
