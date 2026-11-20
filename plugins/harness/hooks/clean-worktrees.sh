@@ -17,6 +17,11 @@
 # found with `gh pr view`. With no number it uses the PR of the current branch; if that lookup fails
 # it exits silently. `clean-worktrees.sh SessionStart` takes no payload and sweeps every branch,
 # answering with additionalContext. A SessionStart sweep has a time budget (CLEAN_BUDGET seconds, default 20, under the 30s hook timeout; 0 = none; other modes default to none): it is checked before each branch, so a branch is never left half-cleaned, and the sweep stops with a "stopped" line in the summary. Run by hand with no argument, it sweeps and prints plain text.
+# Dry run: CLEAN_DRY_RUN set to any value except empty or 0 (use 1) makes none of its own writes, in every mode: no
+# worktree remove, branch delete, upstream config write, `git worktree prune` or CLEAN_RECREATE push. It chooses
+# the same branches and prints `would remove worktree <path>`, `would delete branch <name>` and
+# `would recreate <remote>/<name>` where it reports today (stdout by hand, additionalContext in a hook).
+# `git fetch --prune` still runs (it only updates remote-tracking refs and FETCH_HEAD), with git auto-maintenance off.
 set -u
 SECONDS=0
 only=""  # set in hook mode: clean only the branch of the PR that was just merged
@@ -95,9 +100,13 @@ session_branch=$(git symbolic-ref -q --short HEAD 2>/dev/null)
 root=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
 root=${root%/.git}; cd "$root" || exit 0
 remote=${CLEAN_REMOTE:-origin}
+dry=""; case "${CLEAN_DRY_RUN:-}" in ''|0) ;; *) dry=1 ;; esac
 # Fetch first so a branch the remote already deleted is seen. A failed fetch (no network) is not fatal.
 # Rule (3) trusts remote-tracking refs, so it runs only when the fetch succeeded (refs may be stale).
-fetched=""; git fetch -q --prune "$remote" 2>/dev/null && fetched=1
+# A dry run turns off git's auto-maintenance for its fetch: gc --auto can run `git worktree prune`.
+fetched=""
+if [ -n "$dry" ]; then git -c gc.auto=0 -c maintenance.auto=false fetch -q --prune "$remote" 2>/dev/null && fetched=1
+else git fetch -q --prune "$remote" 2>/dev/null && fetched=1; fi
 keep=" main master ${CLEAN_KEEP:-} $(git symbolic-ref -q --short HEAD) $session_branch "
 # bash 3.2 (macOS) has no associative arrays: look the worktree path up per branch.
 wt_of() { git worktree list --porcelain | awk -v b="refs/heads/$1" '/^worktree /{p=substr($0,10)} $0=="branch " b{print p; exit}'; }
@@ -112,7 +121,8 @@ if [ -n "$base" ]; then
     git check-ref-format --branch "$name" >/dev/null 2>&1 || continue
     git ls-remote --exit-code --heads "$remote" "$name" >/dev/null 2>&1; rc=$?
     [ "$rc" = 2 ] || continue
-    if git push -q "$remote" "$base:refs/heads/$name" 2>/dev/null; then out+="recreated $remote/$name from $remote/main"$'\n'
+    if [ -n "$dry" ]; then out+="would recreate $remote/$name"$'\n'
+    elif git push -q "$remote" "$base:refs/heads/$name" 2>/dev/null; then out+="recreated $remote/$name from $remote/main"$'\n'
     else out+="could not recreate $remote/$name"$'\n'; fi
   done
 fi
@@ -127,6 +137,18 @@ if [ "${1:-}" = SessionStart ]; then
   fi
 fi
 in_use() { [ -n "$live_cwds" ] && printf '%s\n' "$live_cwds" | awk -v p="$1" '$0==p || index($0, p "/")==1 {f=1; exit} END{exit !f}'; }
+# Dry run only: true when `git worktree remove` would refuse the worktree $1 because it holds submodules
+# (git checks the worktree's git dir for `modules`, and the index for a gitlink whose directory has a .git).
+# Fails toward true: an unreadable worktree counts as holding one.
+has_submodules() {
+  local gd sp
+  gd=$(git -C "$1" rev-parse --absolute-git-dir 2>/dev/null) || return 0
+  [ -e "$gd/modules" ] && return 0
+  while IFS= read -r sp; do [ -n "$sp" ] && [ -e "$1/$sp/.git" ] && return 0; done <<EOF
+$(git -C "$1" ls-files -s 2>/dev/null | awk '$1=="160000" {sub(/^[^\t]*\t/, ""); print}')
+EOF
+  return 1
+}
 # CLEAN_STRICT holds globs, so the pattern stays unquoted on purpose.
 # shellcheck disable=SC2254
 is_strict() { local g; for g in ${CLEAN_STRICT:-}; do case "$1" in $g) return 0 ;; esac; done; return 1; }
@@ -169,13 +191,22 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
     [ "$p" = "$root" ] && continue
     case "$start/" in "$p"/*) out+="kept $b: the session runs in $p"$'\n'; continue ;; esac
     if in_use "$p"; then out+="kept $b: a running process uses $p"$'\n'; continue; fi
-    git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
+    if [ -n "$dry" ]; then
+      # `git worktree remove` would refuse a locked worktree, one with changes (untracked files count) or one with submodules.
+      # A failed status (broken or unreadable worktree) also counts as kept, so the report never overstates.
+      if git worktree list --porcelain | awk -v p="$p" '/^worktree /{w=substr($0,10)} w==p && /^locked/{f=1} END{exit !f}' \
+        || has_submodules "$p" || ! st=$(git --no-optional-locks -C "$p" status --porcelain 2>/dev/null) || [ -n "$st" ]; then out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; fi
+      out+="would remove worktree $p"$'\n'
+    else
+      git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
+    fi
   fi
+  if [ -n "$dry" ]; then out+="would delete branch $b"$'\n'; continue; fi
   if { [ "$how" = pr ] && git branch -D "$b" >/dev/null 2>&1; } || { [ "$how" != pr ] && del_contained "$b" "$( [ "$how" = gone ] && echo "$base" || containing_ref "$tip" )"; }; then
     out+="removed $b${p:+ and worktree $p}"$'\n'
   else out+="kept branch $b: merged but could not be deleted; delete by hand if wanted"$'\n'; fi
 done
-git worktree prune
+[ -n "$dry" ] || git worktree prune
 [ -n "$out" ] || exit 0
 case "${1:-}" in
   PostToolUse) jq -n --arg t "Worktree cleanup:"$'\n'"$out" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$t}}' ;;
