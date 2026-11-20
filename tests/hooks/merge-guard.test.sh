@@ -605,6 +605,62 @@ t "#680: a merge-like --subject on the one plain merge is still put to the owner
 t "#680 review: --auto=true is denied like --auto"; g "$MA --auto=true"; assert_rc_contains 2 "is not allowed; a human merges"
 t "#680 review: an assignment in front of the plain merge into a protected base is denied (it would ride on the owner's yes)"
 g "GIT_CONFIG_COUNT=1 $MA"; assert_rc_contains 2 "assignment in front of a merge"
+# Security review of the #680 rewrite. C1: a # that the shell does not read as a comment (after an escaped
+# blank, at the start of a joined line, inside ${ }, a zsh glob qualifier) hid the rest of the line. C2: <<WORD
+# inside ${ } was read as a heredoc start. Each hid a merge, or a second merge behind the owner's prompt.
+TAB=$(printf '\t')
+reset; setbase main
+for c in "echo a\\ #; gh pr merge 7 --repo o/r" "echo a\\${TAB}#; gh pr merge 7 --repo o/r" \
+         "echo a\\${NL}#; gh pr merge 7 --repo o/r" "echo \${a/ #/}; gh pr merge 7 --repo o/r" \
+         "ls *(#qe:'gh pr merge 7 --repo o/r':)" "setopt extendedglob; ls *(#qe:'gh pr merge 7 --repo o/r':)" \
+         "$MA --subject x\${a/ --body #/}; gh pr merge 8 --repo o/r --admin" \
+         "$MA --subject a\\${NL}#; gh pr merge 8 --repo o/r --admin" \
+         "echo \$((1 #)); gh pr merge 7 --repo o/r" "echo \"\${a:-\"x #\"}\"; gh pr merge 7 --repo o/r" \
+         "echo \${a/<<X /y}${NL}gh pr merge 7 --repo o/r${NL}X" "echo \${a:-<<X }${NL}gh pr merge 7 --repo o/r${NL}X" \
+         "$MA --subject x\${a/<<X --body /y}${NL}gh pr merge 8 --repo o/r --admin${NL}X" \
+         "$MA --subject x\${a/<<X /y}${NL}gh pr merge 8 --repo o/r --admin${NL}X" \
+         "echo \${ gh pr merge 7 --repo o/r; }"; do
+  t "merge-guard security review C1/C2: a # or << the shell does not read as a comment or heredoc is denied: $c"; g "$c"; assert_rc 2
+done
+# H1: zsh >! / >>! (and >|, >>|) write a configuration file like > and >>. H2: cd to a glob path can reach .git/hooks.
+# H3: a base change in the same call as a merge: the base read before the change was feat/x.
+# M1: a brace or glob word in a merge flag value expands into other words (--admin) that the prompt does not name.
+reset; setbase feat/x
+for c in "printf '[diff]\\n\\texternal = gh pr merge 7 --repo o/r\\n' >>! .git/config; git diff" \
+         "printf '[diff]\\n\\texternal = gh pr merge 7 --repo o/r\\n' >! .git/config; git diff" \
+         "printf '[diff]\\n\\texternal = gh pr merge 7 --repo o/r\\n' >>| .git/config; git diff" \
+         "cd .g*t/h*ks && echo 'gh pr merge 7 --repo o/r' >> post-commit; cd ../.. && git commit --allow-empty -m x" \
+         "cd .gi?/hook[s] && echo 'gh pr merge 7 --repo o/r' > post-commit; cd ../.. && git commit -m x" \
+         "gh pr edit 7 --repo o/r --base main; gh pr merge 7 --repo o/r" \
+         "gh pr edit 7 --repo o/r -B main && gh pr merge 7 --repo o/r" \
+         "gh pr edit 7 --repo o/r --base=main; gh pr merge 7 --repo o/r" \
+         "F=--base; gh pr edit 7 --repo o/r \$F main; gh pr merge 7 --repo o/r" \
+         "gh api -X PATCH repos/o/r/pulls/7 -f base=main; gh pr merge 7 --repo o/r" \
+         "gh api repos/o/r/pulls/7 -f base=main; gh pr merge 7 --repo o/r" \
+         "gh pr merge 7 --repo o/r; gh api -X PATCH repos/o/r/pulls/7 -f base=main" \
+         "gh api -X PATCH repos/o/r/pulls/7 -f base=main; gh api -X PUT repos/o/r/pulls/7/merge" \
+         "gh pr merge 7 --repo o/r --subject {x,--admin}" "gh pr merge 7 --repo o/r --subject {a..b}" \
+         "gh pr merge 7 --repo o/r --body *" "gh pr merge 7 --repo o/r -t x?"; do
+  t "merge-guard security review H1/H2/H3/M1: denied: $c"; g "$c"; assert_rc 2
+done
+reset; setbase main
+t "merge-guard security review M1: a brace word on the pinned merge into main is denied, not asked"
+g "$MA --subject {x,--admin}"; assert_rc_contains 2 "brace or glob"
+# M2: a call with very many parts is denied before it can pass the hook timeout.
+reset; setbase feat/x
+t "merge-guard security review M2: more than 300 parts next to merge text are denied"
+c=""; for i in $(seq 1 301); do c="${c}true; "; done; g "${c}echo 'gh pr merge 7'"; assert_rc_contains 2 "300 parts"
+# M3: with no jq, a merge spelled g""h is denied (the old raw-text fallback allowed it).
+t "merge-guard security review M3: no jq and g\"\"h pr merge: denied"; g 'g""h pr merge 7 --repo o/r' "$NOJQ"; assert_rc 2
+# Controls: a real comment after plain words, a plain ${ } next to merge text, a base change with no merge,
+# and a gh api write to an issue next to a merge stay allowed.
+reset; setbase feat/x
+for c in "echo hi # gh pr merge 7" "# check gh pr merge 7 first${NL}gh pr view 7 --repo o/r" \
+         "N=\${#x}; B=\${F##*/}; echo \"\${B%.md}: gh pr merge is text\"" \
+         "gh pr edit 7 --repo o/r --add-label x; gh pr merge 7 --repo o/r" \
+         "gh api -X PATCH repos/o/r/issues/9 -f state=closed; gh pr merge 7 --repo o/r"; do
+  t "merge-guard security review: control stays allowed: $c"; g "$c"; assert_rc 0
+done
 # Issue #675 stays open on purpose: a merge that is encoded at run time holds no merge-like text, and text
 # matching cannot see it. These tests document the limit; branch protection on main is the backstop.
 reset

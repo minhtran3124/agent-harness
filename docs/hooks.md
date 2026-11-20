@@ -58,6 +58,21 @@ value there, and a subscript in it runs a stored `$( )`. A write target is read 
 is `.git/config`), and a glob in a target that can match a git file counts as that file. An assignment in front of
 git, gh or rg takes that command off the list.
 
+Where the shell and a plain text reader disagree, the hook denies (security review of #680). A `#` starts a comment
+only at the start of a word: after an escaped blank (`a\ #`), at the start of a line joined by backslash-newline, or
+inside `${ }` it is text. A comment that holds merge text is trusted only as a whole line, or after plain words, on a
+line that is not joined, in a call with no `(( ))`, `$(( ))` or `$[ ]`; any other comment with merge text (after `(`
+or `)`, a quote, an expansion, a glob, a zsh glob qualifier `*(#q...)`) is denied. A `${ }` expansion is read as one
+word; one that holds a blank, a quote, a backslash, `( )`, `<`, `>` or a `#` other than `${#x}`, `${x#p}` or `${x##p}`
+is denied next to merge text (`${a/<<X /y}` is no heredoc to the shell), and so is a quote inside `${ }` inside double
+quotes. zsh `>!` and `>>!` (and `>|`, `>>|`) count as writes. A `cd` to a glob or brace path counts as a cd into a
+possible config directory. A `gh pr edit` with `--base`/`-B` (or a variable or quoted word), and a `gh api` write to
+`pulls/<n>` or to an endpoint the hook cannot read, in the same call as a merge is denied: the merge is judged on the
+base read before the change runs. A word of a `gh pr merge` with brace expansion (`{a,b}`, `{x..y}`) or glob characters
+(`*`, `?`, `[`) is denied: the shell would hand gh other words than the hook judged and the prompt names (`--subject
+{x,--admin}` adds `--admin`). A call with more than 300 parts is denied up front, and the segment loop stops at the
+20 s budget, so a long call cannot pass the 30 s hook timeout.
+
 **gh api is never a merge path (owner decision).** A merge goes only through `gh pr merge`, where the owner is asked.
 `gh api` stays on the list only when the hook can prove its endpoint is no merge path: `{owner}` and `{repo}` are filled
 by gh and count as literal, and a `$VAR` part counts only when one plain `VAR=<literal>` is the only way the call sets
@@ -74,6 +89,10 @@ transcripts counted 112 new denials in 2,297 commands with merge text: 98 of the
   inside `$( )`). Split it into two Bash calls.
 - A `gh api` write with a variable endpoint in a call that mentions a merge. Use the gh CLI instead: `gh pr edit
   --body-file|--base`, `gh issue edit|comment|close`.
+- From the security review of #680: a trailing comment with merge text after anything but plain words (`ls *(x) # gh pr
+  merge`), a `${ }` with a blank, quote or `$( )` inside (`${x:-$(pwd)}`) next to merge text, a `gh pr merge` flag value
+  with `*`, `?`, `[` or a brace list even when it is quoted (`--subject 'v2?'`), a `gh pr edit --base` in the same call
+  as a merge, and more than 300 parts in a call with merge text.
 
 **Not closed (#675).** A merge built at run time with no literal text (`gh pr m{e..e}rge`, `$'...'`, base64, string
 pieces such as `B=mer; ${B}ge`) and a file written in one call (or with the Write tool) and run in the next. The wrapper
@@ -93,7 +112,7 @@ answer, Claude Code returns it as a denial. So no `UserPromptSubmit` token fallb
 `allow`. The owner's `!` or terminal merge stays as before.
 
 **It fails closed, unlike the other hooks (ADR: fail-closed merge guard).** Once it has seen a merge, any doubt denies:
-no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
+no `gh`, no `jq` (once the folded pre-filter matched: `g""h pr merge` counts), no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
 stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto` (and `--auto=<any>`),
 `gh api graphql ... mergePullRequest`, a `gh api .../merge` path with `{owner}/{repo}` placeholders, a merge inside `bash -c`, `eval`,
 `xargs` or another wrapper on a best-effort list (shells, `env`, `sudo`, `nice`, `timeout`, `stdbuf`, `setsid`, `flock`,

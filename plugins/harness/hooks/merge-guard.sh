@@ -24,6 +24,10 @@
 #   git hook or config file, and an expansion that evaluates a value ($(( )), ${s:x}, ${!x}, zsh ${(e)x}).
 #   gh api is never a merge path (owner decision): a gh api write with an endpoint built from a variable the
 #   hook cannot resolve is denied when the call holds "merg" anywhere; merges go through gh pr merge.
+#   Security review of #680: merge text after a # that the shell may not read as a comment (escaped blank, joined
+#   line, ( or ), an expansion, a zsh glob qualifier), a ${ } with a blank, quote, < > or # inside, a gh pr edit
+#   --base or a gh api write to pulls/<n> in a call with a merge, a brace or glob word in a gh pr merge, zsh >! /
+#   >>! writes, a cd to a glob path, more than 300 parts, and no jq after the pre-filter matched are all denied.
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
 #   merge through the web UI or another client, a merge built at run time with no merge-like text (#675:
 #   `gh pr m{e..e}rge`, $'...', base64, string slicing in an interpreter), a file written in one Bash call
@@ -57,12 +61,9 @@ deny() {
   exit 2
 }
 
-if ! command -v jq >/dev/null 2>&1; then
-  if printf '%s' "$payload" | grep -qE 'gh[[:space:]]+(pr[[:space:]]+merge|api)'; then
-    deny "jq is not installed, so the merge command cannot be parsed."
-  fi
-  exit 0
-fi
+# The pre-filter matched (on the folded text, so g""h pr merge counts): with no jq the command cannot be read.
+command -v jq >/dev/null 2>&1 || deny "jq is not installed, so the merge command cannot be parsed."
+
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null) || deny "the command could not be parsed."
 [ -n "$cmd" ] || deny "the command is empty or could not be parsed."
 is_merge_like "$cmd" || exit 0
@@ -151,6 +152,11 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   seg=$(printf '%s' "$1" | sed -E 's/^gh[[:space:]]+pr[[:space:]]+merge[[:space:]]*//')
   set -f
   for w in $seg; do
+    # M1: the shell expands a brace or glob word into other words (--subject {x,--admin} adds --admin), so
+    # the words this loop reads, and the prompt, would not be what gh gets
+    case "$w" in
+      *'{'*,*'}'*|*'{'*..*'}'*|*'*'*|*'?'*|*'['*) deny "the merge word '$w' is expanded by the shell (brace or glob), so the merge cannot be judged." ;;
+    esac
     if [ "$skip" = repo ]; then repo=$w; skip=""; continue; fi
     if [ "$skip" = match ]; then match=$w; skip=""; continue; fi
     if [ -n "$skip" ]; then skip=""; continue; fi
@@ -220,9 +226,10 @@ judge_api_merge() {  # judge_api_merge <segment>
 #   o = the text holds the start of an option that makes an otherwise harmless command run a program
 #       (rg --pre, sort --compress-program, git push --exec / --receive-pack, and their short forms).
 # - A line "\001<REASON>" means the text cannot be parsed safely: deny.
-# Redirections that hold & or | (2>&1, >&f, <&3, >|f) would be cut at that character and leave their
-# target as a command word; turn them into a plain > or < first.
-segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g; s/([<>])&/\1 /g; s/>\|/> /g' | awk '
+# Redirections that hold & or | (2>&1, >&f, <&3, >|f, >>|f) would be cut at that character and leave their
+# target as a command word; zsh's >! and >>! would hide the target from the write check. Turn them all into
+# a plain > or >> first.
+segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g; s/([<>])&/\1 /g; s/>[|!]/> /g' | awk '
     # fold: lowercase, quotes and backslashes removed. Words that only start with "merge" (mergeable, mergedAt,
     # mergeStateStatus, mergeCommit, merge-base, merge_method, merge-guard) are not a merge and become "mrg".
     # A backslash-newline is removed first: the shell joins it in code, double quotes and unquoted heredocs, and an
@@ -251,10 +258,23 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
       gsub(/\\./, "", t)
       gsub(/\$\{([A-Za-z_][A-Za-z0-9_]*|[0-9#?@*$!-])\}/, "", t)
       # forms that do not evaluate a value: a literal offset (${H:0:8}), a length, a default, a pattern
-      gsub(/\$\{#?[A-Za-z_][A-Za-z0-9_]*(:[0-9]+(:[0-9]+)?|:?[-=?+][^${}`]*|(%%?|##?|\/\/?)[^${}`]*)?\}/, "", t)
+      gsub(/\$\{#?[A-Za-z_][A-Za-z0-9_]*(:[0-9]+(:[0-9]+)?|:?[-=?+][^${}`<>#"\047 \t]*|(%%?|##?|\/\/?)[^${}`<>#"\047 \t]*)?\}/, "", t)
       gsub(/\$\(\(/, "$[", t)
       gsub(/\$([A-Za-z_(\047"#?@*$!0-9-]|$)/, "", t)
       return t !~ /\$/ }
+    # bclose <text starting with ${>: the position of the matching }, or 0 when it is not on this line
+    function bclose(s,   j, d, ch) { d = 0
+      for (j = 2; j <= length(s); j++) { ch = substr(s, j, 1)
+        if (ch == "{") d++; else if (ch == "}") { d--; if (d == 0) return j } }
+      return 0 }
+    # badbrace <${...}>: 1 when the expansion holds text this reader cannot follow the way the shell does:
+    # whitespace (the words of the judge would differ), a quote, a backslash, ( ) (a nested substitution or a
+    # zsh flag), < > (a heredoc or redirection that the shell never sees there) or a # other than a length or
+    # a ${x#pat} / ${x##pat} operator (#680 C1, C2: ${a/ #/} and ${a/<<X /y} hid the rest of the line).
+    function badbrace(b,   t) {
+      if (b ~ /[()"\047`\\ \t<>]/) return 1
+      t = b; sub(/^\$\{#/, "${", t); sub(/^\$\{[A-Za-z_0-9@*!?$-]+(\[[^]]*\])?##?/, "${", t)
+      return index(t, "#") > 0 }
     function unesc(t) { gsub(/\\./, "", t); return t }  # drop escaped characters (\` and \$ are text)
     function pseudo(name, body) { n++; OUT[n] = name; RAW[n] = body; EX[n] = body; QD[n] = body; QH[n] = "" }
     function endbody(   f, o) {  # the body HB of heredoc hcur is complete
@@ -287,7 +307,10 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
     { L[NR] = $0 }
     END {
       sp = 0; KIND[0] = "C"; CUR[0] = 0; PC[0] = 0; n = 0; sq = 0; bt = 0; nh = 0; hcur = 1; HB = ""; HJ = ""; cont = 0; BAD = ""
-      NL = NR
+      NL = NR; JP = " "; HASARITH = 0
+      # (( )), $(( )) and $[ ] are read by the shell up to their end, with no comments inside: a # there is not
+      # a comment, so no comment with merge text is trusted in such a call (C1)
+      for (r = 1; r <= NR; r++) if (L[r] ~ /\(\(|\$\[/) HASARITH = 1
       for (r = 1; r <= NL; r++) {
         line = L[r]
         # lines after NR are substitutions taken from heredoc bodies; the input must be fully read by then
@@ -303,7 +326,8 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
           # bash ends a heredoc inside $( ) at "EOF)" too; this reader does not, so it cannot judge the rest
           if (index(l, HW[hcur]) == 1 && substr(l, length(HW[hcur]) + 1) ~ /^[ \t]*\)/) bad("HEREDOCWORD")
           HB = HB line "\n"; continue }
-        cont = 0; incomment = 0; qic = 0
+        # joined: this line continues the last one (backslash-newline); ESC: position of the last escaped character
+        joined = cont; cont = 0; incomment = 0; qic = 0; ESC = 0
         len = length(line)
         for (i = 1; i <= len; i++) { c = substr(line, i, 1); nx = substr(line, i + 1, 1)
           if (sq) {
@@ -323,13 +347,19 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
               else quoted(body) }
             else if (c == "$" && nx == "(") { SUB[sp] = 1; raw("$("); sp++; KIND[sp] = "C"; CUR[sp] = 0; PC[sp] = 0; i++ }
             else if (c == "`") { bt = 1; btb = ""; if (incomment) qic = 1 }
-            else QB[sp] = QB[sp] c
+            else {
+              # "${a:-"x #"}": the shell reads the inner quotes as part of the expansion, this reader would end the string
+              if (c == "$" && nx == "{") { rest = substr(line, i); k = bclose(rest); if (k == 0 || substr(rest, 1, k) ~ /["`]/) bad("BRACE") }
+              QB[sp] = QB[sp] c }
           } else {  # code
-            prev = (i == 1) ? " " : substr(line, i - 1, 1)
+            # the shell starts a word (and so a comment) only after an unescaped blank or operator: an escaped
+            # character is part of a word, and so is the first character of a line joined by backslash-newline
+            # to a word on the line before (C1)
+            prev = (i == 1) ? (joined ? JP : " ") : ((i - 1 == ESC) ? "x" : substr(line, i - 1, 1))
             if (c == "\\") {
-              if (i == len) { cont = 1
+              if (i == len) { cont = 1; JP = prev
                 if (prev !~ /[ \t;|&()]/ && r < NL && L[r + 1] !~ /^([ \t]|$)/) out("\\") }
-              else { out(c nx); raw(c nx); i++ }
+              else { out(c nx); raw(c nx); i++; ESC = i }
             } else if (c == "\047") { seg(sp); sq = (prev == "$") ? 2 : 1; sqb = ""; if (incomment) qic = 1 }
             else if (c == "\"") { seg(sp); sp++; KIND[sp] = "D"; QB[sp] = ""; SUB[sp] = 0; if (incomment) qic = 1 }
             else if (c == "`") { seg(sp); bt = 1; btb = ""; if (incomment) qic = 1 }
@@ -350,10 +380,22 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
             else if (c == " " || c == "\t") { if (CUR[sp]) { out(c); raw(c) } }
             else {
               # a # comment at top level is data up to the newline: quotes, ( ) ; | and << in it do nothing
-              if (c == "#" && prev ~ /[ \t;|&()]/) { if (sp > 0) bad("NESTEDCOMMENT"); else { out("#"); break }; incomment = 1 }
-              if (c == "$" && nx == "{" && sp > 0) {  # ${ ... } inside a nested substitution: keep it only when it is simple
-                rest = substr(line, i); k = index(rest, "}")
-                if (k == 0 || substr(rest, 1, k) ~ /[()"\047`\\]/) bad("NESTEDBRACE")
+              # A comment is trusted to hold merge text only where the shell surely reads one: a whole line, or
+              # after plain words, on a line that is not joined to the last one, in a call with no (( )) or $[ ].
+              # Anywhere else (after ( or ), a quote, an expansion, a glob, a zsh glob qualifier *(#q...)) the #
+              # may not start a comment, so merge text after it is denied (C1).
+              if (c == "#" && prev ~ /[ \t;|&()]/) {
+                if (sp > 0) bad("NESTEDCOMMENT")
+                else {
+                  pre = substr(line, 1, i - 1)
+                  if ((joined || HASARITH || pre !~ /^([ \t]*|[ \t]*[A-Za-z0-9_.\/:=,%+@-][A-Za-z0-9_.\/:=,%+@ \t-]*[ \t])$/) && loose(substr(line, i))) bad("COMMENTMERGE")
+                  out("#"); break }
+                incomment = 1 }
+              # ${ ... } is one word: keep it whole when it is simple, so a # or << inside it is not read as a
+              # comment or a heredoc (C2); anything else in it is not judged
+              if (c == "$" && nx == "{") {
+                rest = substr(line, i); k = bclose(rest)
+                if (k == 0 || badbrace(substr(rest, 1, k))) bad(sp > 0 ? "NESTEDBRACE" : "BRACE")
                 else { out(substr(rest, 1, k)); raw(substr(rest, 1, k)); i += k - 1; continue } }
               if (c == "<" && nx == "<" && substr(line, i + 2, 1) != "<" && prev != "<") {
                 # A heredoc. Only the plain end words NAME, \047NAME\047 and "NAME" are read; any other form is not judged.
@@ -375,7 +417,8 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         else { if (CUR[sp]) PAT[sp] = 0; flush(sp); raw("\n") }
       }
       if (sq || bt || sp > 0 || hcur <= nh) bad("OPENQUOTE")
-      if (BAD != "") print "\001" BAD
+      # the marker line: flags "BAD" (never a flag set), the reason after the tab; it comes first
+      if (BAD != "") print "BAD\t" BAD
       for (i = 1; i <= n; i++) {
         f = ""; s = fold(RAW[i])
         if (loose(QD[i])) f = f "q"
@@ -390,15 +433,26 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
         print f "\t" OUT[i] }
     }')
 
-# The text could not be parsed the way the shell reads it, so what runs cannot be judged: deny.
+# The text could not be parsed the way the shell reads it, so what runs cannot be judged: deny. The awk
+# prints the marker as the first line, "BAD<TAB><REASON>" (printable, so it matches on bash 3.2 too); the
+# segment loop below also denies any flags field that is not a flag set, so an unknown marker never passes.
 case "$segs" in
-  *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;;
-  *$'\001'COMMENTQUOTE*) deny "a quote inside a # comment hides what follows it, so a merge cannot be judged." ;;
-  *$'\001'SUBSTTEXT*) deny "merge-like text next to a \$( ) or backtick substitution inside double quotes cannot be judged." ;;
-  *$'\001'HEREDOC*) deny "a heredoc with an end word that is not a plain name, in a # comment, or next to an open quote cannot be judged next to the word merge." ;;
-  *$'\001'ARITH*) deny "an arithmetic command (( )) evaluates a variable's value, which can run a stored \$( ), so it cannot be judged next to the word merge." ;;
-  *$'\001'*) deny "a case statement, a comment or a \${ } expansion inside a quoted substitution cannot be judged next to the word merge." ;;
+  BAD$'\t'*)
+    why=${segs#BAD$'\t'}; why=${why%%[!A-Z]*}
+    case "$why" in
+      OPENQUOTE) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;;
+      COMMENTQUOTE) deny "a quote inside a # comment hides what follows it, so a merge cannot be judged." ;;
+      COMMENTMERGE) deny "merge-like text after a # that the shell may not read as a comment (after an escaped blank, a joined line, ( or ), an expansion or a glob) cannot be judged." ;;
+      BRACE) deny "a \${ } expansion with a blank, a quote, a # , a < or > or a nested substitution inside cannot be judged next to the word merge." ;;
+      SUBSTTEXT) deny "merge-like text next to a \$( ) or backtick substitution inside double quotes cannot be judged." ;;
+      HEREDOC*) deny "a heredoc with an end word that is not a plain name, in a # comment, or next to an open quote cannot be judged next to the word merge." ;;
+      ARITH) deny "an arithmetic command (( )) evaluates a variable's value, which can run a stored \$( ), so it cannot be judged next to the word merge." ;;
+      *) deny "a case statement, a comment or a \${ } expansion inside a quoted substitution cannot be judged next to the word merge." ;;
+    esac ;;
 esac
+# M2: each segment costs a few processes; a call with very many segments could pass the 30 s hook timeout,
+# where Claude Code would not block it. Deny it up front.
+[ "$(printf '%s\n' "$segs" | grep -c .)" -le 300 ] || deny "a command with more than 300 parts cannot be judged next to the word merge within the time budget."
 
 # inert <segment> <flags> <T>: the allow list of #680. It returns 0 for a command that never runs its
 # arguments, its stdin or a named file as code, and sets LEVEL: 1 = a shell builtin or a text tool that reads
@@ -615,7 +669,8 @@ cfgtarget() {
   case "$s" in
     cd[[:space:]]*)
       w=$(resolve "$(printf '%s' "${s#cd}" | sed -E 's/^[[:space:]]+//')")
-      case "$w" in *'$'*|*'`'*|-|QUOTED|*.git*|*hooks*|*husky*|*.config*) CDCFG=1 ;; esac ;;
+      # a glob or brace target (cd .g*t/h*ks) can reach any of these
+      case "$w" in *'$'*|*'`'*|-|QUOTED|*.git*|*hooks*|*husky*|*.config*|*'*'*|*'?'*|*'['*|*'{'*) CDCFG=1 ;; esac ;;
   esac
   tg=$(printf '%s\n' "$s" | sed -E 's#[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)# #g' | grep -oE '>>?[[:space:]]*[^[:space:]]+' | sed -E 's/^>>?[[:space:]]*//')
   if [ "${s%%[[:space:]]*}" = tee ]; then tg="$tg $(printf '%s' "${s#tee}" | sed -E 's/(^|[[:space:]])-[^[:space:]]*//g')"; fi
@@ -640,8 +695,12 @@ OTHERS=0  # segments that are neither a judged merge nor on the allow list
 CONFS=0   # allow-list segments of level 2 (git, gh, rg: they read configuration files)
 WRITES=0  # 2: a write to a sure configuration or hook file, 1: to a possible one (cfgtarget)
 OTHER1=""
+RETARGET=""  # H3: a command that can change a PR's base (gh pr edit --base, a gh api write to pulls/<n>)
 while IFS= read -r seg; do
-  case "$seg" in *$'\t'*) FL=${seg%%$'\t'*}; seg=${seg#*$'\t'} ;; *) continue ;; esac
+  [ "$SECONDS" -lt "$DEADLINE" ] || deny "the time budget of ${DEADLINE}s ran out while reading the command."
+  [ -n "$seg" ] || continue
+  case "$seg" in *$'\t'*) FL=${seg%%$'\t'*}; seg=${seg#*$'\t'} ;; *) deny "the command could not be split into parts." ;; esac
+  case "$FL" in ''|*[!qwgaxd-]*) deny "the command could not be parsed safely ($FL)." ;; esac
   seg=$(printf '%s' "$seg" | sed -E 's/^[[:space:]]+//'); orig=$seg
   # #677: variable assignments, shell keywords (if then else elif do while until !), zsh prefixes (noglob,
   # nocorrect, -) and redirections (>f, 2>&1, <f, <<<w) in front of a command do not change what runs.
@@ -721,6 +780,17 @@ while IFS= read -r seg; do
       fi ;;
   esac
   KIND=other
+  # H3: a base change and a merge in one call: the merge is judged on the base read now, before the change runs.
+  if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+edit([[:space:]]|$)'; then
+    if printf '%s' "$seg" | grep -qE '[[:space:]](--base([=[:space:]]|$)|-B)|[$`]|QUOTED'; then RETARGET="gh pr edit --base"; fi
+  fi
+  if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api([[:space:]]|$)'; then
+    apiok "$seg" >/dev/null 2>&1 || :
+    if [ "$APIMUT" -eq 1 ]; then
+      # the merge request itself (pulls/<n>/merge) cannot change the base; it is judged below
+      case "$APIEP" in *pulls/[0-9]*/merge) ;; *pulls*|*'$'*|*'`'*|*'{'*|QUOTED|'') RETARGET="a gh api write to a pull request" ;; esac
+    fi
+  fi
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"; KIND=merge
     # an assignment in front of the merge (LD_PRELOAD, GIT_CONFIG_*) would ride on the owner's yes
@@ -796,6 +866,11 @@ while IFS= read -r seg; do
 done <<SEGS
 $segs
 SEGS
+
+# H3: the base was read before the edit runs; the merge would land in the new base.
+if [ -n "$RETARGET" ] && [ "$MERGES" -gt 0 ]; then
+  deny "a merge in the same Bash call as $RETARGET: the base can change before the merge runs. Change the base in a separate Bash call."
+fi
 
 # Merge-like text in one command (an echo, a heredoc, a variable) can reach another command of the same
 # Bash call through a pipe, a variable or a file, so every other command must be on the allow list too.
