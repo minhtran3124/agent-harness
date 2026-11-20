@@ -184,6 +184,27 @@ test('qb9: the server follows a newer run of the project', async () => {
   } finally { server.close(); }
 });
 
+test('qb14: /healthz reports the run shown and whether it is running; a query string is ignored', async () => {
+  const empty = tmp();
+  const none = await B.start({ port: 0, projectDir: empty, follow: true, pollMs: 30 });
+  try {
+    const r = await get(none.port, '/healthz?x=1');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.type.startsWith('application/json'));
+    assert.strictEqual(r.body, '{"ok":true,"run":null,"running":false}');
+  } finally { none.server.close(); }
+  const base = tmp();
+  makeRun(base, 'wf_h', [{ type: 'launched' }]);
+  const { server, port } = await B.start({ port: 0, projectDir: base, follow: true, pollMs: 30 });
+  try {
+    assert.deepStrictEqual(JSON.parse((await get(port, '/healthz')).body), { ok: true, run: 'wf_h', running: true });
+    fs.mkdirSync(path.join(base, 'sess1', 'workflows'), { recursive: true });
+    fs.writeFileSync(path.join(base, 'sess1', 'workflows', 'wf_h.json'), JSON.stringify({ status: 'completed' }));
+    await sleep(200);
+    assert.deepStrictEqual(JSON.parse((await get(port, '/healthz?x=1')).body), { ok: true, run: 'wf_h', running: false });
+  } finally { server.close(); }
+});
+
 test('qb10: flow.json is consistent and the page has no external resources', () => {
   const ids = new Set(FLOW.nodes.map(n => n.id));
   assert.strictEqual(ids.size, FLOW.nodes.length, 'duplicate node id');
