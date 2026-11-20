@@ -33,19 +33,48 @@ default branch. A protected base is denied, unless it is the one owner-approved 
 **Merge text outside the allow list (#680, ADR 0043).** Merge-like text that is not a judged merge (`gh ... merge`,
 `pr merge`, `pulls/<n>/merge`, `repos/.../merges`, the GraphQL merge mutations; `mergeable`, `mergedAt`, `merge-base`
 and `merge-guard` do not count) is allowed only in a command on an allow list of commands that never run their
-arguments: shell builtins and text tools (`echo`, `printf` without `-v`, `cat`, `grep`, `jq`, `sleep`, `seq`, ...),
-`sed -n '<range>p'`, `rg` without `--pre`, git read and commit subcommands (`git fetch|ls-remote|push` only without such
-text and without a program option), and gh read and text subcommands (`gh pr create|comment|edit`, `gh issue ...`,
-`gh api`). Rules: a command off the list with such text in its arguments, quotes, heredoc or here-string is denied
-(R1; `python3 -c`, `perl -e`, `awk`, `sed` with a script, `find -exec`, `git -c alias.x='!...'`); when one command of
-the Bash call holds such text, every other command of the call must be on the list (R2); an assignment with such text
-in front of a command is denied (R3); such text written to a git hook or config file (`.git/...`, `hooks/`, `.husky/`,
-`lefthook`, `gh/`) is denied, and to a possible config file (a hidden or `*config*` or `*rc` name, a target with `$`)
-only next to git, gh or rg (R4); a `$VAR/x.md` target is resolved when `VAR=` is set earlier in the call, and a data file name (`.md`, `.txt`, `.json`) is not a config name. An assignment in front of git, gh or rg (it can point them at other configuration) takes that command off the list. A function defined in the call (`img() { echo ...; }`) may be called: its body is judged as commands of the call; a function named like an existing command is not honored. The patterns of a case arm after `;;` are data. `gh api` is listed only when its endpoint cannot be a merge path: `{owner}` and `{repo}` are literal, and a `$VAR` part counts only when one plain `VAR=<literal>` is the only way the call sets it. A `gh api` request that can be other than GET (`-X`, `--method`, a field or `--input`) with an endpoint built from a variable or substitution the hook cannot resolve is denied when the call holds the substring `merg` anywhere (any case; prose counts too). The owner decided that a merge goes only through `gh pr merge` (the owner is asked), so `gh api` is never a merge path: edit a PR or issue with `gh pr edit --body-file` or `gh issue edit|comment|close` instead. A method-override header counts as a write. A variable is unknown after `NAME=( ... )`, `NAME+=`, `NAME[..]=` or any other way to set it than one plain `NAME=<literal>`. A call that reaches the hook only as a `gh api` call with an expansion (no merge text for the old pre-filter) is judged by this rule alone. A word built at run time (`B=mer; ${B}ge`) is the #675 limit. A command with an expansion that evaluates a value (`$(( ))`, `$[ ]`, `${s:x}`,
-`${a[x]}`, `${!x}`, zsh `${(e)x}` and `$~x`) is never on the list. The wrapper list stays as a second net for a merge
-that bash -c, eval or xargs build at run time. Not closed (#675): a merge encoded at run time with no literal text
-(`gh pr m{e..e}rge`, `$'...'`, base64), and a file written in one call (or with the Write tool) and run in the next;
-branch protection on `main` is the backstop. A denied harmless command is split into two Bash calls or run by the owner.
+arguments: shell builtins and text tools (`echo`, `printf` without `-v`, `cat`, `grep`, `jq`, `sleep`, `seq`, `exit`,
+...), `sed -n '<range>p'`, `rg` without `--pre`, `sort` without `-o`, `uniq` with one operand, git read and commit
+subcommands without an `--ou*`/`--op*` option (`git fetch|ls-remote|push` only without such text and without a program
+option), gh read and text subcommands (`gh pr create|comment|edit|view`, `gh issue ...`), and `gh api` (see below).
+
+- R1: a command off the list with such text in its arguments, quotes, heredoc or here-string is denied (`python3 -c`,
+  `perl -e`, `node -e`, `awk`, `sed` with a script, `find -exec`, `git -c alias.x='!...'`).
+- R2: when one command of the Bash call holds such text, every other command of the call must be on the list.
+- R3: an assignment with such text in front of a command is denied (it reaches the command's environment).
+- R4: such text written to a git hook or config file (`.git/config`, `.git/hooks/`, `hooks/`, `.husky/`, `lefthook`,
+  `pre-commit`, `~/.config/gh`) is denied; to a possible config file (a hidden, `*config*`, `*rc` or `.yml` name, or a
+  target the hook cannot read) only next to git, gh or rg. A data file (`$S/pr-body.md`) is not a config file; `VAR=`
+  set earlier in the call is resolved.
+
+How the hook reads the call: a backslash-newline is joined (also inside quotes and heredocs, where an interpreter joins
+it), a `#` comment is data up to the newline, case patterns after `;;` are data, a simple `$( )` in an unquoted heredoc
+is a command and the rest of the body is data, and a function defined in the call may be called (its body is judged; a
+name that is already a command is not honored). A command with an expansion that evaluates a value (`$(( ))`, `$[ ]`,
+`${s:x}`, `${a[x]}`, `${!x}`, zsh `${(e)x}` and `$~x`) is never on the list, and an assignment in front of git, gh or
+rg takes that command off the list.
+
+**gh api is never a merge path (owner decision).** A merge goes only through `gh pr merge`, where the owner is asked.
+`gh api` stays on the list only when the hook can prove its endpoint is no merge path: `{owner}` and `{repo}` are filled
+by gh and count as literal, and a `$VAR` part counts only when one plain `VAR=<literal>` is the only way the call sets
+it (`NAME=( )`, `NAME+=`, `read`, `declare`, `for` and the like make it unknown). A `gh api` write (`-X`/`--method`
+other than GET, a field or `--input`, a method-override header) with an endpoint built from a variable or substitution
+that the hook cannot resolve is denied when the call holds `merg` anywhere (any case, prose included, the word joined
+as bash joins it). A call that reaches the hook only as a `gh api` call with an expansion is judged by this rule alone.
+
+**Accepted false positives (owner, #680).** These harmless forms are denied; the replay of 30 days of session
+transcripts counted 112 new denials in 2,297 commands with merge text: 98 of the first kind, 14 of the others.
+- An interpreter, `sed`, `awk`, `find` or `git -c` whose own arguments or input hold merge text. Run it yourself, or
+  write the script with the Write tool and run the file in a separate Bash call.
+- A command off the list in the same Bash call as merge text (for example `systemctl`, `git worktree`, or a script run
+  inside `$( )`). Split it into two Bash calls.
+- A `gh api` write with a variable endpoint in a call that mentions a merge. Use the gh CLI instead: `gh pr edit
+  --body-file|--base`, `gh issue edit|comment|close`.
+
+**Not closed (#675).** A merge built at run time with no literal text (`gh pr m{e..e}rge`, `$'...'`, base64, string
+pieces such as `B=mer; ${B}ge`) and a file written in one call (or with the Write tool) and run in the next. The wrapper
+list stays as a second net for a merge that `bash -c`, `eval` or `xargs` build at run time; branch protection on `main`
+is the backstop.
 
 **Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r --match-head-commit <head sha>` (the flag must equal the head the hook reads, so a later push cannot ride the approval; no `--auto`,
 one PR, the only merge in the command, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
@@ -62,21 +91,22 @@ answer, Claude Code returns it as a denial. So no `UserPromptSubmit` token fallb
 **It fails closed, unlike the other hooks (ADR: fail-closed merge guard).** Once it has seen a merge, any doubt denies:
 no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
 stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto`,
-`gh api graphql ... mergePullRequest`, `{owner}/{repo}` placeholders in a `gh api` path, a merge inside `bash -c`, `eval`,
+`gh api graphql ... mergePullRequest`, a `gh api .../merge` path with `{owner}/{repo}` placeholders, a merge inside `bash -c`, `eval`,
 `xargs` or another wrapper on a best-effort list (shells, `env`, `sudo`, `nice`, `timeout`, `stdbuf`, `setsid`, `flock`,
 `script`, `strace` and similar; #677), also when the shell or wrapper is written with a path, a backslash or zsh's `=`, or
 stands behind an assignment, a keyword (`if`, `then`, `else`, `elif`, `do`, `while`, `until`, `!`), a zsh prefix
 (`noglob`, `nocorrect`, `-`) or a redirection; a command name with glob characters or brace expansion; a merge that is not
 at command position (`command gh`, `/usr/bin/gh`, backticks), and `gh alias set|import` next to the word merge. The
-wrapper list is not complete: interpreters (`python -c`, `perl -e`, `awk`), `find -exec` and `git -c alias` are not on it. Any denied segment blocks the whole command. A Bash call that is not a merge exits 0 before any
-parsing, so it costs nothing. There is no environment-variable bypass.
+wrapper list is not complete; the allow list above denies what it misses (interpreters, `find -exec`, `git -c alias`). Any denied segment blocks the whole command. A Bash call with no merge text (and no `gh api` call with an
+expansion) exits 0 before any parsing, so it costs nothing. There is no environment-variable bypass.
 
 **Known false positive (#671, accepted).** A harmless command can be denied as "a merge inside a shell string or wrapper"
 when it has a `$` or a backtick before a word that contains `merge` and runs a shell, for example
 `S=/tmp/x; bash $S/run.sh tests/hooks/post-merge-hooks.test.sh`. An exemption for such script runs was tried in
 #674-#678 and dropped: four security reviews each found a way through it to a merge built at run time. Work around it:
 write the commands to a script file with the Write tool and run that file by a path that does not contain the word, or
-drop the `$` (spell the path out).
+drop the `$` (spell the path out). Still the case after #680 (checked at its final head).
+
 `Verifies:` the PR base and default branch of every judged merge. `Does not verify:` the owner's own `!` or terminal
 merges (the hook never sees them), a local `git merge`, a merge through the web UI or another client, a command built at
 run time, or whether the PR is ready (the workflow gate checks that). Local mode has no PRs, so the guard does not apply there.
