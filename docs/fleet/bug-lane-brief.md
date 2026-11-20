@@ -1,5 +1,8 @@
 # Bug lane brief
 
+> Kept as the record of the trials of ADR 0039 and ADR 0040. New runs use `/harness:pd-orchestrate`
+> and the `pd-work` skill (ADR 0041); do not send this brief.
+
 The orchestrator sends this brief to one free Pod Bay worker session per bug ticket (ADR 0039). The
 worker gets only this text, its ticket and its branch. Replace each `<...>` before sending. Send the
 steps once; do not tell the worker how it is scored.

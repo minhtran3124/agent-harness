@@ -14,7 +14,7 @@ confirmed_at: 2026-10-15
 ---
 ## Applicable When
 
-You rewrite agent-executed prose for style, for example with `skills/asd-ste100/SKILL.md`. The
+You rewrite agent-executed prose for style, for example with `skills/pd-asd-ste100/SKILL.md`. The
 rewrite splits long sentences into short ones, or it cuts words to fit the 600-word ceiling that
 `scripts/audit_skill_prompts.py` sets for each `SKILL.md`.
 

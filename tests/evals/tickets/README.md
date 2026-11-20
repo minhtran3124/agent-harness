@@ -1,4 +1,4 @@
-# Evals for /harness:tickets
+# Evals for /harness:pd-tickets
 
 Each folder is one case. A run uses `claude -p` in a throwaway directory, with the stub `mocks/gh` first on PATH and a fake `GH_TOKEN`, so it cannot reach GitHub. The fixture stays outside the run's directory, so the run is blind to it. Runs cost model usage, so CI does not run them.
 

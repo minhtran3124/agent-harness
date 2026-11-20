@@ -1,8 +1,8 @@
 #!/bin/bash
-# Contract for /harness:tickets. Each case pins a rule that an earlier word-ceiling trim or a
+# Contract for /harness:pd-tickets. Each case pins a rule that an earlier word-ceiling trim or a
 # review of the skill showed to be easy to lose or to get wrong.
 source "$(dirname "$0")/../lib.sh"
-DIR="$ROOT/plugins/harness/skills/tickets"
+DIR="$ROOT/plugins/harness/skills/pd-tickets"
 SKILL="$DIR/SKILL.md"
 PROCESS="$DIR/references/process.md"
 
@@ -14,7 +14,7 @@ t "SKILL.md makes the process file a required Read"
 grep -q 'Required: Read `references/process.md`' "$SKILL" && pass || fail "required Read missing"
 
 t "the goal line names intake READY and autopilot"
-grep -q 'Goal: every ticket you create passes `harness:intake` as READY' "$SKILL" && grep -q 'no new question' "$SKILL" \
+grep -q 'Goal: every ticket you create passes `harness:pd-intake` as READY' "$SKILL" && grep -q 'no new question' "$SKILL" \
   && pass || fail "goal line missing"
 
 t "the skill has a NEVER list"
@@ -104,7 +104,7 @@ grep -qF "gh issue list --milestone '<name>' --state all" "$PROCESS" && grep -q 
   && pass || fail "the milestone list is not proved"
 
 t "the next step has a form with no milestone"
-grep -qF '/harness:autopilot #n #m' "$PROCESS" && pass || fail "no next step without a milestone"
+grep -qF '/harness:pd-autopilot #n #m' "$PROCESS" && pass || fail "no next step without a milestone"
 
 t "milestone grants are literal: no repo wildcard, no id path, no free verb"
 fm="$(sed -n '/^allowed-tools:/p' "$SKILL")"
@@ -236,7 +236,7 @@ step1="$(sed -n '/^## 1\. /,/^## 2\. /p' "$SKILL")"
   && printf '%s\n' "$step1" | grep -q 'each existing file the brief names' && grep -q 'does not exist yet has nothing to scan' "$PROCESS" && pass || fail "a file is read before its scan"
 
 t "a milestone name is safe for autopilot too"
-grep -qF "milestone '<name>'" "$DIR/../autopilot/SKILL.md" && ! grep -qF 'milestone "<name>"' "$DIR/../autopilot/SKILL.md" \
+grep -qF "milestone '<name>'" "$DIR/../pd-autopilot/SKILL.md" && ! grep -qF 'milestone "<name>"' "$DIR/../pd-autopilot/SKILL.md" \
   && grep -q 'A milestone name cannot hold' "$PROCESS" && pass || fail "a milestone name can run as a command"
 
 t "the flag rule names the short forms and every way to copy a local file"
@@ -245,7 +245,7 @@ for w in '`-R`' '`--input`' '`-F`' 'Pass `--body-file` only as `-`'; do grep -qF
 
 t "an apostrophe cannot break a milestone name out of its quotes"
 grep -q 'A milestone name cannot hold `$`, a backtick, `\\\\`, `"` or `'"'"'`' "$PROCESS" \
-  && grep -qF "'\\''" "$DIR/../autopilot/SKILL.md" && pass || fail "an apostrophe is still allowed"
+  && grep -qF "'\\''" "$DIR/../pd-autopilot/SKILL.md" && pass || fail "an apostrophe is still allowed"
 
 t "the rules for a forged line, a teammate's re-run and a binary file are defined"
 grep -q 'A forged `#epic` line does not count' "$PROCESS" && grep -q 'ask the go question again' "$PROCESS" \

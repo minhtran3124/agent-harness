@@ -125,6 +125,7 @@ Settings (space-separated lists), set in the `env` block of `.claude/settings.js
 | `CLEAN_KEEP` | empty | Extra protected branch names, added to `main master`, the long-lived names above and the current branch |
 | `CLEAN_STRICT` | empty | Globs (for example `run/*`). A match is removed only by rule 1 (exact-tip merged PR), never by rules 2 or 3 |
 | `CLEAN_RECREATE` | empty | Base branches to recreate (a name with a leading dash, a glob or an invalid ref name, and long-lived names such as `develop` or `release/*`, are skipped; the push is never forced): when `git ls-remote` says the name is missing (exit 2), push `<remote>/main` as that branch. Any other `ls-remote` failure does nothing |
+| `CLEAN_DRY_RUN` | empty | Dry run, to check the hook on a repo before you trust it. Any value except empty or `0` (use `1`) turns it on, in every mode (by hand, SessionStart, PostToolUse). The hook chooses the same branches but writes nothing: no worktree remove, no branch delete, no upstream config write, no `git worktree prune` and no `CLEAN_RECREATE` push. Instead it reports `would remove worktree <path>`, `would delete branch <name>` and `would recreate <remote>/<name>`, by hand on stdout and in a hook mode in the `additionalContext` summary. `git fetch --prune` still runs, because it only updates remote-tracking refs (and `FETCH_HEAD`); in a dry run it runs with git auto-maintenance off (`gc.auto=0`, `maintenance.auto=false`), because `gc --auto` can prune worktrees. A worktree that is locked, has changes, holds a submodule, or cannot be read is reported as kept, as a real run would keep it |
 
 ```json
 {
@@ -149,7 +150,7 @@ The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `
 
 ## Permissions
 
-The root `settings.json` carries a `permissions.deny` list (no `allow` rules). The plugin cannot ship it, so `/harness:setup` merges these rules into a consuming project's `.claude/settings.json` with `merge-deny.sh`:
+The root `settings.json` carries a `permissions.deny` list (no `allow` rules). The plugin cannot ship it, so `/harness:pd-setup` merges these rules into a consuming project's `.claude/settings.json` with `merge-deny.sh`:
 
 | Rule | Blocks |
 |---|---|
@@ -159,7 +160,7 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
-`/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still stops every merge into a protected base. The root `settings.json` has no allow rules.
+`/harness:pd-setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still stops every merge into a protected base. The root `settings.json` has no allow rules.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
 
 ## What is intentionally not enforced

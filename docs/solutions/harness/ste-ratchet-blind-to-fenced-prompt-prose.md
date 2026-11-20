@@ -1,6 +1,6 @@
 ---
 problem_type: failure
-module: skills/asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
+module: skills/pd-asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
 tags: [ste100, ste-lint, ratchet-blind-spot, fenced-dispatch-prompt, eval-fixture-scope, advisory-section, green-is-not-correct]
 severity: critical
 applicable_when: You rewrite agent prose for STE style and use the STE lint count (the baseline ratchet or the review package's `## STE lint` section) as evidence that the rewrite is done, or you plan a rewrite that touches `*-prompt.md` dispatch prompts or eval fixtures.
@@ -34,7 +34,7 @@ the prose. Each one surfaced mid-run.
   the main text of every dispatch prompt in scope.
 - The review package lints every `.md` under `skills/`, eval fixtures included. The baseline
   globs stop at `skills/*/*/*.md`, and the intent excluded fixtures. A required test-record edit
-  to `skills/xia2/tests/structural/depth-modes-test-cases.md` showed "8 → 35". The reviewer rule
+  to `skills/pd-xia2/tests/structural/depth-modes-test-cases.md` showed "8 → 35". The reviewer rule
   calls that an Important finding.
 - The task-reviewer instruction said "kept" must cite "the HEAD line that keeps the qualifier
   word". Under that wording, an advisory `## Scope qualifiers` line could force a blocking finding
@@ -72,7 +72,7 @@ lint section, the scope of the ratchet, and the scope of the rewrite are the sam
   scope. Record its lint rise as a plan-mandated Minor finding, not an Important one.
 - Let "kept" cite the HEAD text that keeps the condition in other words (fixed in `5f408ff`).
 - Before you rewrite a skill, search its files for repo-local maintenance rules ("must re-run",
-  "When you change"). The `skills/xia2/README.md` structural-suite rule fired on a pure prose
+  "When you change"). The `skills/pd-xia2/README.md` structural-suite rule fired on a pure prose
   rewrite. A fresh agent, blind to the diff, ran Run 5, with 30/30 stable.
 
 ## Guardrail

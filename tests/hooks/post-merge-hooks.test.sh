@@ -44,6 +44,52 @@ t "merged PR but uncommitted changes in the worktree: kept, nothing forced"
 run
 if [ -d "$WT" ] && [ -f "$WT/untracked.txt" ] && printf '%s' "$OUT" | grep -q 'kept'; then pass; else fail "out=$OUT"; fi
 
+# The script reports worktree paths as git resolves them (macOS: /var -> /private/var), so compare with the real path.
+wtp() { (cd "$WT" && pwd -P); }
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge; echo dirty > "$WT/untracked.txt"
+t "dry run: a worktree with an untracked file is reported as kept, as a real run would keep it"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ -d "$WT" ] && git -C "$MAIN" rev-parse -q --verify feat >/dev/null && printf '%s' "$OUT" | grep -q "^kept feat: worktree $(wtp) has changes" \
+   && ! printf '%s' "$OUT" | grep -q '^would '; then pass; else fail "out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge; git -C "$MAIN" worktree lock "$WT"
+t "dry run: a locked worktree is reported as kept"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ -d "$WT" ] && printf '%s' "$OUT" | grep -q "^kept feat: worktree $(wtp) has changes or a lock" \
+   && ! printf '%s' "$OUT" | grep -q '^would '; then pass; else fail "out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+SUB=$(mktemp -d); _CLEANUP_DIRS+=("$SUB"); git -C "$SUB" init -q -b main; git -C "$SUB" -c user.email=t@t -c user.name=t commit -q --allow-empty -m s
+git -C "$WT" -c protocol.file.allow=always submodule -q add "$SUB" s >/dev/null 2>&1
+git -C "$WT" -c user.email=t@t -c user.name=t commit -q -m add-sub
+tip=$(git -C "$MAIN" rev-parse feat); printf '#!/bin/sh\necho %s\n' "$tip" > "$STUB/gh"
+t "dry run: a clean worktree with an initialized submodule is reported as kept (git worktree remove refuses it)"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+REAL=$(cd "$MAIN" && PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ -e "$WT/s/.git" ] && [ -z "$(git -C "$WT" status --porcelain)" ] && printf '%s' "$OUT" | grep -q "^kept feat: worktree $(wtp)" \
+   && ! printf '%s' "$OUT" | grep -q '^would ' && [ -d "$WT" ] && printf '%s' "$REAL" | grep -q "^kept feat: worktree $(wtp)"; then pass
+else fail "dry=$OUT real=$REAL"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+t "dry run: the fetch runs with git auto-maintenance off"
+mkdir -p "$STUB/real"; GITBIN=$(command -v git)
+printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> %s/git.log\nexec %s "$@"\n' "$STUB" "$GITBIN" > "$STUB/git"; chmod +x "$STUB/git"
+(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh >/dev/null 2>&1)
+if grep -q -- '-c gc.auto=0 -c maintenance.auto=false fetch' "$STUB/git.log" && ! grep -q 'worktree prune' "$STUB/git.log"; then pass
+else fail "log=$(cat "$STUB/git.log")"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+t "dry run: a clean merged worktree is reported as would-remove and would-delete, and is kept"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=1 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ -d "$WT" ] && git -C "$MAIN" rev-parse -q --verify feat >/dev/null && printf '%s\n' "$OUT" | grep -qx "would remove worktree $(wtp)" \
+   && printf '%s\n' "$OUT" | grep -qx "would delete branch feat"; then pass; else fail "out=$OUT"; fi
+
+setup merged; git -C "$MAIN" merge -q --no-ff feat -m merge
+t "CLEAN_DRY_RUN=0 is a real run: worktree and branch are removed"
+OUT=$(cd "$MAIN" && CLEAN_DRY_RUN=0 PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1)
+if [ ! -d "$WT" ] && ! git -C "$MAIN" rev-parse -q --verify feat >/dev/null; then pass; else fail "out=$OUT"; fi
+
 setup merged
 t "merged on GitHub with the exact tip but not in git history (squash): worktree and branch are removed"
 run

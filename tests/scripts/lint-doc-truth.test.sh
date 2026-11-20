@@ -2,7 +2,7 @@
 # Contract tests for scripts/lint-doc-truth.sh.
 #
 # The scope cases are the point: agents/*.md and rules/*.md were NOT linted until
-# PR #121, which is how stale `skills/xia2/PROJECT.md` pointers survived in agents/
+# PR #121, which is how stale `skills/pd-xia2/PROJECT.md` pointers survived in agents/
 # (found by hand in PR #119). These tests are the regression guard against a future
 # edit narrowing DOCS back to the four top-level docs.
 source "$(dirname "$0")/../lib.sh"

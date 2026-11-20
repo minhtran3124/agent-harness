@@ -141,11 +141,11 @@ def test_real_repository_matches_expected_surface_shape():
     result = run(root, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data["totals"]["skills"] == 23
+    assert data["totals"]["skills"] == 27
     assert data["totals"]["companion_prompts"] == 6
 
 
-RELEASE_NOTES = SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "release-notes"
+RELEASE_NOTES = SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "pd-release-notes"
 
 
 def test_release_notes_collects_per_item_facts():
@@ -191,7 +191,7 @@ def test_release_notes_collects_milestone_prs_through_issues():
     assert "only when the union is empty" in skill
     assert all(k in schema for k in ("Closes", "Fixes", "Resolves", "Refs"))
     readme = (SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "README.md").read_text()
-    row = next(l for l in readme.splitlines() if l.startswith("| `release-notes`"))
-    assert "/harness:release-notes" in row
+    row = next(l for l in readme.splitlines() if l.startswith("| `pd-release-notes`"))
+    assert "/harness:pd-release-notes" in row
     for signal in ("title", "footer", "label"):
         assert signal in row

@@ -33,13 +33,13 @@ PLAN.md to `shipped`, then trusting blast-radius warnings at face value.
 `hooks/blast-radius-check.sh` arms itself on the **most recently modified `status: active`
 plan** (`ls -t` + first grep hit). Any merged-but-active plan shadows the truly active one, so
 scope warnings cite the wrong `<files>` set — false positives against the real work and silence
-for genuine scope creep. Plans merged outside `/finishing-a-development-branch` (or before its
+for genuine scope creep. Plans merged outside `/pd-finishing-a-development-branch` (or before its
 Step 4 existed) never got the `shipped` transition.
 
 ## Correct Approach
 
 Flip merged plans to `status: shipped` the moment the drift is noticed (canonical values:
-`proposed | active | paused | shipped`). `/finishing-a-development-branch` Step 4 does this for
+`proposed | active | paused | shipped`). `/pd-finishing-a-development-branch` Step 4 does this for
 branches that go through it; the gap is specs merged any other way.
 
 ## Guardrail

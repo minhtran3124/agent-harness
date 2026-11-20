@@ -184,6 +184,27 @@ test('qb9: the server follows a newer run of the project', async () => {
   } finally { server.close(); }
 });
 
+test('qb14: /healthz reports the run shown and whether it is running; a query string is ignored', async () => {
+  const empty = tmp();
+  const none = await B.start({ port: 0, projectDir: empty, follow: true, pollMs: 30 });
+  try {
+    const r = await get(none.port, '/healthz?x=1');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.type.startsWith('application/json'));
+    assert.strictEqual(r.body, '{"ok":true,"run":null,"running":false}');
+  } finally { none.server.close(); }
+  const base = tmp();
+  makeRun(base, 'wf_h', [{ type: 'launched' }]);
+  const { server, port } = await B.start({ port: 0, projectDir: base, follow: true, pollMs: 30 });
+  try {
+    assert.deepStrictEqual(JSON.parse((await get(port, '/healthz')).body), { ok: true, run: 'wf_h', running: true });
+    fs.mkdirSync(path.join(base, 'sess1', 'workflows'), { recursive: true });
+    fs.writeFileSync(path.join(base, 'sess1', 'workflows', 'wf_h.json'), JSON.stringify({ status: 'completed' }));
+    await sleep(200);
+    assert.deepStrictEqual(JSON.parse((await get(port, '/healthz?x=1')).body), { ok: true, run: 'wf_h', running: false });
+  } finally { server.close(); }
+});
+
 test('qb10: flow.json is consistent and the page has no external resources', () => {
   const ids = new Set(FLOW.nodes.map(n => n.id));
   assert.strictEqual(ids.size, FLOW.nodes.length, 'duplicate node id');
@@ -208,6 +229,20 @@ test('qb11: --idle-exit stops the server once no run is going, and not while one
   assert.throws(() => B.parseArgs(['--idle-exit', 'x']), /--idle-exit/);
 });
 
+test('qb16: --idle-exit keeps the board up while a fleet run has an open ticket', async () => {
+  const base = tmp();
+  const ledger = path.join(tmp(), 'ledger.json');
+  const write = state => fs.writeFileSync(ledger, JSON.stringify({ v: 1, run: 'r', base: 'main', tickets: { 1: { state } } }));
+  write('in_review');
+  const live = await B.start({ port: 0, projectDir: base, ledger, follow: true, pollMs: 30, idleExit: 0.002 });
+  let closed = false; live.server.on('close', () => { closed = true; });
+  await sleep(400);
+  assert.ok(!closed, 'an open fleet ticket keeps the board up');
+  write('done');
+  for (let i = 0; i < 40 && !closed; i++) await sleep(50);
+  assert.ok(closed, 'the board stops after the idle time once every fleet ticket is final');
+});
+
 test('qb12: the page works under a path prefix and has an embed mode', () => {
   const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'board.html'), 'utf8');
   // A proxy can serve the board at /board/<project>/: every URL the page loads is relative.
@@ -216,6 +251,18 @@ test('qb12: the page works under a path prefix and has an embed mode', () => {
   // ?embed=1 hides the page header and footer note; the host page gets only a height number.
   assert.ok(/\.embed \.top,\.embed \.note\{display:none\}/.test(html));
   assert.ok(/postMessage\(\{type:'afb-height',height:h\}/.test(html));
+});
+
+test('qb15: /fleet.json answers without a project option, and fleet.html requests only relative URLs', async () => {
+  const { server, port } = await B.start({ port: 0, projectDir: tmp(), follow: false });
+  try {
+    const r = await new Promise((res, rej) => http.get({ host: '127.0.0.1', port, path: '/fleet.json' }, x => { let b = ''; x.on('data', c => { b += c; }); x.on('end', () => res({ status: x.statusCode, body: b })); }).on('error', rej));
+    assert.ok(r.status === 404 || r.status === 503 || r.status === 200, `status ${r.status}`);
+    assert.ok(JSON.parse(r.body), 'JSON body');
+  } finally { server.close(); }
+  const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'fleet.html'), 'utf8');
+  assert.ok(!/(fetch|EventSource)\(\s*['"]\//.test(html), 'fleet.html requests an absolute path');
+  assert.ok(/fetch\('fleet\.json'/.test(html));
 });
 
 test('qb13: agent_facts carries tokens and tool names, and never tool input, prompts or answers', () => {

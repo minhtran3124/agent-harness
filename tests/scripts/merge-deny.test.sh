@@ -1,8 +1,8 @@
 #!/bin/bash
-# Contract tests for plugins/harness/skills/setup/scripts/merge-deny.sh.
+# Contract tests for plugins/harness/skills/pd-setup/scripts/merge-deny.sh.
 source "$(dirname "$0")/../lib.sh"
 
-SCRIPT="$ROOT/plugins/harness/skills/setup/scripts/merge-deny.sh"
+SCRIPT="$ROOT/plugins/harness/skills/pd-setup/scripts/merge-deny.sh"
 
 if ! command -v jq >/dev/null 2>&1; then
   t "merge-deny tests (need jq)"; skip "jq is not installed; install jq to run these cases"

@@ -5,8 +5,8 @@
 # The ship.js cases pf1-pf3 and tests/scripts/preflight.test.sh are written by the implementer (AC8).
 source "$(dirname "$0")/../lib.sh"
 
-PRE="$ROOT/plugins/harness/skills/autopilot/scripts/preflight.sh"
-SKILL="$ROOT/plugins/harness/skills/autopilot/SKILL.md"
+PRE="$ROOT/plugins/harness/skills/pd-autopilot/scripts/preflight.sh"
+SKILL="$ROOT/plugins/harness/skills/pd-autopilot/SKILL.md"
 SHIP="$ROOT/plugins/harness/workflows/ship.js"
 BASH_BIN=$(command -v bash)
 GIT_BIN=$(command -v git)

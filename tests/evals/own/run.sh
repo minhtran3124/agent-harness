@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the /harness:own eval cases with `claude plugin eval`.
+# Run the /harness:pd-own eval cases with `claude plugin eval`.
 #
 # `claude plugin eval` reads cases only from a directory below the plugin. The cases live here,
 # outside plugins/harness, so they do not ship with the plugin. This script copies the plugin and

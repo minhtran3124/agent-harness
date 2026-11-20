@@ -14,13 +14,13 @@ node plugins/harness/board/board.js --run wf_596bd115-74c
 node plugins/harness/board/board.js --idle-exit 30          # stop by itself 30 min after the run ends
 ```
 
-Then open `http://127.0.0.1:4317`. `/harness:autopilot` starts the board for you, and opens it in a browser when a desktop is there (see below). Otherwise start the board before or during the run; it switches to a
+Then open `http://127.0.0.1:4317`. `/harness:pd-autopilot` starts the board for you, and opens it in a browser when a desktop is there (see below). Otherwise start the board before or during the run; it switches to a
 newer run of the same project by itself (`--no-follow` keeps the first one). It works for any project
 that runs `ship.js`, because it only needs the project path.
 
 ## Autopilot starts it
 
-Unless you pass `--no-board`, `/harness:autopilot` runs `plugins/harness/skills/autopilot/scripts/board-start.sh` just
+Unless you pass `--no-board`, `/harness:pd-autopilot` runs `plugins/harness/skills/pd-autopilot/scripts/board-start.sh` just
 before it launches the workflow. The script:
 
 - works for the directory where Claude Code was started (the board derives the project from it);
@@ -31,11 +31,22 @@ before it launches the workflow. The script:
 - keeps a pid, url and log file per project under `${TMPDIR:-/tmp}` (`harness-board-<project>.*`);
 - never blocks a run: with no `node` or a start error it prints one line and exits 0.
 
-The board keeps running after the run ends. Stop it with `bash plugins/harness/skills/autopilot/scripts/board-start.sh --stop`
+The board keeps running after the run ends. Stop it with `bash plugins/harness/skills/pd-autopilot/scripts/board-start.sh --stop`
 from the same directory. It runs from the plugin's own copy, so after a plugin upgrade an old board keeps running
 until you stop it. Verifies: a board for this project answers on the printed URL. Does not verify: that a browser opened,
 that the board outlives the Claude Code session, or that the directory is the one Claude Code writes its runs under (if
 the board shows "No ship.js run found" during a run, start it with `--project <path>` by hand).
+
+## Health check
+
+`GET /healthz` is a cheap check for a script: it does not load the page or the event stream. It answers 200 with
+`content-type: application/json` and `{"ok":true,"run":<run id or null>,"running":<true|false>}`. `run` is the id
+of the run the board shows (`null` when there is none); `running` is true while that run has not ended. A query
+string is ignored.
+
+```
+curl -s http://127.0.0.1:4317/healthz
+```
 
 ## Embed it in another page
 
@@ -103,3 +114,20 @@ previous agent of the same ticket.
   number is not in any file the board reads.
 
 Tests: `bash tests/scripts/board.test.sh`.
+
+## Fleet view (`/harness:pd-orchestrate` runs)
+
+A fleet run has no ship.js run; its state is the ledger `specs/fleet/<run>/ledger.json` of the orchestrator's checkout (format: `skills/pd-orchestrate/references/protocol.md`, section "Ledger").
+
+```
+node plugins/harness/board/board.js --ledger <path to ledger.json>
+node plugins/harness/board/board.js --project <dir>     # newest specs/fleet/*/ledger.json under <dir>
+```
+
+Without `--ledger`, the board picks the newest `specs/fleet/*/ledger.json` (by modification time) under `--project` (default: the current directory). The ledger is read again on every request, so a change shows without a restart.
+
+- `GET /fleet`: HTML page, one row per ticket (id, state, worker, reviewer, pull request). `blocked` and `escalated` rows are marked and listed first; a pull request that is an http(s) URL is a link. The page refreshes itself every 3 seconds and fits a 390 px screen.
+- `GET /fleet.json`: `{"run","base","tickets":[{"id","state","kind","depth","worker","reviewer","head","pr"}]}`, sorted by id (all-digit ids numerically, others as strings). `worker` and `reviewer` are the session names; missing fields are `null`; `pr` is passed through unchanged.
+- No fleet run: `404 {"error":"no fleet run"}`. A ledger that does not parse: `503 {"error":"<reason>"}`; the board keeps running.
+
+The existing routes and the ship.js view are unchanged.

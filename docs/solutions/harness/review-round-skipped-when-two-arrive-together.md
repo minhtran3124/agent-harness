@@ -5,7 +5,7 @@ tags: pr-review-loop, review-polling, last-handled-id, skipped-round, gh-api, cu
 severity: standard
 applicable_when: Polling a PR for new automated reviews in a loop — before you decide "new" by comparing against the latest commit or the newest review.
 affects:
-  - skills/finishing-a-development-branch/SKILL.md
+  - skills/pd-finishing-a-development-branch/SKILL.md
 supersedes: null
 confidence: high
 confirmed_at: 2026-07-27
@@ -63,7 +63,7 @@ the loop will keep re-reporting the same clean round as if it were unread.
 `proposed:` a small helper — `scripts/pr_reviews_since.py <pr> <last_id>` — that prints unhandled
 reviews oldest-first with their findings, so the id-cursor discipline lives in one tested place instead
 of in whichever prompt happens to be polling. Target: `scripts/pr_reviews_since.py` plus a line in
-`skills/finishing-a-development-branch/SKILL.md` where the external-review pass is described.
+`skills/pd-finishing-a-development-branch/SKILL.md` where the external-review pass is described.
 
 ## Related
 

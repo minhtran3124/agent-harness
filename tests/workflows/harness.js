@@ -241,14 +241,14 @@ test('b3: the result lists the worktree dirs outside the repo', async () => {
 
 test('c4: skill and role reads use absolute paths under pluginDir, not the worktree or .claude', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' })] }, null)
-  const want = { 'research:1': 'xia2', 'design:1': 'brainstorming', 'plan:1': 'writing-plans', 'implement:1': 'implement' }
+  const want = { 'research:1': 'pd-xia2', 'design:1': 'pd-brainstorming', 'plan:1': 'pd-writing-plans', 'implement:1': 'pd-implement' }
   for (const [l, sk] of Object.entries(want)) {
     const p = named(calls, new RegExp(`^${l}$`))[0].prompt
     assert(p.includes(`Read /plug/skills/${sk}/SKILL.md`) && !/\.claude\/(?!rules\/)/.test(p), `${l}: ${p.match(/Read [^\n]*/)}`)
     assert(!/Read skills\//.test(p), l)
   }
   const fin = named(calls, /^finish:1$/)[0].prompt
-  assert(fin.includes('Read /plug/skills/finishing-a-development-branch/SKILL.md'), fin.match(/Read [^\n]*/)[0])
+  assert(fin.includes('Read /plug/skills/pd-finishing-a-development-branch/SKILL.md'), fin.match(/Read [^\n]*/)[0])
   assert(named(calls, /^implement:1$/)[0].prompt.includes('/plug/agents/implementer.md') && !/\.claude\/(?!rules\/)/.test(named(calls, /^implement:1$/)[0].prompt))
 })
 
@@ -1259,7 +1259,7 @@ test('v1: an FE ticket runs implement, verify, base check, finish in that order,
   const ls = labelsOf(calls).filter(l => /^(implement|verify|gif|finish)/.test(l))
   assert.deepStrictEqual(ls, ['implement:1', 'verify:1', 'verify-base:1', 'gif:1', 'finish:1'])
   const v = named(calls, /^verify:1$/)[0]
-  assert(v.prompt.includes('/wt/1') && v.prompt.includes('/plug/skills/verify/SKILL.md') && v.prompt.includes('gh issue view 1 --repo o/r --json body'), v.prompt)
+  assert(v.prompt.includes('/wt/1') && v.prompt.includes('/plug/skills/pd-verify/SKILL.md') && v.prompt.includes('gh issue view 1 --repo o/r --json body'), v.prompt)
   assert(!('agentType' in v.opts) && v.opts.model === 'sonnet' && v.opts.effort === 'medium' && v.opts.phase === 'Tickets')
   assert(v.schema.properties.passed && v.schema.properties.stills && v.schema.required.includes('kind'))
   const b = named(calls, /^verify-base:1$/)[0]
@@ -1652,7 +1652,7 @@ test('u2: the UAT prompt holds the body and owner block, never the plan, diff or
   assert(u, labelsOf(calls).join())
   for (const bad of ['SECRET-V', 'SECRET-V2', 'OWNER-SECRET', 'PLAN-MD', 'continues here', 'gh issue view 1']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
   assert(u.prompt.includes('Do the thing.') && u.prompt.includes('Tail text') && u.prompt.includes('Owner said X.'), u.prompt)
-  assert(u.prompt.includes('Config: /wt/1/verify.config.json') && u.prompt.includes('/plug/skills/uat/SKILL.md'), u.prompt)
+  assert(u.prompt.includes('Config: /wt/1/verify.config.json') && u.prompt.includes('/plug/skills/pd-uat/SKILL.md'), u.prompt)
   assert.strictEqual(u.opts.phase, 'UAT')
   const ir = named(calls, /^intent-review$/)[0]
   assert(ir.prompt.includes('SECRET-V'), 'intent review still gets the raw body')

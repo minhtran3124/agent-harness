@@ -10,7 +10,7 @@ env:
 
 on:
   push:
-    branches: [main]
+    branches: [main, podbay]
   pull_request:
 
 jobs:

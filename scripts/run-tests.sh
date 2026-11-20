@@ -67,7 +67,7 @@ fi
 echo "== L1: STE linter self-test and prose baseline =="
 # The self-test can fail the suite. The baseline check reports only and always exits 0.
 if command -v python3 >/dev/null 2>&1; then
-  python3 plugins/harness/skills/asd-ste100/scripts/ste-lint.py --selftest || fail "ste-lint.py --selftest"
+  python3 plugins/harness/skills/pd-asd-ste100/scripts/ste-lint.py --selftest || fail "ste-lint.py --selftest"
   python3 scripts/check_ste_baseline.py
 else
   echo "  skip — no python3"

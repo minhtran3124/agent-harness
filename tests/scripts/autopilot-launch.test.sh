@@ -2,7 +2,7 @@
 # Contract test: autopilot step 8 launches ship by a name the plugin registers.
 source "$(dirname "$0")/../lib.sh"
 
-SKILL="$ROOT/plugins/harness/skills/autopilot/SKILL.md"
+SKILL="$ROOT/plugins/harness/skills/pd-autopilot/SKILL.md"
 PJSON="$ROOT/plugins/harness/.claude-plugin/plugin.json"
 SHIP="$ROOT/plugins/harness/workflows/ship.js"
 

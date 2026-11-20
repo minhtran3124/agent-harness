@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fleet Board</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#dde1e9;--card:#f0f2f6;--ink:#0b101a;--muted:#3f485c;--line:#7a8498;--bad:#b01f2c;--bad-bg:#f7d0d5;--warn:#85530a;--warn-bg:#f6dfae;--ok:#117244;--run:#1d4fd8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#10131a;--card:#1d2330;--ink:#e7eaf2;--muted:#9aa4b6;--line:#323b4d;--bad:#ff6f78;--bad-bg:#3b1e24;--warn:#f2b24b;--warn-bg:#3a2e16;--ok:#3ecf8e;--run:#6f9dff;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.page{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 4px}
+.sub,.msg{color:var(--muted);font-size:13px;margin:0 0 12px;overflow-wrap:anywhere}
+.msg.err{color:var(--bad)}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+li.row{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:4rem 8rem 1fr 1fr 1fr;gap:4px 12px;align-items:baseline}
+li.row>*{min-width:0;overflow-wrap:anywhere}
+.id{font:600 14px ui-monospace,Menlo,Consolas,monospace}
+.state{font-weight:600}
+.lbl{display:none;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+li.s-blocked{background:var(--bad-bg);border-left-color:var(--bad);border-color:var(--bad)}
+li.s-blocked .state{color:var(--bad)}
+li.s-escalated{background:var(--warn-bg);border-left-color:var(--warn);border-color:var(--warn)}
+li.s-escalated .state{color:var(--warn)}
+li.s-done .state,li.s-verified .state,li.s-pr_open .state{color:var(--ok)}
+li.s-in_review .state,li.s-assigned .state,li.s-fixing .state{color:var(--run)}
+a{color:var(--run)}
+@media (max-width:640px){li.row{grid-template-columns:1fr 1fr}.id,.state{grid-column:auto}.lbl{display:block}.pr,.worker,.reviewer{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Fleet Board</h1>
+<p class="sub" id="meta">loading…</p>
+<p class="msg err" id="err" hidden></p>
+<ul id="rows"></ul>
+</div>
+<script>
+(function(){
+var ORDER={blocked:0,escalated:1};
+var rows=document.getElementById('rows'),meta=document.getElementById('meta'),err=document.getElementById('err');
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function cell(cls,label,value){var d=el('div',cls);d.appendChild(el('span','lbl',label));
+  if(value instanceof Node)d.appendChild(value);else d.appendChild(document.createTextNode(value==null?'–':String(value)));return d}
+function prNode(pr){
+  if(pr==null)return '–';
+  var s=String(pr);
+  if(/^https?:\/\//i.test(s)){var a=el('a','',s);a.href=s;a.target='_blank';a.rel='noopener noreferrer';return a}
+  return s}
+function render(d){
+  err.hidden=true;
+  meta.textContent='run '+d.run+' · base '+d.base+' · '+d.tickets.length+' ticket'+(d.tickets.length===1?'':'s');
+  var list=d.tickets.map(function(t,i){return {t:t,i:i}}).sort(function(a,b){
+    var x=ORDER[a.t.state],y=ORDER[b.t.state];x=x===undefined?9:x;y=y===undefined?9:y;return x-y||a.i-b.i}).map(function(o){return o.t});
+  rows.textContent='';
+  list.forEach(function(t){
+    var li=el('li','row s-'+String(t.state).replace(/[^a-z_]/gi,''));
+    li.appendChild(cell('id','id',t.id));
+    li.appendChild(cell('state','state',t.state==null?'–':String(t.state).replace(/_/g,' ')));
+    li.appendChild(cell('worker','worker',t.worker));
+    li.appendChild(cell('reviewer','reviewer',t.reviewer));
+    li.appendChild(cell('pr','pull request',prNode(t.pr)));
+    rows.appendChild(li)})}
+function fail(msg){rows.textContent='';meta.textContent='';err.textContent=msg;err.hidden=false}
+function poll(){
+  fetch('fleet.json',{cache:'no-store'}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
+   .then(function(x){if(x.ok)render(x.j);else fail(x.j&&x.j.error||'error')})
+   .catch(function(){fail('board not reachable')})}
+poll();setInterval(poll,3000);
+})();
+</script>
+</body>
+</html>

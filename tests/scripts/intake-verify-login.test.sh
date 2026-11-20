@@ -2,8 +2,8 @@
 # Contract test: intake checks the login variables by name and never reads .env.
 source "$(dirname "$0")/../lib.sh"
 
-SKILL="$ROOT/plugins/harness/skills/intake/SKILL.md"
-REF="$ROOT/plugins/harness/skills/intake/references/verify-login.md"
+SKILL="$ROOT/plugins/harness/skills/pd-intake/SKILL.md"
+REF="$ROOT/plugins/harness/skills/pd-intake/references/verify-login.md"
 
 t "verify-login.md exists"
 if [ -f "$REF" ]; then pass; else fail "missing $REF"; fi
@@ -42,6 +42,6 @@ t "exit 1 is the answer, not a tool error"
 if grep -qF 'not an error of the tool' "$REF" && grep -qF 'do not retry' "$REF"; then pass; else fail "exit-code note missing"; fi
 
 t "auto mode records throwaway credentials OK for the verify stage"
-if grep -qF 'throwaway credentials OK' "$REF" && grep -qF 'verify/references/config.md' "$REF"; then pass; else fail "auto-mode consent text missing"; fi
+if grep -qF 'throwaway credentials OK' "$REF" && grep -qF 'pd-verify/references/config.md' "$REF"; then pass; else fail "auto-mode consent text missing"; fi
 
 finish

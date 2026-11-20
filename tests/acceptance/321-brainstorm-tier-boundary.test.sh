@@ -2,7 +2,7 @@
 # Acceptance tests for #321 step 1: the tier-boundary sentence in step 2 of the brainstorming skill.
 source "$(dirname "$0")/../lib.sh"
 
-SK=plugins/harness/skills/brainstorming/SKILL.md
+SK=plugins/harness/skills/pd-brainstorming/SKILL.md
 PHRASE='Do not ask how to implement or test'
 
 # step2: the text of step 2 (from the "2. " line to the line before "3. ")

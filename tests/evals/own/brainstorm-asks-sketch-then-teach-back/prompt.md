@@ -5,7 +5,7 @@ timeout_seconds: 900
 allowed_tools: [Read, Glob, Grep, Write, Edit, Skill]
 ---
 
-/harness:own brainstorm store user sessions for the new login
+/harness:pd-own brainstorm store user sessions for the new login
 
 Context is in repo-facts.md. I am the owner. Here is how I will answer, so you can run the whole
 session without waiting for me:

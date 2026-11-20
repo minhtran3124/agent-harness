@@ -309,7 +309,7 @@ def test_table_out_not_written_on_dry_run(tmp_path):
 
 
 def test_skill_doc_matches_dedupe_and_owner_confirmed_rules():
-    skill = (SCRIPT.parent.parent / "skills/decision-record/SKILL.md").read_text()
+    skill = (SCRIPT.parent.parent / "skills/pd-decision-record/SKILL.md").read_text()
     flat = " ".join(skill.split())
     assert "highest `confidence`" in flat
     assert "lowest `confidence`" not in flat

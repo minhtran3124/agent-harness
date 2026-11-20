@@ -69,6 +69,6 @@ t "checker exits 2 on a missing file"
 python3 "$CHK" "$FX/nope.json" "$FX/summary-draft.md" >/dev/null 2>&1; [ $? -eq 2 ] && pass || fail "expected exit 2"
 
 t "SKILL.md default input lookup covers unversioned.json and a custom path"
-grep -q 'docs/releases/unversioned.json' "$ROOT/plugins/harness/skills/release-summary/SKILL.md" && grep -q 'custom `--out`' "$ROOT/plugins/harness/skills/release-summary/SKILL.md" && pass || fail "default lookup misses unversioned.json or custom --out"
+grep -q 'docs/releases/unversioned.json' "$ROOT/plugins/harness/skills/pd-release-summary/SKILL.md" && grep -q 'custom `--out`' "$ROOT/plugins/harness/skills/pd-release-summary/SKILL.md" && pass || fail "default lookup misses unversioned.json or custom --out"
 
 finish

@@ -3,7 +3,7 @@
 # give the scriptPath workaround, and tell the report to name the script that ran.
 source "$(dirname "$0")/../lib.sh"
 
-LA="$ROOT/plugins/harness/skills/autopilot/references/launch-args.md"
+LA="$ROOT/plugins/harness/skills/pd-autopilot/references/launch-args.md"
 RD="$ROOT/README.md"
 SHIPPATH='plugins/harness/workflows/ship.js'
 

@@ -1,8 +1,8 @@
 #!/bin/bash
-# Contract tests for plugins/harness/skills/setup/scripts/merge-allow.sh.
+# Contract tests for plugins/harness/skills/pd-setup/scripts/merge-allow.sh.
 source "$(dirname "$0")/../lib.sh"
 
-SCRIPT="$ROOT/plugins/harness/skills/setup/scripts/merge-allow.sh"
+SCRIPT="$ROOT/plugins/harness/skills/pd-setup/scripts/merge-allow.sh"
 RULE='Bash(gh pr merge *)'
 
 if ! command -v jq >/dev/null 2>&1; then
