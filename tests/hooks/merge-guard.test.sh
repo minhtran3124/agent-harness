@@ -487,6 +487,8 @@ for c in 'git fetch origin && gh api repos/o/r/pulls/7 -q .mergeable_state' \
          "R=o/r; cat > \$S/x1.md <<EOF${NL}gh pr merge is denied${NL}EOF${NL}gh api repos/\$R/milestones/9 -q '.title'" \
          "R=\$(gh repo view --json nameWithOwner -q .nameWithOwner); gh api repos/\$R/pulls/7 --jq .mergeable" \
          "N=7; gh api repos/o/r/pulls/\$N/comments --paginate -q '.[].body'" \
+         "H=\$(git rev-parse HEAD); S=\${H:0:8}; git commit -m \"fix: gh pr merge is denied (\$S)\"" \
+         "B=\${BRANCH:-main}; T=\${F%.md}; git commit -m \"deny gh pr merge in quotes on \$B \$T\"" \
          "N=\$(cat n.txt); gh api -X PATCH repos/o/r/pulls/\$N -f body=done" \
          "A=pulls/7; B=merge; gh api repos/o/r/\$A/\$B" \
          "bash scripts/run-tests.sh > log; gh api repos/o/r/pulls/699/comments/1/replies -f body=\"Fixed in \${H:0:8}\"" \
@@ -573,6 +575,14 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "B=mer\\${NL}ge; gh api -X PUT repos/o/r/pulls/7/\$B" "B=\"mer\\${NL}ge\"; gh api -X PUT repos/o/r/pulls/7/\$B" \
          "f() { gh api -X PUT repos/o/r/pulls/7/\$1; }; f mer\\${NL}ge" \
          "for B in mer\\${NL}ge; do gh api -X PUT repos/o/r/pulls/7/\$B; done" \
+         "X='b[\$(gh pr merge 7 --repo o/r)]'; a[X]=1" "X='b[\$(gh pr merge 7 --repo o/r)]'; ((i=X))" \
+         "X='b[\$(gh pr merge 7 --repo o/r)]'; for ((i=X;;)); do break; done" "X='b[\$(gh pr merge 7 --repo o/r)]'; Y=\${!X}" \
+         "X='gh pr merge 7 --repo o/r'; echo \"\$(if :; then case y in y) \$X;; esac; fi)\"" \
+         "X='gh pr merge 7 --repo o/r'; echo \"\$(! case y in y) \$X;; esac)\"" \
+         "echo '[core]${NL}  fsmonitor = gh pr merge 7 --repo o/r' >> .git/con\\fig; git status" \
+         "echo '#!/bin/sh${NL}gh pr merge 7 --repo o/r' > .git/hoo?s/post-checkout" \
+         "echo '#!/bin/sh${NL}gh pr merge 7 --repo o/r' > .git/hoo\\ks/post-checkout" \
+         "echo '[core] fsmonitor = gh pr merge 7 --repo o/r' >> \".git/con\"fig; git status" \
          "B=me\\rge; gh api -X PUT repos/o/r/pulls/7/\$B" "B=m\"er\"ge; gh api -X PUT repos/o/r/pulls/7/\$B" \
          "B=mer''ge; gh api -X PUT repos/o/r/pulls/7/\$B" "gh api -X PUT repos/o/r/pulls/7/me\\rge" \
          "for n in 72 73; do gh api -X PATCH \"repos/{owner}/{repo}/issues/\$n\" -F body=@f.md; done; python3 -c \"print('merge #76 then close')\"" \
@@ -592,6 +602,9 @@ t "#680: merge text written to \$D/hooks/pre-commit or \$SCRATCH/.git/config is 
 g "echo 'gh pr merge 7 --repo o/r' > \$SCRATCH/.git/config && git status"; assert_rc 2
 reset; setbase main
 t "#680: a merge-like --subject on the one plain merge is still put to the owner"; g "$MA --subject \"gh: merge it\""; assert_ask "Merge PR #7 of o/r into main"
+t "#680 review: --auto=true is denied like --auto"; g "$MA --auto=true"; assert_rc_contains 2 "is not allowed; a human merges"
+t "#680 review: an assignment in front of the plain merge into a protected base is denied (it would ride on the owner's yes)"
+g "GIT_CONFIG_COUNT=1 $MA"; assert_rc_contains 2 "assignment in front of a merge"
 # Issue #675 stays open on purpose: a merge that is encoded at run time holds no merge-like text, and text
 # matching cannot see it. These tests document the limit; branch protection on main is the backstop.
 reset
