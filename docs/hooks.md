@@ -51,8 +51,12 @@ How the hook reads the call: a backslash-newline is joined (also inside quotes a
 it), a `#` comment is data up to the newline, case patterns after `;;` are data, a simple `$( )` in an unquoted heredoc
 is a command and the rest of the body is data, and a function defined in the call may be called (its body is judged; a
 name that is already a command is not honored). A command with an expansion that evaluates a value (`$(( ))`, `$[ ]`,
-`${s:x}`, `${a[x]}`, `${!x}`, zsh `${(e)x}` and `$~x`) is never on the list, and an assignment in front of git, gh or
-rg takes that command off the list.
+`${s:x}`, `${a[x]}`, `${!x}`, zsh `${(e)x}` and `$~x`) is never on the list; a literal offset such as `${H:0:8}`, a
+default or a pattern is plain. An arithmetic command `(( ))` or `for (( ))`, an array element assignment (`a[X]=1`)
+and an assignment with an evaluating expansion (`Y=${!X}`) are denied next to merge text: the shell evaluates a
+value there, and a subscript in it runs a stored `$( )`. A write target is read the way bash writes it (`.git/con\fig`
+is `.git/config`), and a glob in a target that can match a git file counts as that file. An assignment in front of
+git, gh or rg takes that command off the list.
 
 **gh api is never a merge path (owner decision).** A merge goes only through `gh pr merge`, where the owner is asked.
 `gh api` stays on the list only when the hook can prove its endpoint is no merge path: `{owner}` and `{repo}` are filled
@@ -77,7 +81,7 @@ list stays as a second net for a merge that `bash -c`, `eval` or `xargs` build a
 is the backstop.
 
 **Owner approval for one PR into base.** The one exception is a single plain `gh pr merge <n> --repo o/r --match-head-commit <head sha>` (the flag must equal the head the hook reads, so a later push cannot ride the approval; no `--auto`,
-one PR, the only merge in the command, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
+one PR, the only merge in the command, no assignment in front of it, not `gh api`) whose base is `main`, `master`, `develop`, `development`, `staging`,
 `production`, `release/*`, `release-*` or the repo default branch. The hook reads the base and the head commit
 (`--json baseRefName,headRefOid`; the head must be 40 hex characters) and prints `permissionDecision: "ask"` with the
 reason `Merge PR #<n> of <repo> into <base> at <head sha>?`. Claude Code shows the owner a confirmation prompt, and the
@@ -90,7 +94,7 @@ answer, Claude Code returns it as a denial. So no `UserPromptSubmit` token fallb
 
 **It fails closed, unlike the other hooks (ADR: fail-closed merge guard).** Once it has seen a merge, any doubt denies:
 no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
-stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto`,
+stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto` (and `--auto=<any>`),
 `gh api graphql ... mergePullRequest`, a `gh api .../merge` path with `{owner}/{repo}` placeholders, a merge inside `bash -c`, `eval`,
 `xargs` or another wrapper on a best-effort list (shells, `env`, `sudo`, `nice`, `timeout`, `stdbuf`, `setsid`, `flock`,
 `script`, `strace` and similar; #677), also when the shell or wrapper is written with a path, a backslash or zsh's `=`, or

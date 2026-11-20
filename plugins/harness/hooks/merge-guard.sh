@@ -163,7 +163,7 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
       --delete-branch=false|--delete-branch=0|--delete-branch=f|--delete-branch=F|--delete-branch=False|--delete-branch=FALSE|-d=false|-d=0) delb=0 ;;
       -b?*|-t?*|-F?*|-A?*) ;;  # attached value of a value-taking short flag, not bundled flags
       --delete-branch|--delete-branch=*|-d|-[!-]*d*) delb=1 ;;
-      --auto) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
+      --auto|--auto=*) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
       --match-head-commit) skip=match ;;
       --match-head-commit=*) match=${w#--match-head-commit=} ;;
       -b|--body|-t|--subject|-F|--body-file|-A|--author-email) skip=other ;;
@@ -239,7 +239,7 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
     function qd(s,   i) { i = seg(tc()); QD[i] = QD[i] s " " }
     function bad(why) { if (BAD == "") BAD = why }
     function flush(f) {
-      if (CUR[f] && f > 0 && OUT[CUR[f]] ~ /^[ \t]*(case|esac)([ \t]|$)/) bad("NESTEDCASE")
+      if (CUR[f] && f > 0 && OUT[CUR[f]] ~ /(^|[ \t])(case|esac)([ \t]|$)/) bad("NESTEDCASE")
       CUR[f] = 0 }
     function quoted(body,   i) {  # a closed quoted string: record it and put it into the segment
       qd(body); raw(body)
@@ -250,6 +250,8 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
     function plainexp(t) {
       gsub(/\\./, "", t)
       gsub(/\$\{([A-Za-z_][A-Za-z0-9_]*|[0-9#?@*$!-])\}/, "", t)
+      # forms that do not evaluate a value: a literal offset (${H:0:8}), a length, a default, a pattern
+      gsub(/\$\{#?[A-Za-z_][A-Za-z0-9_]*(:[0-9]+(:[0-9]+)?|:?[-=?+][^${}`]*|(%%?|##?|\/\/?)[^${}`]*)?\}/, "", t)
       gsub(/\$\(\(/, "$[", t)
       gsub(/\$([A-Za-z_(\047"#?@*$!0-9-]|$)/, "", t)
       return t !~ /\$/ }
@@ -338,6 +340,8 @@ segs=$(printf '%s\n' "$cmd" | sed -E 's/[0-9]*([<>])&[0-9-]+/ \1 \/dev\/null /g;
             else if (c == "(") {
               # NAME() defines a function: its body is judged as commands of the call (flag d)
               if (nx == ")" && CUR[sp] && OUT[CUR[sp]] ~ /^[A-Za-z_][A-Za-z0-9_-]*[ \t]*$/) FNDEF[CUR[sp]] = 1
+              # (( )) and for (( )) evaluate the value of a variable as arithmetic, and a subscript in it runs $( )
+              if (nx == "(" && prev != "$") bad("ARITH")
               PAT[sp] = 0; if (sp > 0) PC[sp]++; flush(sp); raw(c) }
             else if (c == ")") {
               if (sp > 0 && PC[sp] == 0) { flush(sp); sp--; raw(")") }
@@ -392,6 +396,7 @@ case "$segs" in
   *$'\001'COMMENTQUOTE*) deny "a quote inside a # comment hides what follows it, so a merge cannot be judged." ;;
   *$'\001'SUBSTTEXT*) deny "merge-like text next to a \$( ) or backtick substitution inside double quotes cannot be judged." ;;
   *$'\001'HEREDOC*) deny "a heredoc with an end word that is not a plain name, in a # comment, or next to an open quote cannot be judged next to the word merge." ;;
+  *$'\001'ARITH*) deny "an arithmetic command (( )) evaluates a variable's value, which can run a stored \$( ), so it cannot be judged next to the word merge." ;;
   *$'\001'*) deny "a case statement, a comment or a \${ } expansion inside a quoted substitution cannot be judged next to the word merge." ;;
 esac
 
@@ -615,7 +620,12 @@ cfgtarget() {
   tg=$(printf '%s\n' "$s" | sed -E 's#[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)# #g' | grep -oE '>>?[[:space:]]*[^[:space:]]+' | sed -E 's/^>>?[[:space:]]*//')
   if [ "${s%%[[:space:]]*}" = tee ]; then tg="$tg $(printf '%s' "${s#tee}" | sed -E 's/(^|[[:space:]])-[^[:space:]]*//g')"; fi
   for w in $tg; do
-    w=$(resolve "$w")
+    w=$(resolve "$w" | tr -d "\"'\\\\")  # bash drops quotes and backslashes: .git/con\fig is .git/config
+    case "$w" in
+      *'*'*|*'?'*|*'['*)  # a glob can match a hook or config file
+        case "$w" in *.git*|*hook*|*husky*|*onfig*|*gh/*) WRITES=2; return 0 ;; esac
+        [ "$WRITES" -eq 2 ] || WRITES=1 ;;
+    esac
     if cfgsure "$w"; then WRITES=2; return 0; fi
     if [ "$CDCFG" -eq 1 ] || cfgmaybe "$w"; then [ "$WRITES" -eq 2 ] || WRITES=1; fi
   done
@@ -669,6 +679,12 @@ while IFS= read -r seg; do
     [ "$KW" -eq 1 ] && NSEGS=$((NSEGS + 1))
     # A bare assignment (or a keyword line) that holds merge-like text is a source of that text.
     [ "$T" -eq 1 ] && SRC=1
+    # An assignment to an array element (a[X]=1) or with an evaluating expansion (Y=${!X}) evaluates a
+    # value: like a command off the list (R2 below), it is denied next to merge-like text.
+    if [ "$ASG" -eq 1 ]; then
+      case "$FL" in *x*) OTHERS=$((OTHERS + 1)); [ -n "$OTHER1" ] || OTHER1="an evaluating assignment" ;; esac
+      if printf '%s' "$orig" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*\['; then OTHERS=$((OTHERS + 1)); [ -n "$OTHER1" ] || OTHER1="an array element assignment"; fi
+    fi
     continue
   fi
   if [ "$APIONLY" -eq 1 ]; then
@@ -707,6 +723,8 @@ while IFS= read -r seg; do
   KIND=other
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"; KIND=merge
+    # an assignment in front of the merge (LD_PRELOAD, GIT_CONFIG_*) would ride on the owner's yes
+    [ "$ASG" -eq 0 ] || MERGEASG=1
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
     # No test for the word graphql: the endpoint can come from a variable (gh api "$E").
     case "$(fold "$cmd")" in
@@ -798,6 +816,7 @@ fi
 
 [ "$APIONLY" -eq 0 ] || exit 0
 [ "$ASKS" -gt 0 ] || exit 0
+[ "${MERGEASG:-0}" -eq 0 ] || deny "an assignment in front of a merge into a protected base would run on the owner's yes; run the merge alone, with no assignment."
 # Something targets a non-feat base. It may be put to the owner only when it is the one and only merge.
 if [ "$ASKS" -ne 1 ] || [ "$MERGES" -ne 1 ]; then
   deny "a command with more than one merge cannot be put to the owner; one PR at a time."
