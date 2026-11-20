@@ -570,6 +570,11 @@ for c in "x='a[\$(gh pr merge 7 --repo o/r)]'; s=hi; echo \${s:x}" "x='a[\$(gh p
          "f() { gh api -X PUT repos/o/r/pulls/7/\$B; }; B=merge; f" \
          "for i in 1 2; do gh api -X PUT repos/o/r/pulls/7/\$B; B=merge; done" \
          "f() { gh api -X PUT repos/o/r/pulls/7/\$1; }; f merge" \
+         "B=mer\\${NL}ge; gh api -X PUT repos/o/r/pulls/7/\$B" "B=\"mer\\${NL}ge\"; gh api -X PUT repos/o/r/pulls/7/\$B" \
+         "f() { gh api -X PUT repos/o/r/pulls/7/\$1; }; f mer\\${NL}ge" \
+         "for B in mer\\${NL}ge; do gh api -X PUT repos/o/r/pulls/7/\$B; done" \
+         "B=me\\rge; gh api -X PUT repos/o/r/pulls/7/\$B" "B=m\"er\"ge; gh api -X PUT repos/o/r/pulls/7/\$B" \
+         "B=mer''ge; gh api -X PUT repos/o/r/pulls/7/\$B" "gh api -X PUT repos/o/r/pulls/7/me\\rge" \
          "for n in 72 73; do gh api -X PATCH \"repos/{owner}/{repo}/issues/\$n\" -F body=@f.md; done; python3 -c \"print('merge #76 then close')\"" \
          "cat > \$S/pr-body.md <<EOF${NL}this PR is a merge of two fixes${NL}EOF${NL}gh api -X PATCH repos/\$R/pulls/312 -F body=@\$S/pr-body.md" \
          "gh pr view 7 --json mergeable; for n in 394 397; do gh api -X PATCH repos/o/r/issues/\$n -f state=closed; done" \

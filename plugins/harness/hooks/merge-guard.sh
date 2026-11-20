@@ -69,7 +69,7 @@ is_merge_like "$cmd" || exit 0
 APIONLY=0
 if ! is_merge_like "$cmd" old; then
   # unmapped substring: a stored value can be sliced at run time (B=mergeable; ${B%able})
-  printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' || exit 0
+  fold "$cmd" | grep -q 'merg' || exit 0
   APIONLY=1
 fi
 
@@ -470,12 +470,13 @@ inert() {
 # asked, so gh api is never a merge path. Deny a request that can write (-X/--method other than GET, a field or
 # --input with no explicit GET, a method-override header) whose endpoint holds a variable, a substitution or a
 # backtick that apiok cannot resolve, when the whole call holds the substring "merg" anywhere (any case,
-# unmapped, so a slice of mergeable counts). The word built at run time from pieces (B=mer; ${B}ge) is #675.
+# unmapped, on the pre-filter fold: lowercase, newlines, quotes and backslashes removed, so mer\<newline>ge,
+# me\rge, m"er"ge and a slice of mergeable count). The word built at run time from pieces (B=mer; ${B}ge) is #675.
 apif9() {
   apiok "$1" && return 0
   [ "$APIMUT" -eq 1 ] || return 0
   case "$APIEP" in *'$'*|*'`'*) ;; *) return 0 ;; esac
-  printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\" | grep -q 'merg' || return 0
+  fold "$cmd" | grep -q 'merg' || return 0
   deny "a gh api write request with an endpoint built from a variable, next to merge text, cannot be judged. Merge with 'gh pr merge <n> --repo o/r' (the owner is asked). To edit a PR or issue, use 'gh pr edit --body-file', 'gh issue edit|comment|close' instead of gh api."
 }
 APIEP=""; APIMUT=0  # set by apiok: the raw endpoint, and 1 when the request can be other than GET
@@ -513,9 +514,11 @@ apiok() {
     case "$n" in ''|*[!A-Za-z0-9_]*) return 1 ;; esac
     case "$VARS" in *"|$n="*) v=${VARS##*"|$n="}; v=${v%%|*} ;; *) return 1 ;; esac
     onlyset "$n" || return 1
+    v=$(printf '%s' "$v" | tr -d "\"'\\\\")  # bash drops quotes and backslashes: me\rge is merge
     case "$v" in UNKNOWN|*'?'*|*'#'*|*[Mm][Ee][Rr][Gg][Ee]*) return 1 ;; esac
     ep=${ep/"$w"/$v}
   done
+  ep=$(printf '%s' "$ep" | tr -d "\"'\\\\")
   case "$ep" in *'{'*|*'}'*|*[Mm][Ee][Rr][Gg][Ee]*) return 1 ;; esac
   return 0
 }
