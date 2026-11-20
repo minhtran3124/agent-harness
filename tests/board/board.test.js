@@ -229,6 +229,20 @@ test('qb11: --idle-exit stops the server once no run is going, and not while one
   assert.throws(() => B.parseArgs(['--idle-exit', 'x']), /--idle-exit/);
 });
 
+test('qb16: --idle-exit keeps the board up while a fleet run has an open ticket', async () => {
+  const base = tmp();
+  const ledger = path.join(tmp(), 'ledger.json');
+  const write = state => fs.writeFileSync(ledger, JSON.stringify({ v: 1, run: 'r', base: 'main', tickets: { 1: { state } } }));
+  write('in_review');
+  const live = await B.start({ port: 0, projectDir: base, ledger, follow: true, pollMs: 30, idleExit: 0.002 });
+  let closed = false; live.server.on('close', () => { closed = true; });
+  await sleep(400);
+  assert.ok(!closed, 'an open fleet ticket keeps the board up');
+  write('done');
+  for (let i = 0; i < 40 && !closed; i++) await sleep(50);
+  assert.ok(closed, 'the board stops after the idle time once every fleet ticket is final');
+});
+
 test('qb12: the page works under a path prefix and has an embed mode', () => {
   const html = fs.readFileSync(path.join(root, 'plugins', 'harness', 'board', 'board.html'), 'utf8');
   // A proxy can serve the board at /board/<project>/: every URL the page loads is relative.

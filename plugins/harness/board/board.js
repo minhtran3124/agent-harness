@@ -330,6 +330,13 @@ function readFleet(ledgerFile, project) {
   catch (e) { return { status: 503, body: { error: e instanceof SyntaxError ? 'ledger is not valid JSON' : e.message } }; }
 }
 
+// A fleet run is going while one of its tickets is in a state that is not final.
+const FLEET_FINAL = new Set(['done', 'blocked', 'skipped']);
+function fleetGoing(ledgerFile, project) {
+  const f = readFleet(ledgerFile, project);
+  return f.status === 200 && f.body.tickets.some(t => !FLEET_FINAL.has(t.state));
+}
+
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
@@ -377,6 +384,7 @@ function start(opts) {
   else { const r = pickNewest(); if (r) open(r); }
 
   // idleExit (minutes): stop once no run has been going for that long (the run ended, or none started).
+  // A fleet run counts too: while its ledger has a ticket that is not done, blocked or skipped.
   const idleMs = (opts.idleExit || 0) * 60000;
   let lastBusy = Date.now(), server = null;
   const timer = setInterval(() => {
@@ -385,7 +393,7 @@ function start(opts) {
       if (r && (!tail || r.id !== tail.run.id)) open(r);      // a newer run started: switch to it
     }
     if (tail) tail.tick();
-    if (tail && !tail.ended) lastBusy = Date.now();
+    if ((tail && !tail.ended) || (idleMs && fleetGoing(opts.ledger, opts.project || process.cwd()))) lastBusy = Date.now();
     else if (idleMs && server && Date.now() - lastBusy >= idleMs) server.close();
   }, opts.pollMs || POLL_MS);
 
